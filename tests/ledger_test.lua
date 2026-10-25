@@ -1,0 +1,106 @@
+package.path = "./tests/?.lua;" .. package.path
+local H = require("harness")
+local ns = {}
+H.load("DontDoThat/Model/Ledger.lua", ns)
+local L = ns.Ledger
+
+local function stub(flagged, estimate)
+  return { Evaluate = function(_, action)
+    if flagged[action.family .. action.rank] then return { tier = "defer", cost = estimate } end
+    return { tier = "keep" }
+  end }
+end
+local function svc(rank, o)
+  o = o or {}
+  return { family = "Serpent Sting", name = "Serpent Sting", rank = rank, unlockLevel = o.lvl or 10,
+    cost = o.cost, learned = o.learned or false, available = o.available ~= false }
+end
+local profile = { class = "HUNTER", level = 30 }
+local flag = { ["Serpent Sting3"] = true, ["Serpent Sting4"] = true }
+
+test("unlearned flagged is projected", function()
+  local r = L.Compute(profile, { svc(3, { cost = 100 }) }, stub(flag), {})
+  eq(r.projected, 100); eq(r.verified, 0)
+end)
+test("higher rank learned -> verified", function()
+  local r = L.Compute(profile, { svc(3, { cost = 100 }), svc(4, { learned = true, cost = 200 }) }, stub(flag), {})
+  eq(r.verified, 100); eq(r.projected, 0); eq(r.spentAgainst, 200)
+end)
+test("keep tier counts nothing", function()
+  local r = L.Compute(profile, { svc(2, { cost = 100 }) }, stub(flag), {})
+  eq(r.projected, 0); eq(#r.items, 0)
+end)
+test("unavailable and above-level contribute nothing", function()
+  local r = L.Compute(profile, { svc(3, { cost = 100, available = false }), svc(4, { cost = 100, lvl = 31 }) }, stub(flag), {})
+  eq(r.projected, 0)
+end)
+test("learned elsewhere after dismissal: no savings", function()
+  local r = L.Compute(profile, { svc(3, { learned = true, cost = 100 }) }, stub(flag), {})
+  eq(r.projected, 0); eq(r.verified, 0); eq(r.spentAgainst, 100)
+end)
+test("observed cache overrides estimate", function()
+  local cache = {}
+  L.RecordCost(cache, "Serpent Sting", 3, 555)
+  local r = L.Compute(profile, { svc(3, { cost = 100 }) }, stub(flag), cache)
+  eq(r.projected, 555); eq(r.items[1].costIsEstimate, false)
+end)
+test("estimate marked when no observation", function()
+  local r = L.Compute(profile, { svc(3, { cost = 100 }) }, stub(flag), {})
+  eq(r.items[1].costIsEstimate, true)
+end)
+test("verdict cost is the fallback estimate", function()
+  local r = L.Compute(profile, { svc(3) }, stub(flag, 77), {})
+  eq(r.projected, 77); eq(r.items[1].costIsEstimate, true)
+end)
+test("unknown cost counts zero but is listed", function()
+  local r = L.Compute(profile, { svc(3) }, stub(flag), {})
+  eq(r.projected, 0); eq(#r.items, 1)
+end)
+
+test("respec cost table and cap", function()
+  eq(L.RespecCost(1), 10000); eq(L.RespecCost(2), 50000)
+  eq(L.RespecCost(3), 100000); eq(L.RespecCost(4), 150000)
+  eq(L.RespecCost(10), 450000); eq(L.RespecCost(11), 500000); eq(L.RespecCost(12), 500000); eq(L.RespecCost(500), 500000)
+  eq(L.RespecCost(0), 0)
+end)
+test("custom respec table", function()
+  eq(L.RespecCost(3, { steps = { 1 }, increment = 2, cap = 100 }), 5)
+end)
+test("respec counters", function()
+  local s = L.NewState()
+  eq(s, { respecsAvoided = 0, respecsPerformed = 0, respecSavings = 0, petResetsAvoided = 0, petResetsPerformed = 0,
+    petResetSavings = 0, itemsAvoided = 0, itemsAvoidedCopper = 0, spentAgainst = 0, costCache = {} })
+  L.RecordRespecAvoided(s)
+  eq(s.respecsAvoided, 1); eq(s.respecSavings, 10000)
+  L.RecordRespecPerformed(s)
+  eq(s.respecsPerformed, 1); eq(s.spentAgainst, 10000)
+  L.RecordRespecAvoided(s)
+  eq(s.respecSavings, 60000)
+  L.RecordRespecPerformed(s, nil, 123)
+  eq(s.spentAgainst, 10123)
+end)
+test("totals combine ledger and respec counters", function()
+  local s = L.NewState()
+  L.RecordRespecAvoided(s); L.RecordRespecPerformed(s)
+  local t = L.Totals(s, { verified = 5, projected = 10, spentAgainst = 20 })
+  eq(t, { verified = 5, projected = 10010 + 0, spentAgainst = 10020 })
+end)
+
+test("pet reset cost table, cap, and custom table", function()
+  eq(L.PetResetCost(1), 1000); eq(L.PetResetCost(2), 2000); eq(L.PetResetCost(10), 10000)
+  eq(L.PetResetCost(100), 100000); eq(L.PetResetCost(500), 100000); eq(L.PetResetCost(0), 0)
+  eq(L.PetResetCost(3, { steps = { 5 }, increment = 7, cap = 100 }), 19)
+end)
+
+test("pet reset counters feed the totals separately from respecs", function()
+  local s = L.NewState()
+  L.RecordPetResetAvoided(s)
+  L.RecordPetResetAvoided(s)
+  eq(s.petResetsAvoided, 2); eq(s.petResetSavings, 2000, 'each declined reset would have been the next one')
+  L.RecordPetResetPerformed(s)
+  eq(s.petResetsPerformed, 1); eq(s.spentAgainst, 1000)
+  eq(s.respecsAvoided, 0)
+  local t = L.Totals(s, { verified = 5, projected = 10, spentAgainst = 0 })
+  eq(t.projected, 10 + s.petResetSavings)
+  eq(t.spentAgainst, 1000)
+end)

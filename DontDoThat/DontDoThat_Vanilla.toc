@@ -1,0 +1,76 @@
+## Interface: 11509
+## Title: Don't Do That
+## Notes: Warns you away from unnecessary gold spending until you have bought your level 40 and level 60 mounts.
+## Version: 0.9.0
+## SavedVariables: DontDoThatDB
+## Category: Interface Enhancements
+
+# Load order: libraries, Core, Rules (pure Lua), Model, Data, UI, Debug, then slash commands.
+# Later task groups append their files below, keeping that order.
+
+embeds.xml
+
+Core\Init.lua
+Core\Addon.lua
+
+Rules\Schema.lua
+Rules\Engine.lua
+Rules\Data\Hunter.lua
+Rules\Data\Paladin.lua
+Rules\Data\Mage.lua
+Rules\Data\Warlock.lua
+Rules\Data\Priest.lua
+Rules\Data\Druid.lua
+Rules\Data\Shaman.lua
+Rules\Data\Rogue.lua
+Rules\Data\Warrior.lua
+Rules\Data\Herbalism.lua
+Rules\Data\Skinning.lua
+Rules\Data\ProfessionLearn.lua
+
+Model\SpecInference.lua
+Model\Milestones.lua
+Model\Settings.lua
+Model\PlayerProfile.lua
+Model\Ledger.lua
+Model\TrainerVisibility.lua
+Model\SpellData.lua
+Model\Savings.lua
+Model\Icons.lua
+Model\SoundList.lua
+Model\Tally.lua
+Model\EarnBack.lua
+Model\ItemCategory.lua
+Model\ItemWarning.lua
+
+Data\Sounds.lua
+Data\GoldRates.lua
+Data\SpellData.lua
+Data\TrainerPrices.lua
+
+UI\Helpers.lua
+UI\Alert.lua
+UI\AlertBanner.lua
+UI\Badge.lua
+UI\InfoBubble.lua
+UI\TooltipAugment.lua
+UI\ConfirmPopup.lua
+
+Intercepts\Adapter.lua
+Intercepts\Context.lua
+Intercepts\Trainer.lua
+Intercepts\Confirm.lua
+Intercepts\TrainerFilter.lua
+Intercepts\Resets.lua
+Intercepts\ItemGuard.lua
+Intercepts\Merchant.lua
+Intercepts\Auction.lua
+
+Debug\Log.lua
+Debug\Probe.lua
+Debug\Export.lua
+Debug\Capture.lua
+
+Options\Options.lua
+
+Core\Slash.lua

@@ -1,0 +1,5 @@
+Ace3 subset bundled from https://github.com/WoWUIDev/Ace3
+Tag: Release-r1403
+Commit: d295b12f8b889a30e86e0e901c5494df4b149c49
+Bundled: LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceHook-3.0, AceEvent-3.0, AceConsole-3.0, AceConfig-3.0 (Registry/Cmd/Dialog), AceGUI-3.0 (with widgets)
+Files copied unmodified. License: see LICENSE-Ace3.txt
