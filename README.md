@@ -8,7 +8,7 @@ A World of Warcraft Classic addon that warns you off gold you don't need to spen
   - Red: *Save your gold*. You won't need it until later.
   - Gold: *Not worth buying yet*. A low-value spell.
   - Blue: *Optional*. Handy now and then, but you can get by without it.
-- **Asks before you waste gold.** Buying a red spell, or a non-essential item (armor, weapons, vanity, bags, recipes), a bank or stable slot, COD mail, a talent reset, or your first lesson in a new profession gets a "Buy anyway?" question that says roughly how long it takes to grind that gold back. You can always say yes.
+- **Asks before you waste gold.** Buying a spell that isn't recommended, or a non-essential item (armor, weapons, vanity, bags, recipes), a bank or stable slot, COD mail, a talent reset, or your first lesson in a new profession gets a "Buy anyway?" question that says roughly how long it takes to grind that gold back. You can always say yes.
 - **Knows your class and spec.** The advice follows your talents, or the spec you choose, and comes from common leveling builds and expert guides (Wowhead, Icy Veins).
 - **Shows what you've saved.** The Progress page tallies the gold you've kept and projects your savings up to the mount you're saving for.
 
@@ -29,8 +29,7 @@ Type **`/ddt`** to open the settings (also under Options > AddOns). Pick how fir
 
 ## Known limits
 
-- Spell advice follows expert guides, which sometimes disagree. You can switch off any spell or kind of advice.
-- Some trainer prices are estimates until you visit your own trainer.
+- Spell advice follows expert guides. You can switch off any spell or kind of advice.
 - Talent choices aren't judged; only the cost of resetting is warned about.
 
 ## Problems?
