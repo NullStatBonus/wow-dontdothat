@@ -7,7 +7,7 @@ H.load("DontDoThat/Rules/Engine.lua", ns)
 H.load("DontDoThat/Rules/Data/ProfessionLearn.lua", ns)
 
 local function profile(extra)
-  local p = { class = "HUNTER", level = 25, plausibleSpecs = {}, professions = {}, professionAsked = {},
+  local p = { class = "TEST", level = 25, plausibleSpecs = {}, professions = {}, professionAsked = {},
     milestone = { current = 40, state = "active" } }
   for k, v in pairs(extra or {}) do p[k] = v end
   return p
