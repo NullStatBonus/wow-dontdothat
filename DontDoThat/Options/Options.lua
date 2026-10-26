@@ -370,7 +370,7 @@ end
 ---------------------------------------------------------------------------
 -- Alerts
 
--- The picker's entries in display order: common sounds first, then sound packs, then every other game sound.
+-- The picker's entries in display order: common sounds first, then sound packs.
 local function soundEntries()
   if ns.SoundList then return ns.SoundList.Entries(_G) end
   local out = {}

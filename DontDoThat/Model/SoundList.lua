@@ -3,9 +3,8 @@ local addonName, ns = ...
 -- The alert sound picker's list, built when needed:
 --   1. the common sounds in Data/Sounds.lua (game sound names, so the game supplies the ID),
 --   2. sounds registered with LibSharedMedia-3.0, the shared list that sound packs, DBM, BigWigs and
---      WeakAuras all read and add to (used only if some addon provides the library), and
---   3. every other sound the game names, from its own SOUNDKIT table.
--- Keys: a plain key for (1), "lsm:<name>" for (2), "game:<NAME>" for (3).
+--      WeakAuras all read and add to (used only if some addon provides the library).
+-- Keys: a plain key for (1), "lsm:<name>" for (2).
 local SoundList = {}
 ns.SoundList = SoundList
 
@@ -19,12 +18,6 @@ local function sharedMedia()
   return ok and lib or nil
 end
 
--- IG_MINIMAP_OPEN -> "Minimap open"
-local function pretty(name)
-  local words = name:gsub("^IG_", ""):gsub("^UI_", ""):gsub("^GS_", ""):gsub("_", " "):lower()
-  return (words:gsub("^%l", string.upper))
-end
-
 local function sortedNames(set)
   local names = {}
   for name in pairs(set) do names[#names + 1] = name end
@@ -35,13 +28,12 @@ end
 -- Ordered { key, label } entries.
 function SoundList.Entries(env)
   env = env or _G
-  local out, used = {}, {}
+  local out = {}
   local kit = soundkit(env)
   for _, entry in ipairs((ns.Sounds and ns.Sounds.list) or {}) do
     -- Where the game exposes its sound names, leave out any this client does not have.
     if not kit or entry.constName == nil or kit[entry.constName] ~= nil then
       out[#out + 1] = { key = entry.key, label = entry.label }
-      if entry.constName then used[entry.constName] = true end
     end
   end
 
@@ -59,15 +51,6 @@ function SoundList.Entries(env)
     end
   end
 
-  if kit then
-    local rest = {}
-    for name, id in pairs(kit) do
-      if type(name) == "string" and type(id) == "number" and not used[name] then rest[name] = true end
-    end
-    for _, name in ipairs(sortedNames(rest)) do
-      out[#out + 1] = { key = "game:" .. name, label = "Game sound: " .. pretty(name) }
-    end
-  end
   return out
 end
 
@@ -84,12 +67,6 @@ function SoundList.Resolve(key, env)
       if id == nil then return nil end
       return entry.kind or "soundkit", id
     end
-  end
-
-  if key:sub(1, 5) == "game:" then
-    local id = kit and kit[key:sub(6)]
-    if type(id) == "number" then return "soundkit", id end
-    return nil
   end
 
   if key:sub(1, 4) == "lsm:" then
