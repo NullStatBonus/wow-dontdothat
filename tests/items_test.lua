@@ -5,7 +5,7 @@ local function fresh()
   local ns = { defaults = nil }
   for _, f in ipairs({ "UI/Helpers.lua", "Data/Sounds.lua", "Data/GoldRates.lua", "Model/EarnBack.lua",
     "Model/ItemCategory.lua", "Model/ItemWarning.lua", "Model/Ledger.lua", "Rules/Schema.lua", "Rules/Engine.lua",
-    "Rules/Data/Hunter.lua", "Rules/Data/Herbalism.lua", "Rules/Data/Skinning.lua", "Model/Milestones.lua",
+    "Rules/Data/Hunter.lua", "Model/Milestones.lua",
     "Options/Options.lua" }) do
     H.load("DontDoThat/" .. f, ns)
   end

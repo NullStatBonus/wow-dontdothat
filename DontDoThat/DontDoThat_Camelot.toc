@@ -27,8 +27,6 @@ Rules\Data\Druid.lua
 Rules\Data\Shaman.lua
 Rules\Data\Rogue.lua
 Rules\Data\Warrior.lua
-Rules\Data\Herbalism.lua
-Rules\Data\Skinning.lua
 Rules\Data\ProfessionLearn.lua
 
 Model\SpecInference.lua

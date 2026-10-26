@@ -6,7 +6,7 @@ local addonName, ns = ...
 local Settings = {}
 ns.Settings = Settings
 
-Settings.RuleKinds = { "skipRank", "offSpec", "professionCap" }
+Settings.RuleKinds = { "skipRank", "offSpec" }
 
 local function saved()
   return ns.db and ns.db.profile
@@ -104,7 +104,6 @@ function Settings.RulesFor(class, p)
     offAbilities = set(off.abilities and off.abilities[class]),
     offTags = set(off.tags and off.tags[class]),
     offKinds = set(off.kinds),
-    nearCapMargin = Settings.Number(t.nearCapMargin),
   }
 end
 

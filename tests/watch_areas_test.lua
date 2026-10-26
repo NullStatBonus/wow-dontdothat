@@ -66,7 +66,7 @@ local function env()
   e.GetTalentTabInfo = function(i) return 360 + i, ({ "Beast Mastery", "Marksmanship", "Survival" })[i], "", 1, 0, "bg" end
   return e
 end
-ns.Rules.SetProfessionLearn({ gathering = {}, reasons = {}, generic = "%s is not needed yet." })
+ns.Rules.SetProfessionLearn({ gathering = {}, reason = "%s is not needed yet." })
 
 test("spells off: spell rows get no verdict, profession rows still do", function()
   ns.db = { profile = {} }

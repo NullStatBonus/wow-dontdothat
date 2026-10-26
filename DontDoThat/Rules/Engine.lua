@@ -3,11 +3,11 @@ local addonName, ns = ...
 local Rules = ns.Rules or {}
 ns.Rules = Rules
 
-local classes, professions = {}, {}
+local classes = {}
 
 function Rules.Load(data)
   local id = Rules.Validate(data)
-  if data.class then classes[id] = data else professions[id] = data end
+  classes[id] = data
   return data
 end
 
@@ -20,38 +20,8 @@ function Rules.ListClasses()
   table.sort(keys)
   return keys
 end
-function Rules.GetProfession(key) return professions[key] end
 
--- Sorted keys of every loaded profession, e.g. { "Herbalism", "Skinning" }.
-function Rules.ListProfessions()
-  local keys = {}
-  for key in pairs(professions) do keys[#keys + 1] = key end
-  table.sort(keys)
-  return keys
-end
-
--- Recognises a trainer row as one of a profession's rank tiers. A row can be named by the tier alone
--- ("Journeyman") or together with the profession ("Journeyman Herbalism", "Herbalism (Journeyman)").
--- Row naming on the real trainer is UNVERIFIED; a row that matches nothing is simply left alone.
--- Returns the profession key and the tier name, or nil.
-function Rules.MatchProfessionTier(rowName)
-  if type(rowName) ~= "string" then return nil end
-  local wanted = rowName:lower()
-  for _, key in ipairs(Rules.ListProfessions()) do
-    local prof = professions[key]
-    local pname = (prof.profession or key):lower()
-    for _, tier in ipairs(prof.tiers or {}) do
-      local tname = tier.name:lower()
-      if wanted == tname or wanted == tname .. " " .. pname or wanted == pname .. " (" .. tname .. ")"
-          or wanted == pname .. " " .. tname then
-        return key, tier.name
-      end
-    end
-  end
-  return nil
-end
-
-local learn = { gathering = {}, reasons = {}, generic = "%s won't pay for itself before level 40." }
+local learn = { gathering = {}, reason = "%s costs gold at every level." }
 
 -- Rule data for the one-time "learning a profession" question (Rules/Data/ProfessionLearn.lua).
 function Rules.SetProfessionLearn(data) learn = data end
@@ -67,7 +37,7 @@ end
 
 -- Test hook: forget all loaded data.
 function Rules.Reset()
-  classes, professions = {}, {}
+  classes = {}
 end
 
 local SEVERITY = { keep = 0, info = 1, deferLow = 2, defer = 3 }
@@ -200,34 +170,11 @@ local function evaluateSpell(profile, action, data)
   return keep(profile)
 end
 
-local function evaluateRecipeTier(profile, action)
-  local prof = professions[action.profession or action.family]
-  local skill = prof and profile.professions and profile.professions[prof.profession]
-  if not skill then return keep(profile) end
-  local rules = profile.rules or {}
-  if rules.offKinds and rules.offKinds.professionCap then return keep(profile) end
-  local tierRow
-  for _, t in ipairs(prof.tiers) do
-    if t.name == action.name then tierRow = t end
-  end
-  if not tierRow then return keep(profile) end
-  local margin = rules.nearCapMargin or prof.nearCapMargin or 25
-  local cap = skill.max
-  if cap and skill.skill and cap - skill.skill > margin then
-    local cost, isEstimate = costFor(action, tierRow.cost)
-    return verdict(profile, prof.tier or "defer", "tag",
-      ("Your %s skill is %d of %d. You won't need %s until you're closer to the cap."):format(
-        prof.profession, skill.skill, cap, action.name), cost, isEstimate)
-  end
-  return keep(profile)
-end
-
 -- Asked once per profession: already known, or already asked, means nothing to say.
 local function evaluateProfessionLearn(profile, action)
   local name = action.profession
   if (profile.professions or {})[name] or (profile.professionAsked or {})[name] then return keep(profile) end
-  local reason = learn.reasons[name] or learn.generic:format(name)
-  local v = verdict(profile, "defer", "professionLearn", reason, action.cost, false)
+  local v = verdict(profile, "defer", "professionLearn", learn.reason:format(name), nil, false)
   v.profession = name
   return v
 end
@@ -236,7 +183,6 @@ function Rules.Evaluate(profile, action)
   local m = profile.milestone
   if not (m and m.state == "active") then return keep(profile) end
   if action.kind == "professionLearn" then return evaluateProfessionLearn(profile, action) end
-  if action.kind == "recipeTier" then return evaluateRecipeTier(profile, action) end
   local data = classes[profile.class]
   if not data then return keep(profile) end
   return evaluateSpell(profile, action, data)

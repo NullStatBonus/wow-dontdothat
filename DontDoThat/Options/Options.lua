@@ -228,12 +228,6 @@ local function tuning(create)
   return p.tuning or {}
 end
 
-local function dataMargin()
-  local first = ns.Rules and ns.Rules.ListProfessions and ns.Rules.ListProfessions()[1]
-  local prof = first and ns.Rules.GetProfession(first)
-  return (prof and prof.nearCapMargin) or 25
-end
-
 local TIER_CHOICES = {
   { key = "defer", name = "Save your gold", desc = "Things you won't need until later. This is what the addon always warned about." },
   { key = "deferLow", name = "Not worth buying yet", desc = "Low-value spells. Marked, but they don't get in your way unless you tick this." },
@@ -995,18 +989,8 @@ function Options.Watch()
   profileToggle(page, "filter", "Add a Recommended filter to trainers", "Adds a Recommended choice to the trainer's Filter menu that hides what you can wait on.", "recommendedFilter")
 
   page:section("professionsHeader", "Professions")
-  watchToggle(page, "professions", "Warn about professions I can wait on", "Profession ranks you can't use yet, and the first time you learn a new profession.")
-  page:toggle("kind_professionCap", "Mark profession ranks I can't use yet", "Marks the next rank of a profession until your skill is close enough to need it.",
-    function() return not kindOff("professionCap") end,
-    function(_, value) setKindOff("professionCap", not value); applyNow() end)
-  page:add("margin", {
-    type = "range", width = "full", name = "Wait on a profession rank until your skill is this close to its limit",
-    min = 0, max = 75, step = 5,
-    disabled = function() return kindOff("professionCap") end,
-    get = function() return (ns.Settings and ns.Settings.Number(tuning().nearCapMargin)) or dataMargin() end,
-    set = function(_, value) tuning(true).nearCapMargin = value; applyNow() end,
-  })
-  page:note("professionsNote", "Covers Herbalism and Skinning ranks. A rank costs gold and isn't needed until your skill is close to its limit.")
+  watchToggle(page, "professions", "Warn about professions I can wait on", "The first time you learn a new profession.")
+  page:note("professionsNote", "Asks once, the first time you learn a profession other than Fishing, Herbalism, Mining or Skinning. Leveling a profession costs gold at every step.")
 
   page:section("shoppingHeader", "Shopping")
   watchToggle(page, "shopping", "Warn about things I buy", "Gear, bags, potions and other items at vendors and the auction house.")

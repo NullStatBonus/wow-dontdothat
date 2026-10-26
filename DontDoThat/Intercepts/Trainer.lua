@@ -19,14 +19,12 @@ function Trainer.Compute(env)
   for _, row in ipairs(trainer.rows) do
     if not row.header and ns.Icons then ns.Icons.Remember(row.name, row.icon) end
     if not row.header and not row.learned then
-      local profession, tierName = ns.Rules.MatchProfessionTier(row.name)
       local learning = ns.Rules.MatchProfessionLearn(row.name)
       local action = learning and { kind = "professionLearn", name = row.name, profession = learning, cost = row.cost }
-        or profession and { kind = "recipeTier", name = tierName, profession = profession, cost = row.cost }
         or { kind = "spell", name = row.name, family = row.family, rank = row.rank,
              unlockLevel = row.level, cost = row.cost }
-      -- A row belongs to the Professions area when it is a profession tier or first-time row, else to Spells.
-      local area = (learning or profession) and "professions" or "spells"
+      -- A row belongs to the Professions area when it is a first-time profession row, else to Spells.
+      local area = learning and "professions" or "spells"
       local ok, verdict = false, nil
       if not ns.Settings or ns.Settings.Watching(area) then ok, verdict = pcall(ns.Rules.Evaluate, profile, action) end
       if ok and verdict then

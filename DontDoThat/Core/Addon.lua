@@ -33,7 +33,6 @@ ns.defaults = {
         -- Rules the player switched off (Advanced > Classes). A present key means off, so rules added later are on.
         ruleOff = { abilities = {}, tags = {}, kinds = {} }, -- abilities/tags: class -> name -> true; kinds: kind -> true
         specOverride = {},          -- class -> spec key; absent means inferred from talents
-        -- nearCapMargin is absent until the player sets it; the rule data decides.
         tuning = { stopAfter = 60, promptTiers = { defer = true, deferLow = false, info = false } },
         debug = false,
         traceItems = false,         -- keep a saved record of each vendor and auction decision (Debug page)
