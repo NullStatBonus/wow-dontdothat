@@ -15,7 +15,7 @@ local function svc(rank, o)
   return { family = "Serpent Sting", name = "Serpent Sting", rank = rank, unlockLevel = o.lvl or 10,
     cost = o.cost, learned = o.learned or false, available = o.available ~= false }
 end
-local profile = { class = "HUNTER", level = 30 }
+local profile = { class = "TEST", level = 30 }
 local flag = { ["Serpent Sting3"] = true, ["Serpent Sting4"] = true }
 
 test("unlearned flagged is projected", function()

@@ -1,0 +1,12 @@
+# Packager output and zips
+.release/
+*.zip
+
+# Local notes and captures
+.claude/
+tools/.cache/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

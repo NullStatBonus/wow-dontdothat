@@ -13,7 +13,7 @@ local function trainerEnv()
     { "Serpent Sting", "Rank 5", "unavailable", 300, 34 },
     { "Arcane Shot", "Rank 1", "available", 50, 6 },
     { "Arcane Shot", "Rank 2", "available", 90, 12 },
-    { "Hunter Skills", "", "header" },
+    { "Class Skills", "", "header" },
   }
   return {
     GetNumTrainerServices = function() return #rows end,
@@ -73,7 +73,7 @@ test("trainer snapshot lists services and skips headers", function()
   local snap = P.TrainerSnapshot(trainerEnv())
   truthy(snap.ok)
   eq(#snap.services, 5)
-  eq(snap.headers[1], { index = 6, name = "Hunter Skills" })
+  eq(snap.headers[1], { index = 6, name = "Class Skills" })
   eq(snap.services[2].name, "Serpent Sting")
   eq(snap.services[2].rank, 4)
   eq(snap.services[2].level, 26)

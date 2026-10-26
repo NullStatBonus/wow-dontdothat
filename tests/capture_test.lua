@@ -17,7 +17,7 @@ local function fakeEnv()
     { "Serpent Sting", "Rank 1", "used", 100, 4 },
     { "Serpent Sting", "Rank 2", "available", 200, 10 },
   }
-  env.UnitName = function() return "Hunter Trainer" end
+  env.UnitName = function() return "Class Trainer" end
   env.GetNumTrainerServices = function() return #services end
   env.GetTrainerServiceInfo = function(i) return services[i][1], services[i][2], services[i][3] end
   env.GetTrainerServiceCost = function(i) return services[i][4] end
@@ -43,7 +43,7 @@ end)
 test("TRAINER_SHOW stores a snapshot and notes the rank skip", function()
   local ns, saved = setup(true)
   ns.Capture.OnEvent(fakeEnv(), saved, "TRAINER_SHOW")
-  local tr = saved.captures.trainers["Hunter Trainer"]
+  local tr = saved.captures.trainers["Class Trainer"]
   eq(#tr.services, 2)
   eq(tr.services[2].cost, 200)
   eq(saved.captures.events.TRAINER_SHOW, 1)
@@ -56,20 +56,20 @@ test("an empty list at TRAINER_SHOW is replaced once TRAINER_UPDATE has data", f
   local real = env.GetNumTrainerServices
   env.GetNumTrainerServices = function() return 0 end
   ns.Capture.OnEvent(env, saved, "TRAINER_SHOW")
-  eq(#saved.captures.trainers["Hunter Trainer"].services, 0)
+  eq(#saved.captures.trainers["Class Trainer"].services, 0)
   env.GetNumTrainerServices = real
   ns.Capture.OnEvent(env, saved, "TRAINER_UPDATE")
-  eq(#saved.captures.trainers["Hunter Trainer"].services, 2)
+  eq(#saved.captures.trainers["Class Trainer"].services, 2)
 end)
 
 test("type filters are recorded, with n/a when the function is absent", function()
   local ns, saved = setup(true)
   local env = fakeEnv()
   ns.Capture.OnEvent(env, saved, "TRAINER_SHOW")
-  eq(saved.captures.trainers["Hunter Trainer"].filters.used, "n/a")
+  eq(saved.captures.trainers["Class Trainer"].filters.used, "n/a")
   env.GetTrainerServiceTypeFilter = function(kind) return kind == "used" and 0 or 1 end
   ns.Capture.OnEvent(env, saved, "TRAINER_UPDATE")
-  eq(saved.captures.trainers["Hunter Trainer"].filters, { available = "1", unavailable = "1", used = "0" })
+  eq(saved.captures.trainers["Class Trainer"].filters, { available = "1", unavailable = "1", used = "0" })
 end)
 
 test("hook installation is logged", function()
@@ -145,7 +145,7 @@ test("report lines summarize what was captured", function()
   local ns, saved = setup(true)
   ns.Capture.OnEvent(fakeEnv(), saved, "TRAINER_SHOW")
   local text = table.concat(ns.Capture.Lines(saved), "\n")
-  truthy(text:find('trainer "Hunter Trainer"', 1, true))
+  truthy(text:find('trainer "Class Trainer"', 1, true))
   truthy(text:find("Serpent Sting rank=2", 1, true))
 end)
 

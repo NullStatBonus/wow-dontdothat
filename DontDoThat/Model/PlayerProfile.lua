@@ -3,20 +3,6 @@ local addonName, ns = ...
 local PlayerProfile = {}
 ns.PlayerProfile = PlayerProfile
 
--- STUB, UNVERIFIED: static proficiencies per class. Extend or replace with real data.
--- armorUpgrades maps armor type -> level at which it is gained.
-PlayerProfile.Proficiencies = {
-  HUNTER = {
-    armor = { "Cloth", "Leather" },
-    armorUpgrades = { Mail = 40 },
-    weapons = { "Bows", "Crossbows", "Guns", "Daggers", "Polearms", "Staves", "Swords", "Axes" },
-  },
-}
-
-function PlayerProfile.GetProficiencies(class)
-  return PlayerProfile.Proficiencies[class]
-end
-
 local function copyPoints(t)
   local out = {}
   for k, v in pairs(t or {}) do out[k] = v end
@@ -47,7 +33,6 @@ function PlayerProfile.Build(input)
     activeTalents = input.activeTalents,
     professionAsked = input.professionAsked or {},
     milestone = milestone or { current = nil, state = "finished" }, -- no milestone data: warn about nothing
-    proficiencies = PlayerProfile.GetProficiencies(input.class),
   }
 end
 
