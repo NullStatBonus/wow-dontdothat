@@ -16,7 +16,7 @@ It stays on from level 1 until you've bought the mount you chose to stop at. It 
 
 ## Install
 
-Install it from CurseForge, WoWInterface or Wago with your addon manager, or by hand:
+Install it from CurseForge or Wago with your addon manager, or by hand:
 
 1. Copy the `DontDoThat` folder into your AddOns folder:
    - Classic Era: `World of Warcraft/_classic_era_/Interface/AddOns/`

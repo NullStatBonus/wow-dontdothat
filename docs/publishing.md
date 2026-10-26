@@ -1,6 +1,6 @@
 # Publishing
 
-Releases are built by [BigWigsMods/packager](https://github.com/BigWigsMods/packager) from `.github/workflows/release.yml` and uploaded to CurseForge, WoWInterface and Wago, plus a GitHub release.
+Releases are built by [BigWigsMods/packager](https://github.com/BigWigsMods/packager) from `.github/workflows/release.yml` and uploaded to CurseForge and Wago, plus a GitHub release.
 
 ## One-time setup
 
@@ -9,12 +9,11 @@ Releases are built by [BigWigsMods/packager](https://github.com/BigWigsMods/pack
 
    ```
    ## X-Curse-Project-ID: <CurseForge project ID>
-   ## X-WoWI-ID: <WoWInterface addon ID>
    ## X-Wago-ID: <Wago project ID>
    ```
 
    The packager skips any site whose ID is missing.
-3. Add these repository secrets (Settings > Secrets and variables > Actions): `CF_API_TOKEN`, `WOWI_API_TOKEN`, `WAGO_API_TOKEN`. `GITHUB_TOKEN` is provided by GitHub.
+3. Add these repository secrets (Settings > Secrets and variables > Actions): `CF_API_TOKEN`, `WAGO_API_TOKEN`. `GITHUB_TOKEN` is provided by GitHub.
 4. Pick MIT as the license on each site. The repository's `LICENSE` ships inside the package; the Ace3 libraries keep their own in `DontDoThat/Libs/LICENSE-Ace3.txt`.
 
 ## Releasing
