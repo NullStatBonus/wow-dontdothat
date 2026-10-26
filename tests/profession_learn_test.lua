@@ -15,7 +15,7 @@ end
 local function learn(name) return { kind = "professionLearn", name = "Apprentice " .. name, profession = name, cost = 1000 } end
 
 test("rows teaching a gathering profession are not recognised", function()
-  for _, n in ipairs({ "Skinning", "Herbalism", "Mining" }) do
+  for _, n in ipairs({ "Skinning", "Herbalism", "Mining", "Fishing" }) do
     eq(ns.Rules.MatchProfessionLearn("Apprentice " .. n), nil, n)
   end
   eq(ns.Rules.MatchProfessionLearn("Journeyman Leatherworking"), nil)
@@ -23,18 +23,10 @@ test("rows teaching a gathering profession are not recognised", function()
   eq(ns.Rules.MatchProfessionLearn("Engineering (Apprentice)"), "Engineering")
 end)
 
-test("the first time: defer with a reason specific to the profession and the cost", function()
+test("the first time: defer with a direct reason naming the profession and no cost", function()
   local v = ns.Rules.Evaluate(profile(), learn("Leatherworking"))
-  eq(v.tier, "defer"); eq(v.source, "professionLearn"); eq(v.profession, "Leatherworking"); eq(v.cost, 1000)
+  eq(v.tier, "defer"); eq(v.source, "professionLearn"); eq(v.profession, "Leatherworking"); eq(v.cost, nil)
   truthy(v.reason:find("Leatherworking", 1, true))
-  local other = ns.Rules.Evaluate(profile(), learn("Engineering"))
-  truthy(other.reason ~= v.reason, "each profession has its own wording")
-end)
-
-test("a profession with no wording of its own gets the generic sentence naming it", function()
-  local v = ns.Rules.Evaluate(profile(), learn("Jewelcrafting"))
-  eq(v.tier, "defer")
-  truthy(v.reason:find("Jewelcrafting", 1, true))
 end)
 
 test("already asked or already known means keep", function()

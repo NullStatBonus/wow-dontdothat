@@ -38,7 +38,7 @@ test("rules: malformed data is rejected with a clear message", function()
   d = sample(); d.ranks.X[1].cost = 1.5
   raises(function() ns.Rules.Load(d) end, "copper")
   d = sample(); d.class = nil
-  raises(function() ns.Rules.Load(d) end, "'class' or 'profession'")
+  raises(function() ns.Rules.Load(d) end, "'class' string")
   raises(function() ns.Rules.Load("x") end, "must be a table")
   d = sample(); d.specs = {}
   raises(function() ns.Rules.Load(d) end, "specs")

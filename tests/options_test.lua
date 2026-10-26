@@ -4,7 +4,7 @@ local H = require("harness")
 local function fresh(profile)
   local ns = { version = "0.1.0" }
   for _, f in ipairs({ "UI/Helpers.lua", "Data/Sounds.lua", "Rules/Schema.lua", "Rules/Engine.lua",
-    "Rules/Data/Hunter.lua", "Rules/Data/Herbalism.lua", "Rules/Data/Skinning.lua", "Data/SpellData.lua", "Data/TrainerPrices.lua",
+    "Rules/Data/Hunter.lua", "Data/SpellData.lua", "Data/TrainerPrices.lua",
     "Model/SpellData.lua", "Model/Ledger.lua", "Model/Savings.lua", "Model/Milestones.lua", "Model/Settings.lua", "Model/ItemCategory.lua", "Options/Options.lua" }) do
     H.load("DontDoThat/" .. f, ns)
   end
@@ -289,12 +289,12 @@ local function loadSettings(profile)
   return ns
 end
 
-test("tuning: values show the rule data until the player sets one; stop-after is on Home", function()
+test("tuning: stop-after is on Home", function()
   local ns = loadSettings({})
-  local g, home, watch = ns.Options.Tuning().args, ns.Options.Home().args, ns.Options.Watch().args
-  eq(watch.margin.get(), 25); eq(home.stopAfter.get(), 60)
-  watch.margin.set(nil, 10); home.stopAfter.set(nil, 40)
-  eq(ns.db.profile.tuning.nearCapMargin, 10); eq(ns.db.profile.tuning.stopAfter, 40)
+  local g, home = ns.Options.Tuning().args, ns.Options.Home().args
+  eq(home.stopAfter.get(), 60)
+  home.stopAfter.set(nil, 40)
+  eq(ns.db.profile.tuning.stopAfter, 40)
   eq(home.stopAfter.get(), 40)
   eq(g.window, nil, "the rank window is gone")
 end)
@@ -341,7 +341,7 @@ test("rules page: each ability has a switch that is on until the player turns it
   eq(ns.db.profile.ruleOff.abilities.HUNTER["Distracting Shot"], nil)
 end)
 
-test("rules page: tag switches, rule kind switches and the skill limit switch", function()
+test("rules page: tag switches and rule kind switches", function()
   local ns = loadSettings({})
   local rules = ns.Options.Rules().args
   local choices = rules.HUNTER.args.choices.args
@@ -353,8 +353,6 @@ test("rules page: tag switches, rule kind switches and the skill limit switch", 
   eq(kinds.kind_supersession, nil, "the level-gap switch is gone")
   kinds.kind_offSpec.set(nil, false)
   eq(ns.Settings.RulesFor("HUNTER").offKinds, { offSpec = true })
-  ns.Options.Watch().args.kind_professionCap.set(nil, false)
-  truthy(ns.Settings.RulesFor("HUNTER").offKinds.professionCap)
 end)
 
 test("rules page: the spec dropdown is Automatic plus the class's specs, and Automatic clears the pick", function()

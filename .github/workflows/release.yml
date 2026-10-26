@@ -1,0 +1,47 @@
+name: Release
+
+# Tag vX.Y.Z to package and publish. Run it by hand to build the zip without uploading anything.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Package only; do not upload or create a release
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit
+      - name: Tests
+        run: luajit tests/run.lua
+      - name: TOC and embeds
+        run: |
+          for toc in DontDoThat/DontDoThat_*.toc; do sh tools/check-toc.sh "$toc"; done
+          sh tools/check-tocs-match.sh
+          bash tools/check-embeds.sh
+      - name: Version matches the tag
+        run: sh tools/check-version.sh "${{ github.ref_type == 'tag' && github.ref_name || '' }}"
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the packager reads tags and history
+      - uses: BigWigsMods/packager@v2
+        with:
+          args: ${{ inputs.dry_run && '-d' || '' }}
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GH_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -94,27 +94,11 @@ local function checkClass(d, where)
   end
 end
 
-local function checkProfession(d, where)
-  if type(d.tiers) ~= "table" or #d.tiers == 0 then fail(where, "tiers must be a non-empty list") end
-  local lastCap = 0
-  for i, tier in ipairs(d.tiers) do
-    local w = where .. " tiers[" .. i .. "]"
-    if type(tier.name) ~= "string" then fail(w, "name must be a string") end
-    if not isInt(tier.cap) or tier.cap <= lastCap then fail(w, "cap must be an integer above the previous tier's") end
-    lastCap = tier.cap
-    checkCost(w .. ".cost", tier.cost)
-  end
-  if d.nearCapMargin ~= nil and (type(d.nearCapMargin) ~= "number" or d.nearCapMargin < 0) then
-    fail(where, "nearCapMargin must be a non-negative number")
-  end
-  if d.tier ~= nil and not TIERS[d.tier] then fail(where, "unknown tier '" .. tostring(d.tier) .. "'") end
-end
-
 -- Raises a clear error (no traceback position) when data is malformed.
 function ns.Rules.Validate(d)
   if type(d) ~= "table" then fail("?", "data must be a table") end
-  local id = d.class or d.profession
-  if type(id) ~= "string" then fail("?", "needs a 'class' or 'profession' string") end
-  if d.class then checkClass(d, id) else checkProfession(d, id) end
+  local id = d.class
+  if type(id) ~= "string" then fail("?", "needs a 'class' string") end
+  checkClass(d, id)
   return id
 end

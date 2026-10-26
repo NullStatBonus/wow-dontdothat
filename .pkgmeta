@@ -1,0 +1,21 @@
+package-as: DontDoThat
+
+# The addon lives in DontDoThat/ inside the repository; move it to the top of the package.
+move-folders:
+  DontDoThat/DontDoThat: DontDoThat
+
+# The Ace3 libraries are committed under DontDoThat/Libs, so nothing is fetched at package time.
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - .claude
+  - .github
+  - CLAUDE.md
+  - CONTRIBUTING.md
+  - README.md
+  - docs
+  - openspec
+  - tests
+  - tools

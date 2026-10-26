@@ -14,16 +14,6 @@ Rule data files live in `DontDoThat/Rules/Data/` and call `ns.Rules.Load(table)`
 | `abilityLevels` | Optional ability name to trainer level (informational). |
 | `supersessionWindow` | Optional number; replaces the default window of 4 levels. |
 
-## Profession data (`profession = "Herbalism"`)
-
-| Field | Meaning |
-|---|---|
-| `tiers` | Ordered list `{ name, cap, cost }` (for example Apprentice 75, Journeyman 150, Expert 225, Artisan 300). Costs are editable, unverified estimates. |
-| `nearCapMargin` | A tier is flagged only while `profile.professions[P].max - skill` exceeds this (default 25). |
-| `tier` | Tier used when flagged (default `defer`). |
-
-Recipe-tier actions are `{ kind = "recipeTier", name = "Journeyman", profession = "Herbalism" }`.
-
 ## Evaluation order
 
 Rules apply only while `profile.milestone.state == "active"`. Then: override, rotation (core in any plausible spec keeps; situational is `info`), tags, ability that belongs only to a non-plausible spec (`deferLow`, reason names the spec and tree split), rank supersession (next rank within the window), keep. Empty or missing `plausibleSpecs` means every spec is plausible.

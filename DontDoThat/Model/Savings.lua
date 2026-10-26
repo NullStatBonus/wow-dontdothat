@@ -49,7 +49,7 @@ function Savings.Compute(profile, stopLevel, costCache)
 end
 
 local function copyRules(rules)
-  local out = { nearCapMargin = rules and rules.nearCapMargin, offAbilities = {}, offTags = {}, offKinds = {} }
+  local out = { offAbilities = {}, offTags = {}, offKinds = {} }
   for _, bucket in ipairs({ "offAbilities", "offTags", "offKinds" }) do
     for name, off in pairs(rules and rules[bucket] or {}) do out[bucket][name] = off end
   end

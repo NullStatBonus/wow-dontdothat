@@ -10,7 +10,7 @@ Conventions
 Shapes
 
 ```
-Action  = { kind = "spell"|"respec"|"recipeTier",
+Action  = { kind = "spell"|"respec"|"professionLearn",
             name = "Serpent Sting", family = "Serpent Sting",   -- family groups ranks
             rank = 8, unlockLevel = 58, nextRankLevel = 60,     -- nextRankLevel nil if last rank
             spellId = nil|number, cost = copper|nil, tags = {..}|nil }
@@ -18,7 +18,7 @@ Action  = { kind = "spell"|"respec"|"recipeTier",
 Profile = { class = "HUNTER", level = 25,
             treePoints = { BM = 21, MM = 0, SV = 0 },           -- keyed by spec key
             plausibleSpecs = { "BM" },                          -- from SpecInference
-            professions = { Herbalism = { skill = 75, max = 150 } },
+            professions = { Cooking = { skill = 75, max = 150 } },   -- known professions
             milestone = { current = 40|60|nil, state = "active"|"finished" } }  -- active from level 1 until the level 60 mount is bought
 
 Verdict = { tier = "keep"|"info"|"deferLow"|"defer",
@@ -31,7 +31,7 @@ Service = { family = "Serpent Sting", name = "Serpent Sting", rank = 3, unlockLe
 
 Engine (ns.Rules)
   ns.Rules.Evaluate(profile, action) -> Verdict
-  ns.Rules.Load(classOrProfessionData)  -- validates, raises a clear error on malformed data
+  ns.Rules.Load(classData)  -- validates, raises a clear error on malformed data
   ns.Rules.GetClass(classKey) -> data table or nil
   ns.Rules.SupersessionWindow  -- default 4, overridable via data
 

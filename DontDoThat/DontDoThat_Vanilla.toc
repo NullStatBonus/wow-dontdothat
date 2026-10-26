@@ -2,6 +2,9 @@
 ## Title: Don't Do That
 ## Notes: Warns you away from unnecessary gold spending until you have bought your level 40 and level 60 mounts.
 ## Version: 0.9.0
+## Author: NullStatBonus
+## X-Curse-Project-ID: 1766476
+## X-Wago-ID: mKOa0DNx
 ## SavedVariables: DontDoThatDB
 ## Category: Interface Enhancements
 
@@ -24,8 +27,6 @@ Rules\Data\Druid.lua
 Rules\Data\Shaman.lua
 Rules\Data\Rogue.lua
 Rules\Data\Warrior.lua
-Rules\Data\Herbalism.lua
-Rules\Data\Skinning.lua
 Rules\Data\ProfessionLearn.lua
 
 Model\SpecInference.lua

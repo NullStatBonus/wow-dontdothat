@@ -22,13 +22,10 @@ ns.Rules.Load({
   skipRanks = { Skipper = { 2 } },
   ranks = { Plain = { { rank = 1, unlockLevel = 4 }, { rank = 2, unlockLevel = 10 } } },
 })
-ns.Rules.Load({ profession = "Herbalism", tier = "defer", nearCapMargin = 25,
-  tiers = { { name = "Journeyman", cap = 150, cost = 500 } } })
 
 local function profile(rules, specs)
   return { class = "TEST", level = 25, plausibleSpecs = specs or { "A" }, rules = rules,
-    milestone = { current = 40, state = "active" },
-    professions = { Herbalism = { skill = 130, max = 150 } } }
+    milestone = { current = 40, state = "active" } }
 end
 local function spell(name, extra)
   local a = { kind = "spell", name = name, family = name }
@@ -63,13 +60,6 @@ test("rules: rule kinds switch off individually", function()
   local offSpec = spell("BCore")
   eq(E(profile(nil), offSpec).source, "rotation")
   eq(E(profile({ offKinds = { offSpec = true } }), offSpec).tier, "keep")
-end)
-
-test("rules: profession margin comes from settings when set, and the cap kind switches off", function()
-  local tier = { kind = "recipeTier", profession = "Herbalism", name = "Journeyman" }
-  eq(E(profile(nil), tier).tier, "keep")
-  eq(E(profile({ nearCapMargin = 10 }), tier).tier, "defer")
-  eq(E(profile({ nearCapMargin = 10, offKinds = { professionCap = true } }), tier).tier, "keep")
 end)
 
 test("settings: numbers must be whole and zero or more", function()
@@ -146,10 +136,8 @@ test("alert: channel is used when valid, else Master", function()
   _G.PlaySound, _G.SOUNDKIT = nil, nil
 end)
 
-test("rules: default settings leave every Hunter and profession verdict unchanged", function()
+test("rules: default settings leave every Hunter verdict unchanged", function()
   H.load("DontDoThat/Rules/Data/Hunter.lua", ns)
-  H.load("DontDoThat/Rules/Data/Herbalism.lua", ns)
-  H.load("DontDoThat/Rules/Data/Skinning.lua", ns)
   local data = ns.Rules.GetClass("HUNTER")
   local names = {}
   for name in pairs(data.tags or {}) do names[name] = true end
@@ -174,15 +162,6 @@ test("rules: default settings leave every Hunter and profession verdict unchange
     end
   end
   truthy(checked > 100, "swept enough cases")
-  for _, prof in ipairs(ns.Rules.ListProfessions()) do
-    local d = ns.Rules.GetProfession(prof)
-    for _, t in ipairs(d.tiers) do
-      local function p(rules) return { class = "HUNTER", level = 40, rules = rules, milestone = { current = 40, state = "active" },
-        professions = { [d.profession] = { skill = 10, max = t.cap } } } end
-      local a = { kind = "recipeTier", profession = prof, name = t.name }
-      eq(E(p(defaults), a), E(p(nil), a), prof .. t.name)
-    end
-  end
 end)
 
 test("settings: debug recording is switched off whenever the addon loads", function()
