@@ -20,9 +20,7 @@ Releases are built by [BigWigsMods/packager](https://github.com/BigWigsMods/pack
 
 1. Archive the change and bump `## Version:` in both TOC files (see `CLAUDE.md`), and add the version to `CHANGELOG.md`.
 2. Commit, then tag the commit `vX.Y.Z` (the version without the `v` must equal the TOC version) and push the tag.
-3. The workflow runs the tests and `tools/check-*.sh`, checks the tag against both TOC versions, then packages and uploads.
-
-To try the packaging without uploading anything, run the Release workflow by hand from the Actions tab (it defaults to a dry run).
+3. The workflow runs the tests and `tools/check-*.sh`, checks the tag against both TOC versions, then packages and uploads to CurseForge and Wago and creates the GitHub release.
 
 ## How the package is laid out
 
