@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -33,15 +34,15 @@ ns.Rules.Load({
 
   specs = {
     ARCANE = {
-      name = "Arcane", tree = 1, -- TalentTab order verified from the game tables
+      name = L["Arcane"], tree = 1, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Arcane Missiles", "Arcane Explosion", "Blizzard", "Mana Shield", "Fireball" }), situational = with(SHARED_SITUATIONAL, { "Arcane Wrath", "Arcane Blast" }) },
     },
     FIRE = {
-      name = "Fire", tree = 2, -- TalentTab order verified from the game tables
+      name = L["Fire"], tree = 2, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Fireball", "Fire Blast", "Flamestrike", "Combustion" }), situational = SHARED_SITUATIONAL },
     },
     FROST = {
-      name = "Frost", tree = 3, -- TalentTab order verified from the game tables
+      name = L["Frost"], tree = 3, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Frostbolt", "Cone of Cold", "Blizzard", "Ice Barrier", "Frostfire Bolt", "Ice Block" }), situational = with(SHARED_SITUATIONAL, { "Frost Blast", "Ice Lance" }) },
     },
   },
@@ -49,27 +50,27 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Amplify Magic"] = "Only matters in specific group fights.",
-    ["Arcane Brilliance"] = "Costs a reagent each cast. Not needed while leveling.",
-    ["Blast Wave"] = "Mostly useful in PvP and groups.",
-    ["Dampen Magic"] = "Only matters in specific group fights.",
-    ["Fire Ward"] = "A short shield no leveling build relies on.",
-    ["Frost Ward"] = "A short shield no leveling build relies on.",
-    ["Polymorph: Cow"] = "The ordinary Polymorph does the same job.",
-    ["Portal: Darnassus"] = "Takes a group somewhere and needs a Rune of Portals.",
-    ["Portal: Ironforge"] = "Takes a group somewhere and needs a Rune of Portals.",
-    ["Portal: Orgrimmar"] = "Takes a group somewhere and needs a Rune of Portals.",
-    ["Portal: Stormwind"] = "Takes a group somewhere and needs a Rune of Portals.",
-    ["Portal: Thunder Bluff"] = "Takes a group somewhere and needs a Rune of Portals.",
-    ["Portal: Undercity"] = "Takes a group somewhere and needs a Rune of Portals.",
-    ["Pyroblast"] = "A slow opener you can do without.",
-    ["Scorch"] = "A filler spell you can do without.",
+    ["Amplify Magic"] = L["Only matters in specific group fights."],
+    ["Arcane Brilliance"] = L["Costs a reagent each cast. Not needed while leveling."],
+    ["Blast Wave"] = L["Mostly useful in PvP and groups."],
+    ["Dampen Magic"] = L["Only matters in specific group fights."],
+    ["Fire Ward"] = L["A short shield no leveling build relies on."],
+    ["Frost Ward"] = L["A short shield no leveling build relies on."],
+    ["Polymorph: Cow"] = L["The ordinary Polymorph does the same job."],
+    ["Portal: Darnassus"] = L["Takes a group somewhere and needs a Rune of Portals."],
+    ["Portal: Ironforge"] = L["Takes a group somewhere and needs a Rune of Portals."],
+    ["Portal: Orgrimmar"] = L["Takes a group somewhere and needs a Rune of Portals."],
+    ["Portal: Stormwind"] = L["Takes a group somewhere and needs a Rune of Portals."],
+    ["Portal: Thunder Bluff"] = L["Takes a group somewhere and needs a Rune of Portals."],
+    ["Portal: Undercity"] = L["Takes a group somewhere and needs a Rune of Portals."],
+    ["Pyroblast"] = L["A slow opener you can do without."],
+    ["Scorch"] = L["A filler spell you can do without."],
   },
 
   tags = {

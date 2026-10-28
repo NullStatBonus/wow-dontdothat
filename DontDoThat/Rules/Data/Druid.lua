@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -31,15 +32,15 @@ ns.Rules.Load({
 
   specs = {
     BAL = {
-      name = "Balance", tree = 1, -- TalentTab order verified from the game tables
+      name = L["Balance"], tree = 1, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Wrath", "Moonfire", "Starfire", "Insect Swarm", "Entangling Roots", "Faerie Fire", "Moonkin Form" }), situational = with(SHARED_SITUATIONAL, { "Starsurge", "Starfall", "Sunfire" }) },
     },
     FERAL = {
-      name = "Feral", tree = 2, -- TalentTab order verified from the game tables
+      name = L["Feral"], tree = 2, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Faerie Fire (Feral)", "Claw", "Rake", "Rip", "Shred", "Ferocious Bite", "Maul", "Swipe", "Lacerate", "Pounce", "Ravage", "Prowl", "Dash", "Growl", "Enrage", "Bash", "Feral Charge", "Primal Bite", "Thrash (Cat)", "Skull Bash", "Frenzied Regeneration" }), situational = with(SHARED_SITUATIONAL, { "Mangle", "Tiger's Fury", "Savage Roar", "Berserk", "Survival Instincts" }) },
     },
     RESTO = {
-      name = "Restoration", tree = 3, -- TalentTab order verified from the game tables
+      name = L["Restoration"], tree = 3, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, {}), situational = with(SHARED_SITUATIONAL, { "Lifebloom", "Nourish" }) },
     },
   },
@@ -47,20 +48,20 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Challenging Roar"] = "A group taunt.",
-    ["Cower"] = "Lowers threat. Only needed in groups.",
-    ["Gift of the Wild"] = "Costs a reagent each cast. Not needed while leveling.",
-    ["Hibernate"] = "Only works on beasts and dragonkin.",
-    ["Soothe Animal"] = "Only calms a few animals.",
-    ["Track Humanoids"] = "A tracking toy you can live without.",
-    ["Tranquility"] = "A group heal.",
-    ["Wild Growth"] = "A group heal.",
+    ["Challenging Roar"] = L["A group taunt."],
+    ["Cower"] = L["Lowers threat. Only needed in groups."],
+    ["Gift of the Wild"] = L["Costs a reagent each cast. Not needed while leveling."],
+    ["Hibernate"] = L["Only works on beasts and dragonkin."],
+    ["Soothe Animal"] = L["Only calms a few animals."],
+    ["Track Humanoids"] = L["A tracking toy you can live without."],
+    ["Tranquility"] = L["A group heal."],
+    ["Wild Growth"] = L["A group heal."],
   },
 
   tags = {

@@ -162,3 +162,147 @@ test("respec quotes are bounded", function()
   eq(#saved.respecQuotes, 50)
   eq(saved.respecQuotes[1].count, 11)
 end)
+
+test("the spell identity section reports the trainer row shape and what the talent call returns", function()
+  local P = load()
+  local text = P.Run({
+    GetNumTrainerServices = function() return 1 end,
+    GetTrainerServiceInfo = function() return "Arcane Shot", "Rank 2", "available", 14281 end,
+    GetTalentInfo = function() return "Improved Aspect of the Hawk", 136076, 1, 1, 0, 5 end,
+  }, {})
+  truthy(text:find("Spell identity", 1, true))
+  truthy(text:find('GetTrainerServiceInfo(1) -> "Arcane Shot", "Rank 2", "available", 14281', 1, true))
+  truthy(text:find("value 4 looks like an ID", 1, true))
+  truthy(text:find("GetTrainerServiceSpellID(1) -> missing", 1, true))
+  truthy(text:find('GetTalentInfo(1, 1) -> "Improved Aspect of the Hawk"', 1, true))
+end)
+
+test("the spell identity section asks for a trainer when none is open", function()
+  local P = load()
+  local text = P.Run({}, {})
+  truthy(text:find("open a trainer and run the report again", 1, true))
+end)
+
+-- The trainer ID check: what it reports when a method works, and when nothing does.
+local function trainerIdEnv(opts)
+  local rows = { { "Aimed Shot", "Rank 1", "available" }, { "Beast Mastery", nil, "header" }, { "Serpent Sting", "Rank 2", "available" } }
+  local ids = { ["Aimed Shot"] = 19434, ["Serpent Sting"] = 1978 }
+  local env = {
+    GetNumTrainerServices = function() return #rows end,
+    GetTrainerServiceInfo = function(i) local r = rows[i]; return r[1], r[2], r[3] end,
+    GetSpellInfo = function(id) for n, v in pairs(ids) do if v == id then return n end end end,
+    UIParent = {},
+  }
+  if opts.tooltip then
+    local current
+    env.CreateFrame = function()
+      local tip = {}
+      tip.SetOwner = function() end
+      tip.Hide = function() end
+      tip.SetTrainerService = function(_, i) current = rows[i][1] end
+      tip.GetSpell = function() return current, ids[current] end
+      return tip
+    end
+  end
+  if opts.link then env.GetTrainerServiceItemLink = function(i) return "|Hspell:" .. ids[rows[i][1]] .. "|h[x]|h" end end
+  return env
+end
+
+test("trainer ids: a tooltip that knows the spell is reported as working, with the matching ID", function()
+  local P = load()
+  local text = P.TrainerIds(trainerIdEnv({ tooltip = true }))
+  truthy(text:find("tooltip:GetSpell() -> \"Aimed Shot\", 19434", 1, true), text)
+  truthy(text:find("tooltip:GetSpell gives 19434 and it MATCHES the row", 1, true), text)
+  truthy(text:find("RESULT: a spell ID that matches the row is available through: tooltip:GetSpell", 1, true), text)
+  falsy(text:find("Beast Mastery", 1, true), "header rows are skipped")
+end)
+
+test("trainer ids: an ID inside a link is found, and GetTrainerServiceInfo values are checked too", function()
+  local P = load()
+  local text = P.TrainerIds(trainerIdEnv({ link = true }))
+  truthy(text:find("GetTrainerServiceItemLink gives 1978 and it MATCHES the row", 1, true), text)
+  local env = trainerIdEnv({})
+  env.GetTrainerServiceInfo = function(i) return ({ "Aimed Shot", "Beast Mastery", "Serpent Sting" })[i], "Rank 1", "available", 19434 end
+  truthy(P.TrainerIds(env):find("GetTrainerServiceInfo value 4 = 19434 MATCHES the row", 1, true))
+end)
+
+test("trainer ids: when nothing works the report says so, and a closed trainer asks to open one", function()
+  local P = load()
+  truthy(P.TrainerIds(trainerIdEnv({})):find("RESULT: no method gave an ID", 1, true))
+  truthy(P.TrainerIds({}):find("open a trainer window first", 1, true))
+end)
+
+test("trainer ids: a throwing tooltip is reported, not raised", function()
+  local P = load()
+  local env = trainerIdEnv({})
+  env.CreateFrame = function()
+    return { SetOwner = function() end, Hide = function() end, SetTrainerService = function() error("no such thing") end }
+  end
+  local text = P.TrainerIds(env)
+  truthy(text:find("SetTrainerService(1) -> ERROR", 1, true), text)
+end)
+
+test("hovered spell: reports what the game tooltip holds, and copes without one", function()
+  local P = load()
+  local text = P.HoveredSpell({ GameTooltip = { GetSpell = function() return "Aimed Shot", 19434 end, GetItem = function() end } })
+  truthy(text:find("GameTooltip:GetSpell() -> \"Aimed Shot\", 19434", 1, true), text)
+  eq(P.HoveredSpell({}), "GameTooltip is not available")
+end)
+
+-- The identity checks: talents, riding, professions and the open trainer window.
+local function identityEnv()
+  local ns = {}
+  H.load("DontDoThat/Data/SpellData.lua", ns)
+  H.load("DontDoThat/Data/RuleSpells.lua", ns)
+  H.load("DontDoThat/Data/TalentData.lua", ns)
+  H.load("DontDoThat/Model/SpellData.lua", ns)
+  H.load("DontDoThat/Rules/Schema.lua", ns)
+  H.load("DontDoThat/Rules/Engine.lua", ns)
+  H.load("DontDoThat/Rules/Data/ProfessionLearn.lua", ns)
+  H.load("DontDoThat/Intercepts/Adapter.lua", ns)
+  H.load("DontDoThat/Debug/Probe.lua", ns)
+  local family = ns.SpellData.FamilyId("HUNTER", "Aimed Shot")
+  local talentId
+  for id, ranks in pairs(ns.TalentSpells) do
+    if ns.SpellData.FamilyOfId("HUNTER", ranks[1]) == family then talentId = id end
+  end
+  local env = {
+    UnitClass = function() return "Hunter", "HUNTER", 3 end,
+    GetNumTalentTabs = function() return 1 end,
+    GetNumTalents = function() return 1 end,
+    GetTalentInfo = function() return "Zname", "icon", 1, 1, 2, 5 end,
+    GetTalentLink = function() return "|cff4e96f7|Htalent:" .. talentId .. ":2|h[Zname]|h|r" end,
+    GetSpellInfo = function(id) if id == 33388 then return "Apprentice Riding" end return nil end,
+    IsSpellKnown = function(id) return id == 33388 end,
+    ClassTrainerFrame = { IsShown = function() return true end },
+  }
+  return ns, env
+end
+
+test("identity checks: talent links, riding, professions and the open window are reported", function()
+  local ns, env = identityEnv()
+  local text = table.concat(ns.Probe.IdentityChecks(env), "\n")
+  truthy(text:find("talents: 1 total, 1 with points; 1 links carried a talent ID, 1 known to the table, 1 resolve to a spell family", 1, true), text)
+  truthy(text:find("-> family Aimed Shot", 1, true), text)
+  truthy(text:find("riding spell 33388: client name Apprentice Riding, known true", 1, true), text)
+  truthy(text:find("riding spell 33391: client name nil, known false", 1, true), text)
+  truthy(text:find("profession 2550 (Cooking)", 1, true), text)
+  truthy(text:find("ClassTrainerFrame: exists, SHOWN", 1, true), text)
+  truthy(text:find("CraftFrame: missing", 1, true), text)
+end)
+
+test("identity checks: no talent link is reported as a name fallback, and craft rows get the tooltip spell", function()
+  local ns, env = identityEnv()
+  env.GetTalentLink = nil
+  truthy(table.concat(ns.Probe.IdentityChecks(env), "\n"):find("GetTalentLink is MISSING", 1, true))
+  env.GetNumCrafts = function() return 1 end
+  env.GetCraftInfo = function() return "Growl", "Rank 1" end
+  env.DontDoThatProbeTip = { SetOwner = function() end, Hide = function() end, SetCraftSpell = function() end,
+    GetSpell = function() return "Growl", 2649 end }
+  truthy(table.concat(ns.Probe.IdentityChecks(env), "\n"):find('craft 1: GetCraftInfo -> "Growl", "Rank 1"; tooltip:GetSpell -> "Growl", 2649', 1, true))
+end)
+
+test("identity checks run even with no trainer open, and the report reuses its tooltip frame", function()
+  local ns, env = identityEnv()
+  truthy(ns.Probe.TrainerIds(env):find("== identity checks ==", 1, true))
+end)

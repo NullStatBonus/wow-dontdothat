@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -33,15 +34,15 @@ ns.Rules.Load({
 
   specs = {
     ASSN = {
-      name = "Assassination", tree = 1, -- TalentTab order verified from the game tables
+      name = L["Assassination"], tree = 1, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Backstab", "Mutilate", "Rupture" }), situational = SHARED_SITUATIONAL },
     },
     COMBAT = {
-      name = "Combat", tree = 2, -- TalentTab order verified from the game tables
+      name = L["Combat"], tree = 2, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, {}), situational = with(SHARED_SITUATIONAL, { "Backstab" }) },
     },
     SUBT = {
-      name = "Subtlety", tree = 3, -- TalentTab order verified from the game tables
+      name = L["Subtlety"], tree = 3, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Backstab", "Ambush", "Hemorrhage" }), situational = SHARED_SITUATIONAL },
     },
   },
@@ -49,26 +50,26 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Detect Traps"] = "Rarely helps while leveling.",
-    ["Disarm Trap"] = "Rarely helps while leveling.",
-    ["Distract"] = "Rarely helps while leveling.",
-    ["Expose Armor"] = "A group debuff you can do without.",
-    ["Feint"] = "Lowers your threat. Only needed in groups.",
-    ["Mind-numbing Poison"] = "A utility poison you can do without.",
-    ["Mind-numbing Poison II"] = "A utility poison you can do without.",
-    ["Mind-numbing Poison III"] = "A utility poison you can do without.",
-    ["Occult Poison I"] = "A utility poison you can do without.",
-    ["Occult Poison II"] = "A utility poison you can do without.",
-    ["Wound Poison"] = "A utility poison you can do without.",
-    ["Wound Poison II"] = "A utility poison you can do without.",
-    ["Wound Poison III"] = "A utility poison you can do without.",
-    ["Wound Poison IV"] = "A utility poison you can do without.",
+    ["Detect Traps"] = L["Rarely helps while leveling."],
+    ["Disarm Trap"] = L["Rarely helps while leveling."],
+    ["Distract"] = L["Rarely helps while leveling."],
+    ["Expose Armor"] = L["A group debuff you can do without."],
+    ["Feint"] = L["Lowers your threat. Only needed in groups."],
+    ["Mind-numbing Poison"] = L["A utility poison you can do without."],
+    ["Mind-numbing Poison II"] = L["A utility poison you can do without."],
+    ["Mind-numbing Poison III"] = L["A utility poison you can do without."],
+    ["Occult Poison I"] = L["A utility poison you can do without."],
+    ["Occult Poison II"] = L["A utility poison you can do without."],
+    ["Wound Poison"] = L["A utility poison you can do without."],
+    ["Wound Poison II"] = L["A utility poison you can do without."],
+    ["Wound Poison III"] = L["A utility poison you can do without."],
+    ["Wound Poison IV"] = L["A utility poison you can do without."],
   },
 
   tags = {

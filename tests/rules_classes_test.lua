@@ -4,19 +4,19 @@ local H = require("harness")
 -- Mage, Warlock, Priest, Druid, Shaman, Rogue and Warrior: every spell family in the bundled tables has been
 -- placed somewhere, specs are in the game's tab order, and no spell is both in a rotation and tagged.
 local ns = {}
+H.loadSpellTables(ns)
 H.load("DontDoThat/Rules/Schema.lua", ns)
 H.load("DontDoThat/Rules/Engine.lua", ns)
-H.load("DontDoThat/Data/SpellData.lua", ns)
 local CLASSES = { "MAGE", "WARLOCK", "PRIEST", "DRUID", "SHAMAN", "ROGUE", "WARRIOR" }
 local FILES = { MAGE = "Mage", WARLOCK = "Warlock", PRIEST = "Priest", DRUID = "Druid", SHAMAN = "Shaman", ROGUE = "Rogue", WARRIOR = "Warrior" }
 for _, class in ipairs(CLASSES) do H.load("DontDoThat/Rules/Data/" .. FILES[class] .. ".lua", ns) end
 
 local function considered(data)
   local set = {}
-  local function add(list) for _, n in ipairs(list or {}) do set[n] = true end end
+  local function add(list) for _, id in ipairs(list or {}) do set[id] = true end end
   for _, spec in pairs(data.specs) do add(spec.rotation.core); add(spec.rotation.situational) end
-  for n in pairs(data.tags) do set[n] = true end
-  for n in pairs(data.overrides or {}) do set[n] = true end
+  for id in pairs(data.tags) do set[id] = true end
+  for id in pairs(data.overrides or {}) do set[id] = true end
   add(data.reviewed)
   return set
 end
@@ -27,7 +27,8 @@ for _, class in ipairs(CLASSES) do
     truthy(data, "rule data is loaded")
     local set, missing, seen = considered(data), {}, {}
     for _, row in ipairs(ns.SpellTables[class].rows) do
-      if not set[row.name] and not seen[row.name] then missing[#missing + 1] = row.name; seen[row.name] = true end
+      local id = ns.SpellData.FamilyOfId(class, row.id)
+      if not set[id] and not seen[id] then missing[#missing + 1] = row.name; seen[id] = true end
     end
     table.sort(missing)
     eq(missing, {}, "unclassified " .. class .. " spells")
@@ -47,10 +48,12 @@ for _, class in ipairs(CLASSES) do
     local data = ns.Rules.GetClass(class)
     local rot = {}
     for _, spec in pairs(data.specs) do
-      for _, n in ipairs(spec.rotation.core) do rot[n] = true end
-      for _, n in ipairs(spec.rotation.situational) do rot[n] = true end
+      for _, id in ipairs(spec.rotation.core) do rot[id] = true end
+      for _, id in ipairs(spec.rotation.situational) do rot[id] = true end
     end
-    for n in pairs(data.tags) do falsy(rot[n], n .. " is in a rotation and tagged, so the tag would never apply") end
-    for _, n in ipairs(data.talentSpells) do truthy(n ~= "", n) end
+    for id in pairs(data.tags) do
+      falsy(rot[id], ns.SpellData.FamilyName(class, id) .. " is in a rotation and tagged, so the tag would never apply")
+    end
+    for _, id in ipairs(data.talentSpells) do truthy(ns.SpellData.FamilyName(class, id), tostring(id)) end
   end)
 end

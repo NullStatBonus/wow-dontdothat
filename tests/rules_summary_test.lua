@@ -5,7 +5,7 @@ local H = require("harness")
 local CLASSES = { HUNTER = "Hunter", PALADIN = "Paladin", MAGE = "Mage", WARLOCK = "Warlock", PRIEST = "Priest", DRUID = "Druid",
   SHAMAN = "Shaman", ROGUE = "Rogue", WARRIOR = "Warrior" }
 local ns = { version = "0" }
-for _, f in ipairs({ "UI/Helpers.lua", "Data/Sounds.lua", "Rules/Schema.lua", "Rules/Engine.lua", "Data/SpellData.lua", "Model/Milestones.lua",
+for _, f in ipairs({ "UI/Helpers.lua", "Data/Sounds.lua", "Data/SpellData.lua", "Data/RuleSpells.lua", "Data/TalentData.lua", "Model/SpellData.lua", "Rules/Schema.lua", "Rules/Engine.lua", "Model/Milestones.lua",
   "Model/Settings.lua", "Model/ItemCategory.lua" }) do H.load("DontDoThat/" .. f, ns) end
 for _, file in pairs(CLASSES) do H.load("DontDoThat/Rules/Data/" .. file .. ".lua", ns) end
 H.load("DontDoThat/Options/Options.lua", ns)
@@ -13,7 +13,7 @@ ns.db = { profile = {} }
 
 local function set(...)
   local out = {}
-  for _, list in ipairs({ ... }) do for _, e in ipairs(list) do out[e.name] = (out[e.name] or 0) + 1 end end
+  for _, list in ipairs({ ... }) do for _, e in ipairs(list) do out[e.id] = (out[e.id] or 0) + 1 end end
   return out
 end
 
@@ -27,7 +27,8 @@ for class in pairs(CLASSES) do
     for _, n in ipairs(data.reviewed or {}) do left[n] = true end
     local missing, seen = {}, {}
     for _, row in ipairs(ns.SpellTables[class].rows) do
-      if not shown[row.name] and not seen[row.name] and not left[row.name] then missing[#missing + 1] = row.name; seen[row.name] = true end
+      local id = ns.SpellData.FamilyOfId(class, row.id)
+      if not shown[id] and not seen[id] and not left[id] then missing[#missing + 1] = row.name; seen[id] = true end
     end
     table.sort(missing)
     eq(missing, {}, class .. " spells neither shown nor reviewed")
@@ -36,7 +37,7 @@ for class in pairs(CLASSES) do
   test(class .. ": a spell is in one list only, and Worth buying is never empty", function()
     local s = ns.Options.ClassSummary(ns.Rules.GetClass(class))
     local counts = set(s.keep, s.optional, s.wait, s.low)
-    for name, n in pairs(counts) do eq(n, 1, name .. " is listed " .. n .. " times") end
+    for id, n in pairs(counts) do eq(n, 1, tostring(ns.SpellData.FamilyName(class, id)) .. " is listed " .. n .. " times") end
     truthy(#s.keep > 0, "Worth buying has spells")
     truthy(#s.optional > 0, "Optional has spells")
   end)
@@ -103,8 +104,8 @@ for class in pairs(CLASSES) do
     for _, pair in ipairs(sections) do
       for _, g in ipairs(pair[2]) do
         for _, e in ipairs(g.entries) do
-          falsy(general[e.name], e.name .. " is a general skill")
-          eq(g.title == "Pet", pet[e.name] == true, e.name)
+          falsy(general[e.id], e.name .. " is a general skill")
+          eq(g.title == "Pet", pet[e.id] == true, e.name)
         end
       end
     end

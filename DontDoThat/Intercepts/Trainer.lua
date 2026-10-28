@@ -17,11 +17,11 @@ function Trainer.Compute(env)
   if not trainer.ok then return nil end
   local verdicts = {}
   for _, row in ipairs(trainer.rows) do
-    if not row.header and ns.Icons then ns.Icons.Remember(row.name, row.icon) end
+    if not row.header and ns.Icons then ns.Icons.Remember(row.familyId, row.icon) end
     if not row.header and not row.learned then
-      local learning = ns.Rules.MatchProfessionLearn(row.name)
-      local action = learning and { kind = "professionLearn", name = row.name, profession = learning, cost = row.cost }
-        or { kind = "spell", name = row.name, family = row.family, rank = row.rank,
+      local learning = ns.Rules.MatchProfessionLearn(ns.Adapter.TrainerProfessionId(env, row))
+      local action = learning and { kind = "professionLearn", name = row.name, displayName = row.name, profession = learning, cost = row.cost }
+        or { kind = "spell", name = row.name, familyId = row.familyId, rank = row.rank,
              unlockLevel = row.level, cost = row.cost }
       -- A row belongs to the Professions area when it is a first-time profession row, else to Spells.
       local area = learning and "professions" or "spells"

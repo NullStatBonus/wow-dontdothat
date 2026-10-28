@@ -24,6 +24,77 @@ local function parseRank(sub)
   return n and tonumber(n) or nil
 end
 
+-- Localized spell name -> family ID for a class, from the client's own spell names (see Model/SpellData.lua), so
+-- trainer rows and talents in any language resolve. Cached per client environment and class.
+local nameMaps = setmetatable({}, { __mode = "k" })
+
+function Adapter.FamilyId(env, class, name)
+  env = env or _G
+  if not (class and ns.SpellData) then return nil end
+  nameMaps[env] = nameMaps[env] or {}
+  local maps = nameMaps[env]
+  maps[class] = maps[class] or ns.SpellData.NameMap(class, env)
+  return maps[class][name] or nil
+end
+
+-- The spell ID the game gives for trainer service i. The client has no call for it, but its tooltip knows the
+-- spell: tooltip:SetTrainerService(i), then tooltip:GetSpell() -> name, spellID (confirmed by /ddt trainerids on a
+-- Warrior trainer). Cached by row name and rank text, which identify a trainer spell, so scrolling costs nothing.
+local scanTips = setmetatable({}, { __mode = "k" })
+local seenIds = setmetatable({}, { __mode = "k" })
+
+local function trainerSpellId(env, index, name, sub)
+  local key = tostring(name) .. "\0" .. tostring(sub)
+  seenIds[env] = seenIds[env] or {}
+  if seenIds[env][key] then return seenIds[env][key] end
+  if type(env.CreateFrame) ~= "function" then return nil end
+  local tip = scanTips[env]
+  if tip == nil then
+    local ok, frame = pcall(env.CreateFrame, "GameTooltip", "DontDoThatScanTip", env.UIParent, "GameTooltipTemplate")
+    tip = ok and frame or false
+    scanTips[env] = tip
+  end
+  if not tip then return nil end
+  pcall(tip.SetOwner, tip, env.UIParent, "ANCHOR_NONE")
+  local id
+  if pcall(tip.SetTrainerService, tip, index) and type(tip.GetSpell) == "function" then
+    local ok, _, spellId = pcall(tip.GetSpell, tip)
+    if ok and type(spellId) == "number" then id = spellId end
+  end
+  pcall(tip.Hide, tip)
+  if id then seenIds[env][key] = id end
+  return id
+end
+
+-- Localized name -> profession ID, from the client's name for each profession's apprentice spell.
+local professionMaps = setmetatable({}, { __mode = "k" })
+
+-- The profession a trainer row teaches the first tier of: the row's own spell ID when it is a profession's apprentice
+-- spell, else the row's name (the trainer may teach a spell whose effect grants the profession, which this cannot
+-- tell). A later tier shares the name; the engine ignores it for a profession the player already has.
+function Adapter.TrainerProfessionId(env, row)
+  if row.spellId and ns.Rules.ProfessionNames()[row.spellId] then return row.spellId end
+  return Adapter.ProfessionId(env, row.name)
+end
+
+-- The profession ID (the apprentice spell ID, see Rules/Data/ProfessionLearn.lua) for a trainer row or skill line
+-- name in the client's language, or nil. The English name also matches, which covers a client that names nothing and
+-- the skill lines whose name differs from the spell's (the skill is "Herbalism", the spell "Herb Gathering").
+function Adapter.ProfessionId(env, name)
+  env = env or _G
+  if type(name) ~= "string" then return nil end
+  if not professionMaps[env] then
+    local map = {}
+    for id, english in pairs(ns.Rules.ProfessionNames()) do
+      local localized = ns.SpellData and ns.SpellData.ClientName(env, id)
+      if localized then map[localized] = id end
+      map[english] = map[english] or id
+    end
+    professionMaps[env] = map
+  end
+  return professionMaps[env][name]
+end
+
 -- GetTrainerServiceInfo(i) -> name, subText ("Rank 3"), type ("available"|"unavailable"|"used"|"header")
 -- GetTrainerServiceCost(i) -> copper; GetTrainerServiceLevelReq(i) -> level
 -- Returns { ok, reason, rows, byIndex }. rows keep the client's order and original service indexes;
@@ -35,6 +106,7 @@ function Adapter.ReadTrainer(env)
     return { ok = false, reason = "GetNumTrainerServices unavailable", rows = {}, byIndex = {} }
   end
   local rows, byIndex = {}, {}
+  local class = Adapter.ReadPlayer(env).class
   for i = 1, count do
     local name, sub, kind, expanded = call(env, "GetTrainerServiceInfo", i)
     if name ~= nil then
@@ -43,7 +115,10 @@ function Adapter.ReadTrainer(env)
         row.header = true
         row.expanded = expanded and true or false
       else
-        row.family = name
+        -- The spell ID the game gives is the identity; the client's spell name only stands in when it gives none.
+        row.spellId = trainerSpellId(env, i, name, sub)
+        row.familyId = (row.spellId and class and ns.SpellData.FamilyOfId(class, row.spellId))
+          or Adapter.FamilyId(env, class, name)
         row.rank = parseRank(sub)
         row.cost = (call(env, "GetTrainerServiceCost", i))
         row.level = (call(env, "GetTrainerServiceLevelReq", i))
@@ -86,18 +161,39 @@ function Adapter.ReadTalentTabs(env)
   return tabs
 end
 
--- Names of the talents the player has put at least one point into, as a set. Returns nil when the
--- client cannot say, so rules treat every talent as unknown rather than missing.
+-- The talent's database ID, read from its hyperlink ("|Htalent:2213:1|h[Name]|h"), or nil.
+local function talentId(env, tab, index)
+  local link = call(env, "GetTalentLink", tab, index)
+  return type(link) == "string" and tonumber(link:match("Htalent:(%d+)")) or nil
+end
+
+-- Family IDs of the spells the player's talents grant, as a set: the talents with at least one point. A talent is
+-- recognised by its ID from the talent hyperlink (Data/TalentData.lua gives its rank spells), and only when the
+-- client gives no link, or the table does not know the talent, by the talent's name. A talent that is not a spell
+-- the rules care about is left out. Returns nil when the client cannot say, so rules treat every talent as unknown
+-- rather than missing.
 function Adapter.ReadActiveTalents(env)
   env = env or _G
   local tabCount = call(env, "GetNumTalentTabs")
   if type(tabCount) ~= "number" then return nil end
   local active = {}
+  local class = Adapter.ReadPlayer(env).class
   for tab = 1, tabCount do
     local count = call(env, "GetNumTalents", tab)
     for i = 1, type(count) == "number" and count or 0 do
       local name, _, _, _, rank = call(env, "GetTalentInfo", tab, i)
-      if type(name) == "string" and type(rank) == "number" and rank > 0 then active[name] = true end
+      if type(rank) == "number" and rank > 0 then
+        local spells = ns.TalentSpells and ns.TalentSpells[talentId(env, tab, i)]
+        local family
+        if spells then
+          for _, spellId in ipairs(spells) do
+            family = family or (class and ns.SpellData.FamilyOfId(class, spellId))
+          end
+        elseif type(name) == "string" then
+          family = Adapter.FamilyId(env, class, name)
+        end
+        if family then active[family] = true end
+      end
     end
   end
   return active
@@ -114,35 +210,74 @@ function Adapter.ReadTrainerFilters(env)
   return { available = on("available"), unavailable = on("unavailable"), used = on("used") }
 end
 
-function Adapter.ReadNpcName(env)
+-- Who the open trainer is: the NPC's GUID, which is the same in every language and different for two trainers
+-- that share a name. The name stands in when the client gives no GUID.
+function Adapter.ReadNpcId(env)
   env = env or _G
+  local guid = call(env, "UnitGUID", "npc")
+  if type(guid) == "string" and guid ~= "" then return guid end
   local name = call(env, "UnitName", "npc")
   return type(name) == "string" and name or nil
 end
 
--- Riding is bought as a spell. Names come from the sources' wording for the two goals ("Apprentice
--- Riding" for the level 40 mount, "Journeyman Riding" for level 60) and are UNVERIFIED on Forever.
--- A spell the player knows is found by name in the spellbook.
-local function knows(env, name)
-  if type(env.C_Spell) == "table" and type(env.C_Spell.GetSpellInfo) == "function" then
-    local ok, info = pcall(env.C_Spell.GetSpellInfo, name)
-    if ok and type(info) == "table" and info.name then return true end
+-- Riding is bought as a spell, and the player has it when the spellbook knows any of the IDs. Forever has
+-- Apprentice Riding (the level 40 goal) and Journeyman Riding (level 60). Classic Era has neither: riding is the
+-- racial passive of the player's mount (Horse Riding, Wolf Riding, Ram Riding, Tiger Riding, Raptor Riding, Kodo
+-- Riding, Undead Horsemanship, Mechanostrider Piloting), confirmed absent by /ddt trainerids on Era. Era's level 60
+-- riding is a higher skill rank of the same skill. A Paladin or Warlock has class mounts instead: Summon Warhorse / Felsteed are the level 40 goal and Summon
+-- Charger / Dreadsteed the level 60 one, on both clients. Level 60 riding for the races on Era is read from the skill
+-- line's max rank below.
+local RIDING = {
+  apprentice = { 33388, 33389, 824, 825, 826, 828, 10861, 18995, 10906, 10907, 13819, 1279399, 5784 },
+  journeyman = { 33391, 33392, 23214, 23161 },
+}
+
+local function knowsAny(env, ids)
+  for _, id in ipairs(ids) do
+    if Adapter.IsSpellKnown(env, id) == true then return true end
   end
-  if type(env.GetSpellInfo) == "function" then
-    local ok, found = pcall(env.GetSpellInfo, name)
-    if ok and found then return true end
+  return false
+end
+
+-- Classic Era's racial riding skills: spell ID -> the English name of the spell and of its skill line, which are the
+-- same word (Horse Riding spell 824 and skill line 148). The skill's max rank is 75 once riding is learned and 150
+-- once epic riding is, which is the only sign of level 60 riding there.
+local ERA_RIDING_SKILLS = {
+  [824] = "Horse Riding", [825] = "Wolf Riding", [826] = "Ram Riding", [828] = "Tiger Riding",
+  [10861] = "Raptor Riding", [18995] = "Kodo Riding", [10906] = "Undead Horsemanship", [10907] = "Mechanostrider Piloting",
+}
+Adapter.EraRidingSkills = ERA_RIDING_SKILLS
+
+-- Has the player trained the 150 rank of a racial riding skill? The skill line is found through the client's name
+-- for the racial spell, so this works in any language; GetSkillLineInfo gives no skill ID.
+local function epicRidingSkill(env)
+  local wanted = {}
+  for id, english in pairs(ERA_RIDING_SKILLS) do
+    wanted[(ns.SpellData and ns.SpellData.ClientName(env, id)) or english] = true
+    wanted[english] = true
+  end
+  local count = call(env, "GetNumSkillLines")
+  if type(count) ~= "number" then return false end
+  for i = 1, count do
+    local name, isHeader, _, _, _, _, maxRank = call(env, "GetSkillLineInfo", i)
+    if type(name) == "string" and not isHeader and wanted[name] and type(maxRank) == "number" and maxRank >= 150 then
+      return true
+    end
   end
   return false
 end
 
 function Adapter.ReadRiding(env)
   env = env or _G
-  return { apprentice = knows(env, "Apprentice Riding"), journeyman = knows(env, "Journeyman Riding") }
+  return {
+    apprentice = knowsAny(env, RIDING.apprentice),
+    journeyman = knowsAny(env, RIDING.journeyman) or epicRidingSkill(env),
+  }
 end
 
 -- GetSkillLineInfo(i) -> name, isHeader, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank
 -- (the Classic shape, UNVERIFIED on Forever; the debug report lists the lines it sees).
--- Returns { [lineName] = { skill = , max = } } for every line that is not a category header.
+-- Returns { [professionId] = { skill = , max = } } for each profession the player has.
 function Adapter.ReadProfessions(env)
   env = env or _G
   local out = {}
@@ -151,8 +286,13 @@ function Adapter.ReadProfessions(env)
   for i = 1, count do
     local name, isHeader, _, rank, _, _, maxRank = call(env, "GetSkillLineInfo", i)
     if type(name) == "string" and not isHeader and type(rank) == "number" then
-      out[name] = { skill = rank, max = type(maxRank) == "number" and maxRank or nil }
+      local id = Adapter.ProfessionId(env, name)
+      if id then out[id] = { skill = rank, max = type(maxRank) == "number" and maxRank or nil } end
     end
+  end
+  -- A profession whose apprentice spell the spellbook knows counts as known whatever the skill line is called.
+  for id in pairs(ns.Rules.ProfessionNames()) do
+    if not out[id] and Adapter.IsSpellKnown(env, id) == true then out[id] = {} end
   end
   return out
 end

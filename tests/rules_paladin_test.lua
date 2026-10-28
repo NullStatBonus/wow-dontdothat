@@ -2,6 +2,7 @@ package.path = "./tests/?.lua;" .. package.path
 local H = require("harness")
 
 local ns = {}
+H.loadSpellTables(ns)
 H.load("DontDoThat/Rules/Schema.lua", ns)
 H.load("DontDoThat/Rules/Engine.lua", ns)
 H.load("DontDoThat/Rules/Data/Paladin.lua", ns)
@@ -10,11 +11,11 @@ H.load("DontDoThat/Data/SpellData.lua", ns)
 local data = ns.Rules.GetClass("PALADIN")
 
 local function profile(specs, talents)
-  return { class = "PALADIN", level = 25, plausibleSpecs = specs, activeTalents = talents,
+  return { class = "PALADIN", level = 25, plausibleSpecs = specs, activeTalents = H.talentSet(ns, "PALADIN", talents),
     milestone = { current = 40, state = "active" } }
 end
 local function eval(name, specs, talents, rank)
-  return ns.Rules.Evaluate(profile(specs, talents), { kind = "spell", name = name, family = name, rank = rank })
+  return ns.Rules.Evaluate(profile(specs, talents), { kind = "spell", name = name, familyId = H.fid(ns, "PALADIN", name), rank = rank })
 end
 local function tier(name, specs, talents) return eval(name, specs, talents).tier end
 
@@ -74,14 +75,15 @@ test("paladin: Hammer of Wrath is core, Exorcism waits, Consecration needs its t
 end)
 
 test("paladin: only Hammer of Justice ranks 2 to 4 are skipped (Icy Veins: just rank 1)", function()
-  eq(data.skipRanks, { ["Hammer of Justice"] = { 2, 3, 4 } })
+  eq(data.skipRanks, { [H.fid(ns, "PALADIN", "Hammer of Justice")] = { 2, 3, 4 } })
   truthy(eval("Hammer of Justice", { "RET" }, nil, 1) and eval("Hammer of Justice", { "RET" }, nil, 1).tier ~= "defer")
   for rank = 2, 4 do eq(eval("Hammer of Justice", { "RET" }, nil, rank).source, "skipRank", "rank " .. rank) end
 end)
 
 test("paladin: the nine talent spells are not rotation spells until the talent is active", function()
   eq(#data.talentSpells, 9)
-  for _, n in ipairs(data.talentSpells) do
+  for _, id in ipairs(data.talentSpells) do
+    local n = ns.SpellData.FamilyName("PALADIN", id)
     local without = eval(n, { "HOLY", "PROT", "RET" }, {})
     truthy(without.source ~= "rotation", n .. " without its talent")
   end
@@ -99,23 +101,25 @@ end)
 
 test("paladin: every spell family in the bundled table and the Era-only list has been considered", function()
   local considered = {}
-  local function add(list) for _, n in ipairs(list or {}) do considered[n] = true end end
+  local function add(list) for _, id in ipairs(list or {}) do considered[id] = true end end
   for _, spec in pairs(data.specs) do add(spec.rotation.core); add(spec.rotation.situational) end
-  for n in pairs(data.tags) do considered[n] = true end
-  for n in pairs(data.overrides) do considered[n] = true end
+  for id in pairs(data.tags) do considered[id] = true end
+  for id in pairs(data.overrides) do considered[id] = true end
   add(data.reviewed)
 
-  local names = {}
-  for _, row in ipairs(ns.SpellTables.PALADIN.rows) do names[row.name] = true end
+  local families = {}
+  for _, row in ipairs(ns.SpellTables.PALADIN.rows) do families[ns.SpellData.FamilyOfId("PALADIN", row.id)] = true end
   -- Families that exist only in the Classic Era tables (see the build comparison in the change design).
   for _, n in ipairs({ "Blessing of Salvation", "Greater Blessing of Salvation", "Greater Blessing of Sanctuary",
       "Sanctity Aura", "Blessing of Sanctuary", "Crusader Strike", "Divine Steed", "Hand of Reckoning",
-      "Beacon of Light", "Avenger's Shield", "Righteous Vengeance" }) do names[n] = true end
+      "Beacon of Light", "Avenger's Shield", "Righteous Vengeance" }) do families[H.fid(ns, "PALADIN", n)] = true end
 
   local missing = {}
-  for n in pairs(names) do if not considered[n] then missing[#missing + 1] = n end end
+  for id in pairs(families) do
+    if not considered[id] then missing[#missing + 1] = ns.SpellData.FamilyName("PALADIN", id) end
+  end
   table.sort(missing)
-  eq(missing, {}, "unclassified Paladin spells")
+  eq(missing, {}, "unclassified Paladin spells: " .. table.concat(missing, ", "))
 end)
 
 test("paladin: effect spells never count as purchases", function()

@@ -6,17 +6,17 @@ local L = ns.Ledger
 
 local function stub(flagged, estimate)
   return { Evaluate = function(_, action)
-    if flagged[action.family .. action.rank] then return { tier = "defer", cost = estimate } end
+    if flagged[action.familyId .. ":" .. action.rank] then return { tier = "defer", cost = estimate } end
     return { tier = "keep" }
   end }
 end
 local function svc(rank, o)
   o = o or {}
-  return { family = "Serpent Sting", name = "Serpent Sting", rank = rank, unlockLevel = o.lvl or 10,
+  return { familyId = 1978, name = "Serpent Sting", rank = rank, unlockLevel = o.lvl or 10,
     cost = o.cost, learned = o.learned or false, available = o.available ~= false }
 end
 local profile = { class = "TEST", level = 30 }
-local flag = { ["Serpent Sting3"] = true, ["Serpent Sting4"] = true }
+local flag = { ["1978:3"] = true, ["1978:4"] = true }
 
 test("unlearned flagged is projected", function()
   local r = L.Compute(profile, { svc(3, { cost = 100 }) }, stub(flag), {})
@@ -40,7 +40,7 @@ test("learned elsewhere after dismissal: no savings", function()
 end)
 test("observed cache overrides estimate", function()
   local cache = {}
-  L.RecordCost(cache, "Serpent Sting", 3, 555)
+  L.RecordCost(cache, 1978, 3, 555)
   local r = L.Compute(profile, { svc(3, { cost = 100 }) }, stub(flag), cache)
   eq(r.projected, 555); eq(r.items[1].costIsEstimate, false)
 end)

@@ -102,3 +102,60 @@ function ns.Rules.Validate(d)
   checkClass(d, id)
   return id
 end
+
+-- Rule files are written with English spell names. Compile turns them into the form the engine uses: every
+-- name becomes a spell family ID (see Model/SpellData.lua), a "~Prefix" key or entry stands for every family whose
+-- name starts with the prefix, and a name that matches no spell raises an error that names the rule. The source
+-- table is left alone. resolver = { id = function(name) -> key or nil, prefix = function(prefix) -> list of keys }.
+function ns.Rules.Compile(d, resolver)
+  local class = d.class
+  local function keysFor(where, name)
+    if type(name) ~= "string" then fail(class .. " " .. where, "spell names must be strings") end
+    if name:sub(1, 1) == "~" then
+      local ids = resolver.prefix(name:sub(2))
+      if #ids == 0 then fail(class .. " " .. where, "no spell name starts with '" .. name:sub(2) .. "'") end
+      return ids
+    end
+    local id = resolver.id(name)
+    if id == nil then fail(class .. " " .. where, "no spell named '" .. name .. "' for this class") end
+    return { id }
+  end
+  local function list(where, names)
+    if names == nil then return nil end
+    local out, seen = {}, {}
+    for _, name in ipairs(names) do
+      for _, id in ipairs(keysFor(where, name)) do
+        if not seen[id] then seen[id] = true; out[#out + 1] = id end
+      end
+    end
+    return out
+  end
+  local function map(where, from)
+    if from == nil then return nil end
+    local out = {}
+    for name, value in pairs(from) do
+      for _, id in ipairs(keysFor(where .. "." .. tostring(name), name)) do out[id] = value end
+    end
+    return out
+  end
+  local out = {}
+  for k, v in pairs(d) do out[k] = v end
+  out.specs = {}
+  for key, spec in pairs(d.specs) do
+    local rotation = {}
+    for k, v in pairs(spec.rotation) do rotation[k] = v end
+    rotation.core = list("specs." .. key .. ".rotation.core", spec.rotation.core)
+    rotation.situational = list("specs." .. key .. ".rotation.situational", spec.rotation.situational)
+    local copy = {}
+    for k, v in pairs(spec) do copy[k] = v end
+    copy.rotation = rotation
+    out.specs[key] = copy
+  end
+  for _, field in ipairs({ "tags", "overrides", "why", "skipRanks", "ranks", "abilityLevels" }) do
+    out[field] = map(field, d[field])
+  end
+  for _, field in ipairs({ "talentSpells", "reviewed", "general", "pet" }) do
+    out[field] = list(field, d[field])
+  end
+  return out
+end

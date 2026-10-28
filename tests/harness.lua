@@ -7,6 +7,8 @@ function H.load(path, ns)
   -- Loads an addon file the way WoW does: the file receives (addonName, ns) as varargs.
   local chunk, err = loadfile(path)
   if not chunk then error(err, 2) end
+  -- The TOC loads Locales/enUS.lua first; tests that build a bare ns get the same English-as-key table.
+  ns.L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
   return chunk("DontDoThat", ns)
 end
 
@@ -56,6 +58,32 @@ function _G.test(name, fn)
     H.failed = H.failed + 1
     H.failures[#H.failures + 1] = name .. "\n    " .. tostring(err)
   end
+end
+
+-- A resolver for synthetic rule data in tests: the name written is the key the engine uses.
+H.sameKeys = { id = function(name) return name end, prefix = function() return {} end }
+
+-- Loads the spell tables and the code that reads them, the way the TOC does before any rule data.
+function H.loadSpellTables(ns)
+  H.load("DontDoThat/Data/SpellData.lua", ns)
+  H.load("DontDoThat/Data/RuleSpells.lua", ns)
+  H.load("DontDoThat/Data/TalentData.lua", ns)
+  H.load("DontDoThat/Model/SpellData.lua", ns)
+end
+
+-- The family ID of an English spell name, as rule data resolves it. Fails the test on an unknown name.
+function H.fid(ns, class, name)
+  local id = ns.SpellData.FamilyId(class, name)
+  if not id then error("no spell named '" .. tostring(name) .. "' for " .. tostring(class), 2) end
+  return id
+end
+
+-- { ["Name"] = true } -> { [familyId] = true }, or nil when the set is nil (the client could not say).
+function H.talentSet(ns, class, names)
+  if names == nil then return nil end
+  local out = {}
+  for name, on in pairs(names) do out[H.fid(ns, class, name)] = on end
+  return out
 end
 
 function H.report()

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Pure helpers shared by the UI modules. No frames, no WoW calls.
 local H = {}
@@ -18,10 +19,10 @@ function H.FormatMoney(copper)
 end
 
 local TIERS = {
-  keep = { label = "Keep", color = { 0.2, 0.9, 0.2 } },
-  info = { label = "Optional", color = { 0.4, 0.7, 1.0 } },
-  deferLow = { label = "Not worth buying yet", color = { 1.0, 0.82, 0.0 } },
-  defer = { label = "Save your gold", color = { 1.0, 0.2, 0.2 } },
+  keep = { label = L["Keep"], color = { 0.2, 0.9, 0.2 } },
+  info = { label = L["Optional"], color = { 0.4, 0.7, 1.0 } },
+  deferLow = { label = L["Not worth buying yet"], color = { 1.0, 0.82, 0.0 } },
+  defer = { label = L["Save your gold"], color = { 1.0, 0.2, 0.2 } },
 }
 
 function H.TierStyle(tier)
@@ -44,7 +45,7 @@ function H.TooltipText(verdict)
   local lines = { style.label }
   if verdict.reason and verdict.reason ~= "" then lines[#lines + 1] = tostring(verdict.reason) end
   local cost = H.FormatMoney(verdict.cost)
-  if cost then lines[#lines + 1] = (verdict.costIsEstimate and "Costs about " or "Costs ") .. cost end
+  if cost then lines[#lines + 1] = (verdict.costIsEstimate and L["Costs about %s"] or L["Costs %s"]):format(cost) end
   return table.concat(lines, "\n")
 end
 
@@ -59,7 +60,7 @@ function H.TooltipParts(verdict)
     heading = style.label,
     color = { style.color[1], style.color[2], style.color[3] },
     reason = (verdict.reason and verdict.reason ~= "") and tostring(verdict.reason) or nil,
-    cost = cost and ((verdict.costIsEstimate and "Costs about " or "Costs ") .. cost) or nil,
+    cost = cost and ((verdict.costIsEstimate and L["Costs about %s"] or L["Costs %s"]):format(cost)) or nil,
   }
 end
 
@@ -80,9 +81,9 @@ end
 
 function H.BannerText(verdict, name)
   verdict = verdict or {}
-  local head = tostring(name or verdict.name or "This purchase")
+  local head = tostring(name or verdict.name or L["This purchase"])
   local cost = H.FormatMoney(verdict.cost)
-  if cost then head = head .. " costs " .. (verdict.costIsEstimate and "about " or "") .. cost .. "." end
+  if cost then head = (verdict.costIsEstimate and L["%s costs about %s."] or L["%s costs %s."]):format(head, cost) end
   local detail = tostring(verdict.reason or "")
   local earn = ns.EarnBack and ns.EarnBack.Line(verdict.cost)
   if earn then detail = detail .. (detail ~= "" and "\n" or "") .. earn end

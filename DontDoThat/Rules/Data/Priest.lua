@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -33,15 +34,15 @@ ns.Rules.Load({
 
   specs = {
     DISC = {
-      name = "Discipline", tree = 1, -- TalentTab order verified from the game tables
+      name = L["Discipline"], tree = 1, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Smite" }), situational = SHARED_SITUATIONAL },
     },
     HOLY = {
-      name = "Holy", tree = 2, -- TalentTab order verified from the game tables
+      name = L["Holy"], tree = 2, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Smite", "Greater Heal" }), situational = with(SHARED_SITUATIONAL, { "Circle of Healing" }) },
     },
     SHADOW = {
-      name = "Shadow", tree = 3, -- TalentTab order verified from the game tables
+      name = L["Shadow"], tree = 3, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Mind Flay", "Vampiric Embrace", "Shadowform", "Devouring Plague", "Silence" }), situational = with(SHARED_SITUATIONAL, { "Mind Spike", "Void Plague", "Shadowfiend", "Dispersion", "Mind Sear", "Vampiric Touch", "Shadow Word: Death" }) },
     },
   },
@@ -49,32 +50,32 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Divine Spirit"] = "A group buff.",
-    ["Elune's Grace"] = "A small defensive bonus most players never notice.",
-    ["Fade"] = "Lowers your threat. Only needed in groups.",
-    ["Fear Ward"] = "Mostly a PvP and raid tool.",
-    ["Feedback"] = "Only counters enemy mana burn, mostly in PvP.",
-    ["Holy Fire"] = "Costs more than Smite for a small gain while leveling.",
-    ["Lightwell"] = "A group spell.",
-    ["Mana Burn"] = "Mostly useful against other casters.",
-    ["Mind Control"] = "Mostly useful against other players.",
-    ["Mind Soothe"] = "Only calms a few enemies.",
-    ["Mind Vision"] = "A scouting tool you can live without.",
-    ["Pain Suppression"] = "A group-healing cooldown.",
-    ["Power Word: Barrier"] = "A group-healing cooldown.",
-    ["Prayer of Fortitude"] = "Costs a reagent each cast. Not needed while leveling.",
-    ["Prayer of Mending"] = "A group heal.",
-    ["Prayer of Shadow Protection"] = "Costs a reagent each cast. Not needed while leveling.",
-    ["Prayer of Spirit"] = "Costs a reagent each cast. Not needed while leveling.",
-    ["Shackle Undead"] = "Only useful against undead.",
-    ["Shadow Protection"] = "Only matters against specific raid fights.",
-    ["Shadowguard"] = "Only helps against shadow casters.",
+    ["Divine Spirit"] = L["A group buff."],
+    ["Elune's Grace"] = L["A small defensive bonus most players never notice."],
+    ["Fade"] = L["Lowers your threat. Only needed in groups."],
+    ["Fear Ward"] = L["Mostly a PvP and raid tool."],
+    ["Feedback"] = L["Only counters enemy mana burn, mostly in PvP."],
+    ["Holy Fire"] = L["Costs more than Smite for a small gain while leveling."],
+    ["Lightwell"] = L["A group spell."],
+    ["Mana Burn"] = L["Mostly useful against other casters."],
+    ["Mind Control"] = L["Mostly useful against other players."],
+    ["Mind Soothe"] = L["Only calms a few enemies."],
+    ["Mind Vision"] = L["A scouting tool you can live without."],
+    ["Pain Suppression"] = L["A group-healing cooldown."],
+    ["Power Word: Barrier"] = L["A group-healing cooldown."],
+    ["Prayer of Fortitude"] = L["Costs a reagent each cast. Not needed while leveling."],
+    ["Prayer of Mending"] = L["A group heal."],
+    ["Prayer of Shadow Protection"] = L["Costs a reagent each cast. Not needed while leveling."],
+    ["Prayer of Spirit"] = L["Costs a reagent each cast. Not needed while leveling."],
+    ["Shackle Undead"] = L["Only useful against undead."],
+    ["Shadow Protection"] = L["Only matters against specific raid fights."],
+    ["Shadowguard"] = L["Only helps against shadow casters."],
   },
 
   tags = {

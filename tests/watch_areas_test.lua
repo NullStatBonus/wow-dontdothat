@@ -3,7 +3,7 @@ local H = require("harness")
 
 -- Nudge level and the watch-area switches (Model/Settings.lua), and what the switches do.
 local ns = {}
-for _, f in ipairs({ "Rules/Schema.lua", "Rules/Engine.lua", "Rules/Data/Hunter.lua", "Model/SpecInference.lua",
+for _, f in ipairs({ "Data/SpellData.lua", "Data/RuleSpells.lua", "Data/TalentData.lua", "Model/SpellData.lua", "Rules/Schema.lua", "Rules/Engine.lua", "Rules/Data/Hunter.lua", "Model/SpecInference.lua",
   "Model/Milestones.lua", "Model/Settings.lua", "Model/PlayerProfile.lua", "Intercepts/Adapter.lua",
   "Intercepts/Context.lua", "Intercepts/Trainer.lua" }) do
   H.load("DontDoThat/" .. f, ns)
@@ -52,7 +52,7 @@ end)
 -- Trainer rows: a class spell and a profession first-tier row.
 local ROWS = {
   { "Distracting Shot", "Rank 1", "available", 600, 12 },
-  { "Apprentice Leatherworking", nil, "available", 100, 5 },
+  { "Leatherworking", "Apprentice", "available", 100, 5 },
 }
 local function env()
   local e = {}
@@ -66,7 +66,7 @@ local function env()
   e.GetTalentTabInfo = function(i) return 360 + i, ({ "Beast Mastery", "Marksmanship", "Survival" })[i], "", 1, 0, "bg" end
   return e
 end
-ns.Rules.SetProfessionLearn({ gathering = {}, reason = "%s is not needed yet." })
+ns.Rules.SetProfessionLearn({ gathering = {}, apprentice = { Leatherworking = 2108 }, reason = "%s is not needed yet." })
 
 test("spells off: spell rows get no verdict, profession rows still do", function()
   ns.db = { profile = {} }

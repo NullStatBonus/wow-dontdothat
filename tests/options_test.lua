@@ -3,9 +3,9 @@ local H = require("harness")
 
 local function fresh(profile)
   local ns = { version = "0.1.0" }
-  for _, f in ipairs({ "UI/Helpers.lua", "Data/Sounds.lua", "Rules/Schema.lua", "Rules/Engine.lua",
-    "Rules/Data/Hunter.lua", "Data/SpellData.lua", "Data/TrainerPrices.lua",
-    "Model/SpellData.lua", "Model/Ledger.lua", "Model/Savings.lua", "Model/Milestones.lua", "Model/Settings.lua", "Model/ItemCategory.lua", "Options/Options.lua" }) do
+  for _, f in ipairs({ "UI/Helpers.lua", "Data/Sounds.lua", "Data/SpellData.lua", "Data/RuleSpells.lua", "Data/TalentData.lua", "Model/SpellData.lua", "Rules/Schema.lua", "Rules/Engine.lua",
+    "Rules/Data/Hunter.lua", "Data/TrainerPrices.lua",
+    "Model/Ledger.lua", "Model/Savings.lua", "Model/Milestones.lua", "Model/Settings.lua", "Model/ItemCategory.lua", "Options/Options.lua" }) do
     H.load("DontDoThat/" .. f, ns)
   end
   ns.db = { profile = profile or {} }
@@ -173,7 +173,7 @@ end)
 
 test("each spell line carries an icon that is looked up when drawn", function()
   local ns = fresh()
-  ns.Icons = { Lookup = function(name) return name == "Distracting Shot" and 132330 or "fallback" end }
+  ns.Icons = { Lookup = function(id) return id == H.fid(ns, "HUNTER", "Distracting Shot") and 132330 or "fallback" end }
   local wait = lines(ns.Options.Rules().args.HUNTER.args.wait)
   local found
   for _, w in pairs(wait) do if w.name and tostring(w.name):find("^Distracting Shot") then found = w end end
@@ -329,16 +329,17 @@ end)
 
 test("rules page: each ability has a switch that is on until the player turns it off", function()
   local ns = loadSettings({})
+  local shot = H.fid(ns, "HUNTER", "Distracting Shot")
   local wait = lines(ns.Options.Rules().args.HUNTER.args.wait)
   local line
   for _, w in pairs(wait) do if w.name == "Distracting Shot" then line = w end end
   truthy(line.get())
   line.set(nil, false)
-  eq(ns.db.profile.ruleOff.abilities.HUNTER["Distracting Shot"], true)
+  eq(ns.db.profile.ruleOff.abilities.HUNTER[shot], true)
   falsy(line.get())
-  eq(ns.Settings.RulesFor("HUNTER").offAbilities["Distracting Shot"], true)
+  eq(ns.Settings.RulesFor("HUNTER").offAbilities[shot], true)
   line.set(nil, true)
-  eq(ns.db.profile.ruleOff.abilities.HUNTER["Distracting Shot"], nil)
+  eq(ns.db.profile.ruleOff.abilities.HUNTER[shot], nil)
 end)
 
 test("rules page: tag switches and rule kind switches", function()
@@ -436,14 +437,14 @@ test("custom detail says what is set", function()
 end)
 
 test("reset all lives on Home, and no other settings page has a reset", function()
-  local ns = fresh({ enabled = false, alert = { cooldown = 9 }, tuning = { stopAfter = 40 }, professionAsked = { Engineering = true },
+  local ns = fresh({ enabled = false, alert = { cooldown = 9 }, tuning = { stopAfter = 40 }, professionAsked = { [4036] = true },
     milestoneOverride = { [40] = true }, debug = true, traceItems = true })
   local reset = ns.Options.Home().args.resetAll
   eq(reset.type, "execute"); truthy(reset.confirm)
   reset.func()
   eq(ns.db.profile.enabled, nil); eq(ns.db.profile.alert, nil); eq(ns.db.profile.tuning, nil)
   eq(ns.db.profile.debug, nil); eq(ns.db.profile.traceItems, nil)
-  eq(ns.db.profile.professionAsked, { Engineering = true }, "what you have already done is kept")
+  eq(ns.db.profile.professionAsked, { [4036] = true }, "what you have already done is kept")
   eq(ns.db.profile.milestoneOverride, { [40] = true })
   for _, page in ipairs({ ns.Options.Tuning(), ns.Options.Watch(), ns.Options.Rules() }) do
     local function find(group)
@@ -475,4 +476,24 @@ test("rules page: a class page has Worth buying and Optional by spec, then the o
   truthy(first.inline, "each spec group is an inline box")
   truthy(first.name:find("All specs", 1, true), first.name)
   eq(ns.Options.ClassSummary(ns.Rules.GetClass("HUNTER")).keepGroups[1].title, "All specs")
+end)
+
+test("rules page: a switch is saved by spell, so it survives a change of client language", function()
+  local ns = loadSettings({})
+  local shot = H.fid(ns, "HUNTER", "Distracting Shot")
+  local function find(label)
+    for _, w in pairs(lines(ns.Options.Rules().args.HUNTER.args.wait)) do
+      if w.name == label then return w end
+    end
+  end
+  _G.GetSpellInfo = function(id) return "Z" .. id end
+  local ok, err = pcall(function()
+    local line = find("Z" .. shot)
+    truthy(line, "the page shows the name the client uses")
+    line.set(nil, false)
+  end)
+  _G.GetSpellInfo = nil
+  truthy(ok, tostring(err))
+  eq(ns.Settings.RulesFor("HUNTER").offAbilities[shot], true)
+  falsy(find("Distracting Shot").get(), "still switched off when the client shows the English name")
 end)

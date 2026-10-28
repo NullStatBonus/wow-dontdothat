@@ -1,14 +1,22 @@
 local addonName, ns = ...
+local L = ns.L
 
 local Rules = ns.Rules or {}
 ns.Rules = Rules
 
 local classes = {}
 
-function Rules.Load(data)
+-- Validates rule data written with English spell names and stores it compiled to family IDs. A resolver can be
+-- passed in (tests do); by default names resolve through the bundled spell tables for the data's class.
+function Rules.Load(data, resolver)
   local id = Rules.Validate(data)
-  classes[id] = data
-  return data
+  resolver = resolver or {
+    id = function(name) return ns.SpellData.FamilyId(id, name) end,
+    prefix = function(prefix) return ns.SpellData.FamiliesWithPrefix(id, prefix) end,
+  }
+  local compiled = Rules.Compile(data, resolver)
+  classes[id] = compiled
+  return compiled
 end
 
 function Rules.GetClass(key) return classes[key] end
@@ -21,18 +29,29 @@ function Rules.ListClasses()
   return keys
 end
 
-local learn = { gathering = {}, reason = "%s costs gold at every level." }
+local learn = { names = {}, gathering = {}, reason = L["%s costs gold at every level."] }
 
--- Rule data for the one-time "learning a profession" question (Rules/Data/ProfessionLearn.lua).
-function Rules.SetProfessionLearn(data) learn = data end
+-- Rule data for the one-time "learning a profession" question (Rules/Data/ProfessionLearn.lua). A profession is
+-- identified by the spell ID of its apprentice tier. The data names them in English (apprentice = { Cooking = 2550 },
+-- gathering = { Fishing = true }); the engine works in the IDs.
+function Rules.SetProfessionLearn(data)
+  local names, gathering = {}, {}
+  for name, id in pairs(data.apprentice or {}) do names[id] = name end
+  for name in pairs(data.gathering or {}) do
+    local id = data.apprentice and data.apprentice[name]
+    if not id then error(("DontDoThat rule data (professions): gathering profession '%s' has no apprentice spell"):format(name), 0) end
+    gathering[id] = true
+  end
+  learn = { names = names, gathering = gathering, reason = data.reason }
+end
 
--- Recognises the trainer row that teaches the first tier of a profession the player should be asked
--- about ("Apprentice Leatherworking" or "Leatherworking (Apprentice)"). Gathering professions and
--- everything else return nil. Row naming on the real trainer is UNVERIFIED.
-function Rules.MatchProfessionLearn(rowName)
-  if type(rowName) ~= "string" then return nil end
-  local name = rowName:match("^Apprentice (.+)$") or rowName:match("^(.+) %(Apprentice%)$")
-  if name and not learn.gathering[name] then return name end
+-- Profession ID -> its English name, for the adapter to match against and for text when the client gives none.
+function Rules.ProfessionNames() return learn.names end
+
+-- A profession ID the player should be asked about the first time they learn it. Gathering professions and
+-- anything unknown return nil.
+function Rules.MatchProfessionLearn(id)
+  if learn.names[id] and not learn.gathering[id] then return id end
 end
 
 -- Test hook: forget all loaded data.
@@ -78,7 +97,7 @@ local function inRotation(profile, data, list, name)
 end
 
 local function rankRow(data, action)
-  local rows = data.ranks and data.ranks[action.family or action.name]
+  local rows = data.ranks and data.ranks[action.familyId]
   return rows and action.rank and rows[action.rank], rows
 end
 
@@ -91,7 +110,7 @@ local function verdict(profile, tier, source, reason, cost, isEstimate)
 end
 
 local function keep(profile)
-  return verdict(profile, "keep", "default", "No rule applies.")
+  return verdict(profile, "keep", "default", L["No rule applies."])
 end
 
 -- Cost: the adapter-supplied price wins; otherwise a data estimate, marked as such.
@@ -101,7 +120,7 @@ local function costFor(action, estimate)
 end
 
 -- Player-facing wording. Keep it short and free of internal terms (tags, tiers, specs, rotations).
-local WAIT_UNTIL_60 = "You won't need this until level 60."
+local WAIT_UNTIL_60 = L["You won't need this until level 60."]
 
 -- A per-ability sentence wins, then a per-tag sentence from the rule data, then the default.
 local function whyWait(data, name, tag)
@@ -114,11 +133,12 @@ end
 function Rules.WhyWait(data, name, tag) return whyWait(data, name, tag) end
 
 local function evaluateSpell(profile, action, data)
-  local name = action.family or action.name
+  local name = action.familyId
+  if name == nil then return keep(profile) end
   local rules = profile.rules or {}
   local offAbilities, offTags, offKinds = rules.offAbilities or {}, rules.offTags or {}, rules.offKinds or {}
   -- An ability the player switched off is never flagged, whatever else would apply.
-  if offAbilities[name] then return verdict(profile, "keep", "disabled", "You turned off warnings for this.") end
+  if offAbilities[name] then return verdict(profile, "keep", "disabled", L["You turned off warnings for this."]) end
   local row, rows = rankRow(data, action)
   local cost, isEstimate = costFor(action, row and row.cost)
   local function out(tier, source, reason) return verdict(profile, tier, source, reason, cost, isEstimate) end
@@ -126,12 +146,12 @@ local function evaluateSpell(profile, action, data)
   -- A skipped rank is judged on its own, even when the spell as a whole is kept.
   local skipped = data.skipRanks and data.skipRanks[name]
   if skipped and not offKinds.skipRank and action.rank and contains(skipped, action.rank) then
-    return out("defer", "skipRank", "Only a small upgrade over the rank before it.")
+    return out("defer", "skipRank", L["Only a small upgrade over the rank before it."])
   end
 
   local override = data.overrides and data.overrides[name]
   if override then
-    if override == "keep" then return verdict(profile, "keep", "override", "Worth having.") end
+    if override == "keep" then return verdict(profile, "keep", "override", L["Worth having."]) end
     return out(override, "override", whyWait(data, name))
   end
 
@@ -140,12 +160,12 @@ local function evaluateSpell(profile, action, data)
   for _, key in ipairs(keys) do
     local rot = data.specs[key].rotation
     if inRotation(profile, data, rot.core, name) then
-      return verdict(profile, "keep", "rotation", "You'll use this a lot.")
+      return verdict(profile, "keep", "rotation", L["You'll use this a lot."])
     end
     if not infoSpec and inRotation(profile, data, rot.situational, name) then infoSpec = key end
   end
   if infoSpec then
-    return out("info", "rotation", "Handy now and then, but you can get by without it.")
+    return out("info", "rotation", L["Handy now and then, but you can get by without it."])
   end
 
   local bestTier, bestTag
@@ -163,7 +183,7 @@ local function evaluateSpell(profile, action, data)
   for _, key in ipairs(offKinds.offSpec and {} or sortedKeys(data.specs)) do
     local rot = data.specs[key].rotation
     if not isPlausible[key] and (inRotation(profile, data, rot.core, name) or inRotation(profile, data, rot.situational, name)) then
-      return out("deferLow", "rotation", ("Mostly used by %s players, and your talents lean another way."):format(specName(data, key)))
+      return out("deferLow", "rotation", (L["Mostly used by %s players, and your talents lean another way."]):format(specName(data, key)))
     end
   end
 
@@ -174,7 +194,7 @@ end
 local function evaluateProfessionLearn(profile, action)
   local name = action.profession
   if (profile.professions or {})[name] or (profile.professionAsked or {})[name] then return keep(profile) end
-  local v = verdict(profile, "defer", "professionLearn", learn.reason:format(name), nil, false)
+  local v = verdict(profile, "defer", "professionLearn", learn.reason:format(action.displayName or learn.names[name] or tostring(name)), nil, false)
   v.profession = name
   return v
 end

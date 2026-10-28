@@ -51,12 +51,12 @@ function Ledger.NewState()
   }
 end
 
-function Ledger.CostKey(family, rank)
-  return tostring(family) .. tostring(rank)
+function Ledger.CostKey(familyId, rank)
+  return tostring(familyId) .. ":" .. tostring(rank)
 end
 
-function Ledger.RecordCost(costCache, family, rank, cost)
-  if costCache and cost then costCache[Ledger.CostKey(family, rank)] = cost end
+function Ledger.RecordCost(costCache, familyId, rank, cost)
+  if costCache and familyId and cost then costCache[Ledger.CostKey(familyId, rank)] = cost end
 end
 
 -- The declined respec would have been the next one.
@@ -95,14 +95,14 @@ end
 -- Cost precedence: observed cache, then the service's data cost, then the engine verdict's cost.
 -- Only the cache counts as observed; anything else is flagged costIsEstimate.
 local function resolveCost(costCache, service, verdict)
-  local observed = costCache and costCache[Ledger.CostKey(service.family, service.rank)]
+  local observed = costCache and costCache[Ledger.CostKey(service.familyId, service.rank)]
   if observed then return observed, false end
   return service.cost or verdict.cost, true
 end
 
 local function higherRankLearned(services, svc)
   for _, other in ipairs(services) do
-    if other.learned and other.family == svc.family and (other.rank or 0) > (svc.rank or 0) then
+    if other.learned and svc.familyId and other.familyId == svc.familyId and (other.rank or 0) > (svc.rank or 0) then
       return true
     end
   end
@@ -115,7 +115,7 @@ function Ledger.Compute(profile, services, engine, costCache)
     local eligible = svc.learned or (svc.available and (svc.unlockLevel or 0) <= profile.level)
     if eligible then
       local verdict = engine.Evaluate(profile, {
-        kind = "spell", name = svc.name, family = svc.family, rank = svc.rank,
+        kind = "spell", name = svc.name, familyId = svc.familyId, rank = svc.rank,
         unlockLevel = svc.unlockLevel, cost = svc.cost,
       })
       if verdict and verdict.tier ~= "keep" then
@@ -132,7 +132,7 @@ function Ledger.Compute(profile, services, engine, costCache)
           result.projected = result.projected + (cost or 0)
         end
         result.items[#result.items + 1] = {
-          family = svc.family, name = svc.name, rank = svc.rank, cost = cost,
+          familyId = svc.familyId, name = svc.name, rank = svc.rank, cost = cost,
           costIsEstimate = isEstimate, status = status, tier = verdict.tier,
         }
       end

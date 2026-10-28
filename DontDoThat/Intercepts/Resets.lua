@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- One-click gold sinks that the game guards with an "Are you sure?" dialog: talent resets, pet-skill resets,
 -- bank slots, stable slots and COD mail. When the game opens its dialog for one, this plays the warning sound
@@ -20,13 +21,13 @@ local addonName, ns = ...
 local Resets = {}
 ns.Resets = Resets
 
-local MARK = "Don't Do That:"
+local MARK = L["Don't Do That:"]
 
 local KINDS = {
   talent = {
-    popups = { "CONFIRM_TALENT_WIPE" }, confirmFn = "ConfirmTalentWipe", event = "CONFIRM_TALENT_WIPE", label = "Talent reset",
-    title = "Reset your talents?", ask = "Reset anyway?", rises = true,
-    advice = "Resetting costs gold, and more each time you do it. Only do it if you really need to.",
+    popups = { "CONFIRM_TALENT_WIPE" }, confirmFn = "ConfirmTalentWipe", event = "CONFIRM_TALENT_WIPE", label = L["Talent reset"],
+    title = L["Reset your talents?"], ask = L["Reset anyway?"], rises = true,
+    advice = L["Resetting costs gold, and more each time you do it. Only do it if you really need to."],
     avoided = function(state) ns.Ledger.RecordRespecAvoided(state) end,
     performed = function(state, cost) ns.Ledger.RecordRespecPerformed(state, nil, cost) end,
     -- What the game's own Cancel does for this dialog.
@@ -37,25 +38,25 @@ local KINDS = {
     end,
   },
   pet = {
-    popups = { "CONFIRM_PET_UNLEARN" }, confirmFn = "ConfirmPetUnlearn", event = "CONFIRM_PET_UNLEARN", label = "Pet skill reset",
-    title = "Take every skill off your pet?", ask = "Reset anyway?", rises = true,
-    advice = "Taking skills off your pet costs gold, and more each time. Only do it if you really need to.",
+    popups = { "CONFIRM_PET_UNLEARN" }, confirmFn = "ConfirmPetUnlearn", event = "CONFIRM_PET_UNLEARN", label = L["Pet skill reset"],
+    title = L["Take every skill off your pet?"], ask = L["Reset anyway?"], rises = true,
+    advice = L["Taking skills off your pet costs gold, and more each time. Only do it if you really need to."],
     avoided = function(state) ns.Ledger.RecordPetResetAvoided(state) end,
     performed = function(state, cost) ns.Ledger.RecordPetResetPerformed(state, nil, cost) end,
   },
   bank = {
-    guard = "bank", popups = { "CONFIRM_BUY_BANK_SLOT" }, done = { "PurchaseSlot" }, label = "Bank slot",
-    title = "Buy another bank slot?", ask = "Buy anyway?", rises = true,
-    advice = "Bank slots cost gold, and more each time. Only buy one if you really need the space.",
+    guard = "bank", popups = { "CONFIRM_BUY_BANK_SLOT" }, done = { "PurchaseSlot" }, label = L["Bank slot"],
+    title = L["Buy another bank slot?"], ask = L["Buy anyway?"], rises = true,
+    advice = L["Bank slots cost gold, and more each time. Only buy one if you really need the space."],
     price = function(env) return type(env.BankFrame) == "table" and env.BankFrame.nextSlotCost or nil end,
     accept = function(env) if type(env.PurchaseSlot) == "function" then env.PurchaseSlot() end end,
     avoided = function(state, cost) ns.Ledger.RecordItemAvoided(state, cost) end,
     performed = function(state, cost) ns.Ledger.RecordItemPerformed(state, cost) end,
   },
   stable = {
-    guard = "stable", popups = { "CONFIRM_BUY_STABLE_SLOT" }, done = { "BuyStableSlot" }, label = "Stable slot",
-    title = "Buy another stable slot?", ask = "Buy anyway?", rises = true,
-    advice = "Stable slots cost gold, and more each time. Only buy one if you really need to keep another pet.",
+    guard = "stable", popups = { "CONFIRM_BUY_STABLE_SLOT" }, done = { "BuyStableSlot" }, label = L["Stable slot"],
+    title = L["Buy another stable slot?"], ask = L["Buy anyway?"], rises = true,
+    advice = L["Stable slots cost gold, and more each time. Only buy one if you really need to keep another pet."],
     price = function(env)
       if type(env.GetNextStableSlotCost) ~= "function" then return nil end
       local ok, cost = pcall(env.GetNextStableSlotCost)
@@ -67,9 +68,9 @@ local KINDS = {
   },
   cod = {
     guard = "cod", popups = { "COD_CONFIRMATION", "COD_CONFIRMATION_AUTO_LOOT" },
-    done = { "TakeInboxItem", "AutoLootMailItem" }, label = "COD mail",
-    title = "Pay for this mail?", ask = "Pay anyway?", rises = false,
-    advice = "Paying a COD costs gold. Only pay it if you really want what's in the mail.",
+    done = { "TakeInboxItem", "AutoLootMailItem" }, label = L["COD mail"],
+    title = L["Pay for this mail?"], ask = L["Pay anyway?"], rises = false,
+    advice = L["Paying a COD costs gold. Only pay it if you really want what's in the mail."],
     price = function(env) return type(env.OpenMailFrame) == "table" and env.OpenMailFrame.cod or nil end,
     -- Read when Accept is pressed, as the game does; skip quietly if the mail window is gone.
     accept = function(env, data, which)
@@ -115,7 +116,7 @@ end
 function Resets.Status()
   local out = { switchedOffBy = disabledReason or "no" }
   for key, kind in pairs(KINDS) do
-    out[key] = { on = active(kind), lastSeen = seen[key] or "not seen this session" }
+    out[key] = { on = active(kind), lastSeen = seen[key] or L["not seen this session"] }
   end
   return out
 end
@@ -128,12 +129,12 @@ end
 local function question(kind, cost)
   local price
   if type(cost) == "number" and cost > 0 then
-    price = ("This costs %s%s."):format(ns.UIHelpers.FormatMoney(cost), kind.rises and ", and the price goes up each time" or "")
+    price = (L["This costs %s%s."]):format(ns.UIHelpers.FormatMoney(cost), kind.rises and L[", and the price goes up each time"] or "")
   else
-    price = kind.rises and "This costs gold, and more each time." or "This costs gold."
+    price = kind.rises and L["This costs gold, and more each time."] or L["This costs gold."]
   end
   local earn = ns.EarnBack and ns.EarnBack.Line(cost)
-  return ("%s\n\n%s You'll want that gold for your mount.%s\n\n%s"):format(kind.title, price,
+  return (L["%s\n\n%s You'll want that gold for your mount.%s\n\n%s"]):format(kind.title, price,
     earn and ("\n\n" .. earn) or "", kind.ask)
 end
 
@@ -266,7 +267,7 @@ local function refuse(env, func)
   if ns.Log then ns.Log.Add("reset: our question switched off (%s)", disabledReason) end
   if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
     pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME,
-      "|cffff3333Don't Do That:|r this game version won't let it confirm these for you. Try again; it will add a warning to the game's own question instead.")
+      "|cffff3333" .. L["Don't Do That:"] .. "|r " .. L["this game version won't let it confirm these for you. Try again; it will add a warning to the game's own question instead."])
   end
 end
 

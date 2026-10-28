@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: BM rotation is sourced. MM and SV rotations are thinly sourced
 -- (plausible Classic-style lists) and carry needsReview = true.
@@ -30,14 +31,14 @@ ns.Rules.Load({
 
   specs = {
     BM = {
-      name = "Beast Mastery", tree = 1, -- talent tab order observed on Classic Era 1.15.9
+      name = L["Beast Mastery"], tree = 1, -- talent tab order observed on Classic Era 1.15.9
       rotation = {
         core = with(SHARED_CORE, { "Summon Hawk", "Mend Pet", "Intimidation", "Bestial Wrath" }),
         situational = SHARED_SITUATIONAL,
       },
     },
     MM = {
-      name = "Marksmanship", tree = 2,
+      name = L["Marksmanship"], tree = 2,
       rotation = {
         needsReview = true, -- UNVERIFIED: plausible Classic-style list
         core = with(SHARED_CORE, { "Aimed Shot", "Rapid Fire" }),
@@ -45,7 +46,7 @@ ns.Rules.Load({
       },
     },
     SV = {
-      name = "Survival", tree = 3,
+      name = L["Survival"], tree = 3,
       rotation = {
         needsReview = true, -- UNVERIFIED: plausible Classic-style list
         core = with(SHARED_CORE, { "Raptor Strike", "Mongoose Bite", "Wing Clip" }),
@@ -59,24 +60,24 @@ ns.Rules.Load({
 
   -- Plain-language reasons shown to the player. `why` is per ability; `tagReasons` is the fallback per tag.
   tagReasons = {
-    PvP = "Only useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Only useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Distracting Shot"] = "Pulls enemies off your tank. You only need it in groups and raids.",
-    ["Tranquilizing Shot"] = "Only needed for a few raid fights.",
-    ["Volley"] = "Group damage for raids. Not needed while leveling.",
-    ["Aspect of the Wild"] = "A resistance bonus for groups and raids.",
-    ["Beast Lore"] = "Only shows information about a pet.",
-    ["Eagle Eye"] = "A scouting tool you can live without.",
-    ["Eyes of the Beast"] = "A scouting tool you can live without.",
-    ["Arcane Resistance"] = "Only matters against specific raid fights.",
-    ["Fire Resistance"] = "Only matters against specific raid fights.",
-    ["Frost Resistance"] = "Only matters against specific raid fights.",
-    ["Nature Resistance"] = "Only matters against specific raid fights.",
-    ["Shadow Resistance"] = "Only matters against specific raid fights.",
+    ["Distracting Shot"] = L["Pulls enemies off your tank. You only need it in groups and raids."],
+    ["Tranquilizing Shot"] = L["Only needed for a few raid fights."],
+    ["Volley"] = L["Group damage for raids. Not needed while leveling."],
+    ["Aspect of the Wild"] = L["A resistance bonus for groups and raids."],
+    ["Beast Lore"] = L["Only shows information about a pet."],
+    ["Eagle Eye"] = L["A scouting tool you can live without."],
+    ["Eyes of the Beast"] = L["A scouting tool you can live without."],
+    ["Arcane Resistance"] = L["Only matters against specific raid fights."],
+    ["Fire Resistance"] = L["Only matters against specific raid fights."],
+    ["Frost Resistance"] = L["Only matters against specific raid fights."],
+    ["Nature Resistance"] = L["Only matters against specific raid fights."],
+    ["Shadow Resistance"] = L["Only matters against specific raid fights."],
   },
 
   tags = {

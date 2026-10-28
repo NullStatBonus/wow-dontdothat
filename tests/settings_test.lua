@@ -2,6 +2,7 @@ package.path = "./tests/?.lua;" .. package.path
 local H = require("harness")
 
 local ns = {}
+H.loadSpellTables(ns)
 H.load("DontDoThat/Rules/Schema.lua", ns)
 H.load("DontDoThat/Rules/Engine.lua", ns)
 H.load("DontDoThat/Model/Milestones.lua", ns)
@@ -21,14 +22,14 @@ ns.Rules.Load({
   tags = { Pvper = { "PvP" }, Both = { "PvP", "Raid" } },
   skipRanks = { Skipper = { 2 } },
   ranks = { Plain = { { rank = 1, unlockLevel = 4 }, { rank = 2, unlockLevel = 10 } } },
-})
+}, H.sameKeys)
 
 local function profile(rules, specs)
   return { class = "TEST", level = 25, plausibleSpecs = specs or { "A" }, rules = rules,
     milestone = { current = 40, state = "active" } }
 end
 local function spell(name, extra)
-  local a = { kind = "spell", name = name, family = name }
+  local a = { kind = "spell", name = name, familyId = name }
   for k, v in pairs(extra or {}) do a[k] = v end
   return a
 end
@@ -171,9 +172,9 @@ test("settings: debug recording is switched off whenever the addon loads", funct
 end)
 
 test("settings: reset all clears every setting except what the player has already done", function()
-  local p = { enabled = false, watch = { shopping = false }, tuning = { stopAfter = 40 }, professionAsked = { Mining = true },
+  local p = { enabled = false, watch = { shopping = false }, tuning = { stopAfter = 40 }, professionAsked = { [2575] = true },
     milestoneOverride = { [60] = true }, debug = true }
   ns.Settings.ResetAll(p)
-  eq(p, { professionAsked = { Mining = true }, milestoneOverride = { [60] = true } })
+  eq(p, { professionAsked = { [2575] = true }, milestoneOverride = { [60] = true } })
   ns.Settings.ResetAll(nil)
 end)

@@ -2,6 +2,16 @@
 
 Rule data files live in `DontDoThat/Rules/Data/` and call `ns.Rules.Load(table)`. `Load` validates the table and raises a message beginning `DontDoThat rule data (<id>): ...` on malformed data. Money is integer copper. Anything unverified is commented in the data file.
 
+## Spell names and IDs
+
+Rule files are written with English spell names (the Classic Era names, which the Forever tables sometimes rename: Curse of Agony is Bane of Agony). `ns.Rules.Load` compiles every name to a spell family ID (`SpellData.FamilyId`, see `docs/contracts.md`), and the engine, the settings and the Rules page work in IDs only. Anywhere the table below says "name" it means this.
+
+- A name that matches no spell raises `DontDoThat rule data (<class> <field>): no spell named '<name>' for this class`, and `tests/spell_ids_test.lua` fails on it.
+- A key or list entry written `~Prefix` stands for every family whose name starts with the prefix (`~Create Firestone` covers Lesser, normal, Greater and Major). It must match at least one.
+- Professions (`ProfessionLearn.lua`) are identified by the spell ID of their apprentice tier, for example Cooking = 2550. `gathering` lists the ones that are never asked about and must also appear in `apprentice`.
+- The trainer-based tables (`Data/SpellData.lua`) do not list talent-granted spells, default attacks or conjured items. Add such a name to `tools/rule-spell-names.txt` (`CLASS<TAB>Name`) and run `python3 -I tools/build-rule-spells.py` to write `Data/RuleSpells.lua`. It looks the name up in the Classic Era and Forever tables, so it needs the cached wago CSVs in `tools/.cache`.
+- The Warlock `grimoires.keep` list names demon abilities, not items. A grimoire is recognised by its item ID (the number in its item link), and `Data/RuleItems.lua` maps each grimoire item ID to its ability. Regenerate it with `python3 -I tools/build-rule-items.py`, which downloads the item tables into `tools/.cache/items`. `tests/grimoires_test.lua` fails on a kept name that no grimoire has.
+
 ## Class data (`class = "HUNTER"`)
 
 | Field | Meaning |

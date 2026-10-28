@@ -2,6 +2,7 @@ package.path = "./tests/?.lua;" .. package.path
 local H = require("harness")
 
 local ns = {}
+H.loadSpellTables(ns)
 H.load("DontDoThat/Rules/Schema.lua", ns)
 H.load("DontDoThat/Rules/Engine.lua", ns)
 H.load("DontDoThat/Rules/Data/Hunter.lua", ns)
@@ -11,7 +12,7 @@ local function profile(specs, pts)
     milestone = { current = 40, state = "active" } }
 end
 local function tier(name, specs, extra)
-  local a = { kind = "spell", name = name, family = name }
+  local a = { kind = "spell", name = name, familyId = H.fid(ns, "HUNTER", name) }
   for k, v in pairs(extra or {}) do a[k] = v end
   return ns.Rules.Evaluate(profile(specs), a).tier
 end
@@ -51,13 +52,13 @@ end)
 test("hunter: keep overrides", function()
   for _, n in ipairs({ "Serpent Sting", "Hunter's Mark", "Freezing Trap", "Immolation Trap",
     "Explosive Trap", "Deterrence", "Disengage" }) do
-    local v = ns.Rules.Evaluate(profile({ "BM" }), { kind = "spell", name = n, family = n })
+    local v = ns.Rules.Evaluate(profile({ "BM" }), { kind = "spell", name = n, familyId = H.fid(ns, "HUNTER", n) })
     eq(v.tier, "keep", n); eq(v.source, "override", n)
   end
 end)
 
 test("hunter: Survival-only ability for a BM-only profile is flagged with reason", function()
-  local v = ns.Rules.Evaluate(profile({ "BM" }), { kind = "spell", name = "Mongoose Bite", family = "Mongoose Bite" })
+  local v = ns.Rules.Evaluate(profile({ "BM" }), { kind = "spell", name = "Mongoose Bite", familyId = H.fid(ns, "HUNTER", "Mongoose Bite") })
   eq(v.tier, "deferLow")
   eq(v.reason, "Mostly used by Survival players, and your talents lean another way.")
 end)
@@ -74,7 +75,7 @@ test("hunter: MM and SV rotations need review, BM does not", function()
 end)
 
 test("hunter: Serpent Sting rank table", function()
-  local rows = ns.Rules.GetClass("HUNTER").ranks["Serpent Sting"]
+  local rows = ns.Rules.GetClass("HUNTER").ranks[H.fid(ns, "HUNTER", "Serpent Sting")]
   local levels, mana = {}, {}
   for i, r in ipairs(rows) do levels[i] = r.unlockLevel; mana[i] = r.manaCost end
   truthy(H.deepEqual(levels, { 4, 10, 18, 26, 34, 42, 50, 58, 60 }))
@@ -103,7 +104,7 @@ test("hunter: Trueshot Aura and Dual Wield are kept", function()
 end)
 
 local function rankTier(name, rank, specs)
-  return ns.Rules.Evaluate(profile(specs or { "BM" }), { kind = "spell", name = name, family = name, rank = rank }).tier
+  return ns.Rules.Evaluate(profile(specs or { "BM" }), { kind = "spell", name = name, familyId = H.fid(ns, "HUNTER", name), rank = rank }).tier
 end
 
 test("hunter: Wing Clip rank 1 is kept for every spec, later ranks are skipped", function()
@@ -132,7 +133,7 @@ test("hunter: skipped ranks are deferred, neighbouring ranks are not", function(
 end)
 
 test("hunter: a skipped rank overrides the family keep, and says why in plain words", function()
-  local v = ns.Rules.Evaluate(profile({ "BM" }), { kind = "spell", name = "Mend Pet", family = "Mend Pet", rank = 6, cost = 36000 })
+  local v = ns.Rules.Evaluate(profile({ "BM" }), { kind = "spell", name = "Mend Pet", familyId = H.fid(ns, "HUNTER", "Mend Pet"), rank = 6, cost = 36000 })
   eq(v.tier, "defer"); eq(v.source, "skipRank"); eq(v.cost, 36000)
   eq(v.reason, "Only a small upgrade over the rank before it.")
 end)
@@ -145,8 +146,8 @@ end)
 test("hunter: a talent spell is not part of a rotation until its talent is active", function()
   local function withTalents(talents, name)
     local p = profile({ "BM" })
-    p.activeTalents = talents
-    return ns.Rules.Evaluate(p, { kind = "spell", name = name, family = name }).tier
+    p.activeTalents = H.talentSet(ns, "HUNTER", talents)
+    return ns.Rules.Evaluate(p, { kind = "spell", name = name, familyId = H.fid(ns, "HUNTER", name) }).tier
   end
   eq(withTalents({}, "Intimidation"), "keep", "Intimidation has no other rule, so it is kept by default")
   eq(withTalents({ Intimidation = true }, "Intimidation"), "keep")
@@ -158,12 +159,12 @@ end)
 test("hunter: a talent spell without its talent is judged by later rules, not the rotation", function()
   local p = profile({ "BM" })
   p.activeTalents = {}
-  local v = ns.Rules.Evaluate(p, { kind = "spell", name = "Scatter Shot", family = "Scatter Shot" })
+  local v = ns.Rules.Evaluate(p, { kind = "spell", name = "Scatter Shot", familyId = H.fid(ns, "HUNTER", "Scatter Shot") })
   eq(v.source, "tag", "PvP tag decides")
   p.activeTalents = nil
-  eq(ns.Rules.Evaluate(p, { kind = "spell", name = "Aimed Shot", family = "Aimed Shot" }).source, "rotation")
+  eq(ns.Rules.Evaluate(p, { kind = "spell", name = "Aimed Shot", familyId = H.fid(ns, "HUNTER", "Aimed Shot") }).source, "rotation")
   p.activeTalents = {}
-  eq(ns.Rules.Evaluate(p, { kind = "spell", name = "Aimed Shot", family = "Aimed Shot" }).source, "default")
+  eq(ns.Rules.Evaluate(p, { kind = "spell", name = "Aimed Shot", familyId = H.fid(ns, "HUNTER", "Aimed Shot") }).source, "default")
 end)
 
 test("hunter: Aspect of the Pack and Frost Trap are optional, and the spells Hunters rely on are worth buying", function()
