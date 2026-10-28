@@ -1,5 +1,6 @@
 package.path = "./tests/?.lua;" .. package.path
 local T = require("classtest")
+local H = require("harness")
 
 local d = T.new("DRUID", "Druid")
 
@@ -39,13 +40,14 @@ test("druid: niche utility is defer-low-value and group spells wait", function()
 end)
 
 test("druid: only expert-guided ranks are skipped, never rank 1", function()
-  eq(d.data.skipRanks["Rejuvenation"][1], 11)
-  eq(#d.data.skipRanks["Rejuvenation"], 1)
-  eq(d.data.skipRanks["Claw"], nil)
-  eq(d.data.skipRanks["Healing Touch"], nil)
-  eq(d.data.skipRanks["Wrath"], nil)
-  for name, ranks in pairs(d.data.skipRanks) do
-    for _, r in ipairs(ranks) do assert(r > 1, name .. " skips rank 1") end
+  local function skip(name) return d.data.skipRanks[H.fid(d.ns, "DRUID", name)] end
+  eq(skip("Rejuvenation")[1], 11)
+  eq(#skip("Rejuvenation"), 1)
+  eq(skip("Claw"), nil)
+  eq(skip("Healing Touch"), nil)
+  eq(skip("Wrath"), nil)
+  for id, ranks in pairs(d.data.skipRanks) do
+    for _, r in ipairs(ranks) do assert(r > 1, id .. " skips rank 1") end
   end
 end)
 

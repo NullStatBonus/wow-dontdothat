@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -33,15 +34,15 @@ ns.Rules.Load({
 
   specs = {
     ELEM = {
-      name = "Elemental", tree = 1, -- TalentTab order verified from the game tables
+      name = L["Elemental"], tree = 1, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Chain Lightning", "Lava Burst", "Fire Nova", "Fire Nova Totem", "Magma Totem", "Flametongue Weapon", "Frost Shock" }), situational = with(SHARED_SITUATIONAL, { "Mana Spring Totem", "Healing Stream Totem", "Water Shield" }) },
     },
     ENH = {
-      name = "Enhancement", tree = 2, -- TalentTab order verified from the game tables
+      name = L["Enhancement"], tree = 2, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Windfury Weapon", "Flametongue Weapon", "Frostbrand Weapon", "Stormstrike", "Strength of Earth Totem", "Grace of Air Totem", "Chain Lightning", "Fire Nova", "Fire Nova Totem", "Magma Totem", "Frost Shock" }), situational = with(SHARED_SITUATIONAL, { "Mana Spring Totem", "Healing Stream Totem", "Lava Burst", "Lava Lash", "Shamanistic Rage", "Water Shield" }) },
     },
     RESTO = {
-      name = "Restoration", tree = 3, -- TalentTab order verified from the game tables
+      name = L["Restoration"], tree = 3, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Lesser Healing Wave", "Chain Heal", "Riptide", "Healing Stream Totem", "Mana Spring Totem", "Mana Tide Totem" }), situational = with(SHARED_SITUATIONAL, { "Chain Lightning", "Strength of Earth Totem", "Grace of Air Totem", "Water Shield", "Earth Shield" }) },
     },
   },
@@ -49,28 +50,28 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Disease Cleansing Totem"] = "Rarely helps while leveling.",
-    ["Far Sight"] = "A scouting tool you can live without.",
-    ["Fire Resistance Totem"] = "Only matters against specific raid fights.",
-    ["Flametongue Totem"] = "A totem you can do without.",
-    ["Frost Resistance Totem"] = "Only matters against specific raid fights.",
-    ["Grounding Totem"] = "Mostly useful against other players.",
-    ["Nature Resistance Totem"] = "Only matters against specific raid fights.",
-    ["Poison Cleansing Totem"] = "Rarely helps while leveling.",
-    ["Purge"] = "Mostly useful against other players.",
-    ["Sentry Totem"] = "A scouting tool you can live without.",
-    ["Stoneskin Totem"] = "A defensive totem you can do without.",
-    ["Tremor Totem"] = "Only matters in groups and raids.",
-    ["Water Breathing"] = "Rarely helps while leveling.",
-    ["Water Walking"] = "Rarely helps while leveling.",
-    ["Windfury Totem"] = "A group buff.",
-    ["Windwall Totem"] = "A defensive totem you can do without.",
+    ["Disease Cleansing Totem"] = L["Rarely helps while leveling."],
+    ["Far Sight"] = L["A scouting tool you can live without."],
+    ["Fire Resistance Totem"] = L["Only matters against specific raid fights."],
+    ["Flametongue Totem"] = L["A totem you can do without."],
+    ["Frost Resistance Totem"] = L["Only matters against specific raid fights."],
+    ["Grounding Totem"] = L["Mostly useful against other players."],
+    ["Nature Resistance Totem"] = L["Only matters against specific raid fights."],
+    ["Poison Cleansing Totem"] = L["Rarely helps while leveling."],
+    ["Purge"] = L["Mostly useful against other players."],
+    ["Sentry Totem"] = L["A scouting tool you can live without."],
+    ["Stoneskin Totem"] = L["A defensive totem you can do without."],
+    ["Tremor Totem"] = L["Only matters in groups and raids."],
+    ["Water Breathing"] = L["Rarely helps while leveling."],
+    ["Water Walking"] = L["Rarely helps while leveling."],
+    ["Windfury Totem"] = L["A group buff."],
+    ["Windwall Totem"] = L["A defensive totem you can do without."],
   },
 
   tags = {

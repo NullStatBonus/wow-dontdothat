@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Asks before a flagged purchase at a trainer. The Train button's click is wrapped: for a spell the
 -- rules fully defer, the player gets a loud alert and a "Buy anyway?" prompt, and the original click
@@ -144,7 +145,7 @@ function Confirm.Disable(reason)
   if ns.Log then ns.Log.Add("confirm: prompts disabled (%s)", tostring(reason)) end
   if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
     pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME,
-      "Don't Do That: this game version won't let it confirm purchases, so it will only mark them.")
+      L["Don't Do That: this game version won't let it confirm purchases, so it will only mark them."])
   end
 end
 
@@ -159,19 +160,19 @@ end
 -- What `/ddt test` does: behaves exactly as a purchase of a deferred spell would with the current settings,
 -- but buys nothing. say(text) reports what happened.
 function Confirm.Test(say)
-  local verdict = { tier = "defer", name = "Distracting Shot", cost = 600,
-    reason = "Pulls enemies off your tank. You only need it in groups and raids." }
+  local verdict = { tier = "defer", name = L["Distracting Shot"], cost = 600,
+    reason = L["Pulls enemies off your tank. You only need it in groups and raids."] }
   local key = "test:" .. tostring(time and time() or 0)
   local settings = alertSettings()
   if not addonEnabled() then
-    say("test: Don't Do That is turned off, so a purchase would go through with no warning.")
+    say(L["test: Don't Do That is turned off, so a purchase would go through with no warning."])
     return
   end
   if not promptsEnabled() then
     -- No question: the warning, then the purchase goes ahead.
     local fired = ns.Alert.Trigger(verdict, key, settings)
-    say(fired and "test: \"Ask before buying\" is off, so you'd get the warning and the purchase would go ahead."
-      or "test: \"Ask before buying\" and the warning sound are both off, so nothing would happen.")
+    say(fired and L["test: \"Ask before buying\" is off, so you'd get the warning and the purchase would go ahead."]
+      or L["test: \"Ask before buying\" and the warning sound are both off, so nothing would happen."])
     return
   end
   local soundOnly = {}
@@ -179,7 +180,7 @@ function Confirm.Test(say)
   soundOnly.alertBanner = false
   pcall(ns.Alert.Trigger, verdict, key, soundOnly)
   local shown = ns.ConfirmPopup.Ask(verdict,
-    function() say("test: you chose to buy it anyway (nothing was bought)") end,
-    function() say("test: you declined") end)
-  if not shown then say("test: this game version could not show the question") end
+    function() say(L["test: you chose to buy it anyway (nothing was bought)"]) end,
+    function() say(L["test: you declined"]) end)
+  if not shown then say(L["test: this game version could not show the question"]) end
 end

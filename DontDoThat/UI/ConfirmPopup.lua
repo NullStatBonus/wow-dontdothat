@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 local Popup = {}
 ns.ConfirmPopup = Popup
@@ -27,7 +28,7 @@ local function answer(kind, data)
   local ok, err = pcall(fn)
   if not ok then
     if ns.Log then ns.Log.Add("popup: the %s step failed: %s", kind, tostring(err)) end
-    say(("that didn't work (%s)."):format(tostring(err)))
+    say(L["that didn't work (%s)."]:format(tostring(err)))
   end
 end
 
@@ -36,8 +37,8 @@ local function register()
   if _G.StaticPopupDialogs[KEY] then return true end
   _G.StaticPopupDialogs[KEY] = {
     text = "%s",
-    button1 = _G.ACCEPT or "Accept",
-    button2 = _G.CANCEL or "Cancel",
+    button1 = _G.ACCEPT or L["Accept"],
+    button2 = _G.CANCEL or L["Cancel"],
     -- Called as (dialog, data, ...). Returning nothing lets the game close the dialog.
     OnAccept = function(_, data) answer("accept", data) end,
     OnCancel = function(_, data) answer("cancel", data) end,
@@ -75,5 +76,5 @@ function Popup.Ask(verdict, onConfirm, onCancel)
   local head = ns.UIHelpers.BannerText(verdict)
   local reason = verdict and verdict.reason or ""
   local earn = ns.EarnBack and ns.EarnBack.Line(verdict and verdict.cost)
-  return Popup.Show(head .. "\n\n" .. tostring(reason) .. (earn and ("\n\n" .. earn) or "") .. "\n\nBuy anyway?", onConfirm, onCancel)
+  return Popup.Show(head .. "\n\n" .. tostring(reason) .. (earn and ("\n\n" .. earn) or "") .. "\n\n" .. L["Buy anyway?"], onConfirm, onCancel)
 end

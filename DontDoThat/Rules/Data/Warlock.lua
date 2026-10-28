@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -35,15 +36,15 @@ ns.Rules.Load({
 
   specs = {
     AFFL = {
-      name = "Affliction", tree = 1, -- TalentTab order verified from the game tables
+      name = L["Affliction"], tree = 1, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, {}), situational = SHARED_SITUATIONAL },
     },
     DEMO = {
-      name = "Demonology", tree = 2, -- TalentTab order verified from the game tables
+      name = L["Demonology"], tree = 2, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, {}), situational = SHARED_SITUATIONAL },
     },
     DEST = {
-      name = "Destruction", tree = 3, -- TalentTab order verified from the game tables
+      name = L["Destruction"], tree = 3, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Shadowburn", "Conflagrate", "Rain of Fire" }), situational = SHARED_SITUATIONAL },
     },
   },
@@ -51,39 +52,39 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Bane of Doom"] = "A level 60 curse.",
-    ["Banish"] = "Rarely helps while leveling.",
-    ["Curse of Doom"] = "A level 60 curse.",
-    ["Curse of Idiocy"] = "A minor curse you can do without.",
-    ["Curse of Recklessness"] = "A minor curse you can do without.",
-    ["Curse of Shadow"] = "A debuff for groups and raids.",
-    ["Curse of Tongues"] = "Mostly useful against other players.",
-    ["Curse of Weakness"] = "A minor curse you can do without.",
-    ["Curse of the Elements"] = "A debuff for groups and raids.",
-    ["Detect Greater Invisibility"] = "Only shows hidden enemies.",
-    ["Detect Invisibility"] = "Only shows hidden enemies.",
-    ["Detect Lesser Invisibility"] = "Only shows hidden enemies.",
-    ["Drain Mana"] = "Mostly useful against other casters in PvP.",
-    ["Explorer Imp"] = "A scouting toy you can live without.",
-    ["Eye of Kilrogg"] = "A scouting tool you can live without.",
-    ["Fel Armor"] = "A later armor you can do without while leveling.",
-    ["Incinerate"] = "A level 40 nuke you can do without while leveling.",
-    ["Portal of Summoning"] = "Costs a Soul Shard reagent and is for groups.",
-    ["Ritual of Doom"] = "A group ritual for level 60.",
-    ["Searing Pain"] = "Shadow Bolt and your damage-over-time spells cover it.",
-    ["Sense Demons"] = "Only shows where demons are.",
-    ["Shadow Ward"] = "A short shield you rarely need while leveling.",
-    ["Soul Fire"] = "A slow nuke you can do without while leveling.",
-    ["Subjugate Demon"] = "Rarely worth the soul shard and the setup.",
-    ["Wrack"] = "Rarely helps while leveling.",
-    ["~Create Firestone"] = "A buff stone you can do without.",
-    ["~Create Spellstone"] = "A buff stone you can do without.",
+    ["Bane of Doom"] = L["A level 60 curse."],
+    ["Banish"] = L["Rarely helps while leveling."],
+    ["Curse of Doom"] = L["A level 60 curse."],
+    ["Curse of Idiocy"] = L["A minor curse you can do without."],
+    ["Curse of Recklessness"] = L["A minor curse you can do without."],
+    ["Curse of Shadow"] = L["A debuff for groups and raids."],
+    ["Curse of Tongues"] = L["Mostly useful against other players."],
+    ["Curse of Weakness"] = L["A minor curse you can do without."],
+    ["Curse of the Elements"] = L["A debuff for groups and raids."],
+    ["Detect Greater Invisibility"] = L["Only shows hidden enemies."],
+    ["Detect Invisibility"] = L["Only shows hidden enemies."],
+    ["Detect Lesser Invisibility"] = L["Only shows hidden enemies."],
+    ["Drain Mana"] = L["Mostly useful against other casters in PvP."],
+    ["Explorer Imp"] = L["A scouting toy you can live without."],
+    ["Eye of Kilrogg"] = L["A scouting tool you can live without."],
+    ["Fel Armor"] = L["A later armor you can do without while leveling."],
+    ["Incinerate"] = L["A level 40 nuke you can do without while leveling."],
+    ["Portal of Summoning"] = L["Costs a Soul Shard reagent and is for groups."],
+    ["Ritual of Doom"] = L["A group ritual for level 60."],
+    ["Searing Pain"] = L["Shadow Bolt and your damage-over-time spells cover it."],
+    ["Sense Demons"] = L["Only shows where demons are."],
+    ["Shadow Ward"] = L["A short shield you rarely need while leveling."],
+    ["Soul Fire"] = L["A slow nuke you can do without while leveling."],
+    ["Subjugate Demon"] = L["Rarely worth the soul shard and the setup."],
+    ["Wrack"] = L["Rarely helps while leveling."],
+    ["~Create Firestone"] = L["A buff stone you can do without."],
+    ["~Create Spellstone"] = L["A buff stone you can do without."],
   },
 
   tags = {

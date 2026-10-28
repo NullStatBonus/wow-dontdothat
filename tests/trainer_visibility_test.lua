@@ -2,6 +2,7 @@ package.path = "./tests/?.lua;" .. package.path
 local H = require("harness")
 
 local ns = {}
+H.loadSpellTables(ns)
 H.load("DontDoThat/Rules/Schema.lua", ns)
 H.load("DontDoThat/Rules/Engine.lua", ns)
 H.load("DontDoThat/Rules/Data/Hunter.lua", ns)
@@ -116,7 +117,7 @@ end
 local function hunterRows()
   local out = {}
   for i, name in ipairs({ "Serpent Sting", "Distracting Shot", "Scatter Shot", "Arcane Shot" }) do
-    out[i] = { index = i, name = name, action = { kind = "spell", name = name, family = name } }
+    out[i] = { index = i, name = name, action = { kind = "spell", name = name, familyId = H.fid(ns, "HUNTER", name) } }
   end
   return out
 end

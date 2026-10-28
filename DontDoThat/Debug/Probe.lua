@@ -58,13 +58,16 @@ local function describe(env, v)
 end
 
 -- Calls fn(...) and returns { ok=bool, err=string|nil, secret=bool, n=count, values={...} }.
+-- Keeps the count of results, so a nil in the middle (a header row with no rank text) does not cut the rest off.
+local function pack(...) return { n = select("#", ...), ... } end
+
 local function safeCall(env, fn, ...)
-  local packed = { pcall(fn, ...) }
+  local packed = pack(pcall(fn, ...))
   if not packed[1] then
     return { ok = false, err = tostring(packed[2]), values = {}, n = 0 }
   end
-  local res = { ok = true, values = {}, n = #packed - 1 }
-  for i = 2, #packed do
+  local res = { ok = true, values = {}, n = packed.n - 1 }
+  for i = 2, packed.n do
     res.values[i - 1] = packed[i]
     if isSecret(env, packed[i]) then res.secret = true end
   end
@@ -426,6 +429,318 @@ end
 -- tally look wrong.
 local SAMPLE_SPELLS = { "Arcane Shot", "Serpent Sting", "Distracting Shot", "Great Stamina", "Aspect of the Beast" }
 
+-- Answers two open questions about identifying spells without English text: does the trainer give a spell ID
+-- (directly, or through an item link), and can a talent be tied to a spell ID. Reports what the client returns
+-- for the first trainer row and the first talent so the shape is on record. Row shape on Forever is UNVERIFIED.
+function Probe.SpellIdentity(env)
+  env = env or _G
+  local lines = {}
+  local function shape(path, ...)
+    local first, err, vals = firstValue(env, path, ...)
+    if first == nil and err then return nil, err end
+    local parts = {}
+    for i = 1, math.max(#vals, 1) do parts[#parts + 1] = describe(env, vals[i]) end
+    return vals, table.concat(parts, ", ")
+  end
+  local count = firstValue(env, "GetNumTrainerServices")
+  if type(count) == "number" and count > 0 then
+    local vals, text = shape("GetTrainerServiceInfo", 1)
+    lines[#lines + 1] = "  GetTrainerServiceInfo(1) -> " .. tostring(text)
+    local numeric
+    for i, v in ipairs(vals or {}) do if type(v) == "number" and v > 100 then numeric = i end end
+    lines[#lines + 1] = numeric and ("  value %d looks like an ID"):format(numeric) or "  no ID-like value in the row"
+    for _, path in ipairs({ "GetTrainerServiceItemLink", "GetTrainerServiceSpellID", "C_TrainerUI.GetTrainerServiceInfo" }) do
+      local _, t = shape(path, 1)
+      lines[#lines + 1] = ("  %s(1) -> %s"):format(path, tostring(t))
+    end
+  else
+    lines[#lines + 1] = "  open a trainer and run the report again for the trainer row shape"
+  end
+  local _, talent = shape("GetTalentInfo", 1, 1)
+  lines[#lines + 1] = "  GetTalentInfo(1, 1) -> " .. tostring(talent)
+  for _, path in ipairs({ "GetTalentLink", "C_SpellBook.GetSpellInfo" }) do
+    local _, t = shape(path, 1, 1)
+    lines[#lines + 1] = ("  %s(1, 1) -> %s"):format(path, tostring(t))
+  end
+  return lines
+end
+
+-- Can the addon see a spell ID for a trainer row? Tries every way known to give one on an open trainer window and
+-- prints what each returns, so the answer comes from the real client. Read-only. Run through /ddt trainerids with
+-- the trainer open; the rows from the first few services are checked, and the line "RESULT" names what worked.
+local TRAINER_ID_CALLS = {
+  "GetTrainerServiceItemLink", "GetTrainerServiceSpellID", "GetTrainerServiceSkillLine", "GetTrainerServiceSpell",
+  "GetTrainerServiceSkillReq", "C_TrainerUI.GetTrainerServiceInfo", "C_Trainer.GetTrainerServiceInfo",
+  "C_Trainer.GetServiceInfo",
+}
+
+local function listValues(env, vals, n)
+  local parts = {}
+  for i = 1, math.max(n or 0, #vals, 1) do parts[#parts + 1] = describe(env, vals[i]) end
+  return table.concat(parts, ", ")
+end
+
+local function spellName(env, id)
+  local f = resolve(env, "GetSpellInfo")
+  if type(f) ~= "function" then return nil end
+  local ok, name = pcall(f, id)
+  return ok and type(name) == "string" and name or nil
+end
+
+-- Numbers in a list of values that name the row's spell, according to GetSpellInfo.
+local function matchingId(env, vals, rowName)
+  for i, v in ipairs(vals) do
+    if type(v) == "number" and v > 100 and spellName(env, v) == rowName then return v, i end
+  end
+end
+
+-- The other places the addon relies on a spell or talent ID, checked against the real client: talent hyperlinks,
+-- the riding spells, the profession apprentice spells, and which trainer window is open.
+function Probe.IdentityChecks(env)
+  env = env or _G
+  local lines = { "== identity checks ==" }
+  local function add(fmt, ...) lines[#lines + 1] = fmt:format(...) end
+  local class = ns.Adapter and ns.Adapter.ReadPlayer(env).class
+
+  -- Talents: does GetTalentLink exist, carry a talent ID the generated table knows, and resolve to a spell family?
+  local tabs = firstValue(env, "GetNumTalentTabs")
+  if type(tabs) ~= "number" then
+    add("talents: GetNumTalentTabs gave %s", tostring(tabs))
+  elseif type(resolve(env, "GetTalentLink")) ~= "function" then
+    add("talents: GetTalentLink is MISSING, so talents are read by name")
+  else
+    local total, ranked, linked, known, resolved = 0, 0, 0, 0, 0
+    local examples = {}
+    for tab = 1, tabs do
+      local n = firstValue(env, "GetNumTalents", tab)
+      for i = 1, type(n) == "number" and n or 0 do
+        total = total + 1
+        local rank = safeCall(env, resolve(env, "GetTalentInfo") or function() end, tab, i).values[5]
+        if type(rank) == "number" and rank > 0 then ranked = ranked + 1 end
+        local link = firstValue(env, "GetTalentLink", tab, i)
+        local id = type(link) == "string" and tonumber(link:match("Htalent:(%d+)")) or nil
+        if id then
+          linked = linked + 1
+          local spells = ns.TalentSpells and ns.TalentSpells[id]
+          if spells then known = known + 1 end
+          local family = spells and class and ns.SpellData and ns.SpellData.FamilyOfId(class, spells[1])
+          if family then resolved = resolved + 1 end
+          if #examples < 3 then
+            examples[#examples + 1] = ("  tab %d talent %d: link %s -> talent %d -> spells %s -> family %s"):format(
+              tab, i, tostring(link):gsub("|", "||"), id, spells and table.concat(spells, "/") or "unknown",
+              family and tostring(ns.SpellData.FamilyName(class, family)) or "none")
+          end
+        end
+      end
+    end
+    add("talents: %d total, %d with points; %d links carried a talent ID, %d known to the table, %d resolve to a spell family",
+      total, ranked, linked, known, resolved)
+    for _, l in ipairs(examples) do lines[#lines + 1] = l end
+  end
+
+  -- Riding: the IDs the addon watches, what the client calls them, and what it says about the spellbook.
+  local known = ns.Adapter and ns.Adapter.IsSpellKnown
+  for _, id in ipairs({ 33388, 33389, 33391, 33392, 824, 825, 826, 828, 10861, 18995, 10906, 10907, 13819, 1279399, 5784, 23214, 23161 }) do
+    add("riding spell %d: client name %s, known %s", id, tostring(spellName(env, id)),
+      tostring(known and known(env, id)))
+  end
+  -- Era's riding skill lines: the rank is how level 60 riding shows.
+  local skills = {}
+  local nLines = firstValue(env, "GetNumSkillLines")
+  for i = 1, type(nLines) == "number" and nLines or 0 do
+    local r = safeCall(env, resolve(env, "GetSkillLineInfo") or function() end, i)
+    local sname, header, rank, maxRank = r.values[1], r.values[2], r.values[4], r.values[7]
+    if type(sname) == "string" and not header then
+      for id, english in pairs(ns.Adapter and ns.Adapter.EraRidingSkills or {}) do
+        if sname == english or sname == spellName(env, id) then
+          skills[#skills + 1] = ("riding skill line %q (racial spell %d): rank %s / max %s"):format(sname, id, tostring(rank), tostring(maxRank))
+        end
+      end
+    end
+  end
+  table.sort(skills)
+  if #skills == 0 then skills[1] = "no racial riding skill line found in the skill list" end
+  for _, l in ipairs(skills) do lines[#lines + 1] = l end
+  add("ReadRiding says: %s", ns.Adapter and (function() local r = ns.Adapter.ReadRiding(env); return ("apprentice %s, journeyman %s"):format(tostring(r.apprentice), tostring(r.journeyman)) end)() or "adapter missing")
+  for _, name in ipairs({ "Apprentice Riding", "Journeyman Riding" }) do
+    local r = safeCall(env, resolve(env, "GetSpellInfo") or function() end, name)
+    add("GetSpellInfo(%q) -> %s", name, r.ok and listValues(env, r.values, r.n) or "ERROR")
+  end
+
+  -- Professions: the apprentice spell the addon expects for each.
+  if ns.Rules and ns.Rules.ProfessionNames then
+    local ids = {}
+    for id in pairs(ns.Rules.ProfessionNames()) do ids[#ids + 1] = id end
+    table.sort(ids)
+    for _, id in ipairs(ids) do
+      add("profession %d (%s): client name %s, known %s", id, ns.Rules.ProfessionNames()[id], tostring(spellName(env, id)),
+        tostring(known and known(env, id)))
+    end
+  end
+
+  -- Which trainer window is open (the pet trainer may use the craft window).
+  for _, frame in ipairs({ "ClassTrainerFrame", "CraftFrame", "TradeSkillFrame" }) do
+    local f = env[frame]
+    local shown = type(f) == "table" and type(f.IsShown) == "function" and select(2, pcall(f.IsShown, f))
+    add("%s: %s", frame, type(f) == "table" and ("exists, " .. (shown and "SHOWN" or "hidden")) or "missing")
+  end
+  local crafts = firstValue(env, "GetNumCrafts")
+  if type(crafts) == "number" and crafts > 0 then
+    local tip = env.DontDoThatProbeTip
+    for i = 1, math.min(crafts, 3) do
+      local r = safeCall(env, resolve(env, "GetCraftInfo"), i)
+      local line = ("craft %d: GetCraftInfo -> %s"):format(i, listValues(env, r.values, r.n))
+      if tip and type(tip.SetCraftSpell) == "function" and pcall(tip.SetOwner, tip, env.UIParent, "ANCHOR_NONE")
+        and pcall(tip.SetCraftSpell, tip, i) then
+        local g = safeCall(env, tip.GetSpell, tip)
+        line = line .. ("; tooltip:GetSpell -> %s"):format(listValues(env, g.values, g.n))
+        pcall(tip.Hide, tip)
+      end
+      lines[#lines + 1] = line
+    end
+  end
+  return lines
+end
+
+function Probe.TrainerIds(env, opts)
+  env = env or _G
+  opts = opts or {}
+  local lines = {}
+  local function add(fmt, ...) lines[#lines + 1] = fmt:format(...) end
+  local count = firstValue(env, "GetNumTrainerServices")
+  if type(count) ~= "number" or count == 0 then
+    return "open a trainer window first, then run this again (GetNumTrainerServices gave " .. tostring(count) .. ")"
+      .. "\n\n" .. table.concat(Probe.IdentityChecks(env), "\n")
+  end
+
+  local tip
+  if type(env.CreateFrame) == "function" then
+    if type(env.DontDoThatProbeTip) == "table" then
+      tip = env.DontDoThatProbeTip
+    else
+      local ok, frame = pcall(env.CreateFrame, "GameTooltip", "DontDoThatProbeTip", env.UIParent, "GameTooltipTemplate")
+      if ok and frame then tip = frame end
+    end
+  end
+  add("trainer services: %d; private tooltip: %s; C_TooltipInfo: %s", count, tip and "created" or "NOT available",
+    type(resolve(env, "C_TooltipInfo.GetTrainerService")) == "function" and "has GetTrainerService" or "no GetTrainerService")
+
+  local worked, rows = {}, 0
+  for i = 1, count do
+    local name, _, vals = firstValue(env, "GetTrainerServiceInfo", i)
+    if name ~= nil and vals[3] ~= "header" and rows < (opts.rows or 8) then
+      rows = rows + 1
+      local res = safeCall(env, resolve(env, "GetTrainerServiceInfo"), i)
+      add("")
+      add("row %d: %s", i, listValues(env, res.values, res.n))
+      local id, at = matchingId(env, res.values, name)
+      if id then add("  GetTrainerServiceInfo value %d = %d MATCHES the row", at, id); worked["GetTrainerServiceInfo"] = true end
+
+      for _, path in ipairs(TRAINER_ID_CALLS) do
+        local f = resolve(env, path)
+        if type(f) == "function" then
+          local r = safeCall(env, f, i)
+          add("  %s(%d) -> %s", path, i, r.ok and listValues(env, r.values, r.n) or ("ERROR " .. tostring(r.err)))
+          local link = r.ok and r.values[1]
+          local fromLink = type(link) == "string" and tonumber(link:match("[Hh]%a+:(%d+)"))
+          local hit = matchingId(env, r.values, name) or (fromLink and spellName(env, fromLink) == name and fromLink)
+          if hit then add("    %s gives %d and it MATCHES the row", path, hit); worked[path] = true end
+        end
+      end
+
+      if tip then
+        pcall(tip.SetOwner, tip, env.UIParent, "ANCHOR_NONE")
+        local okSet, errSet = pcall(tip.SetTrainerService, tip, i)
+        if not okSet then
+          add("  tooltip:SetTrainerService(%d) -> ERROR %s", i, tostring(errSet))
+        else
+          for _, method in ipairs({ "GetSpell", "GetItem" }) do
+            if type(tip[method]) == "function" then
+              local r = safeCall(env, tip[method], tip)
+              add("  tooltip:%s() -> %s", method, r.ok and listValues(env, r.values, r.n) or ("ERROR " .. tostring(r.err)))
+              local hit = matchingId(env, r.values, name)
+              if hit then add("    tooltip:%s gives %d and it MATCHES the row", method, hit); worked["tooltip:" .. method] = true end
+            else
+              add("  tooltip:%s is missing", method)
+            end
+          end
+          local title = env.DontDoThatProbeTipTextLeft1
+          if type(title) == "table" and type(title.GetText) == "function" then
+            local okT, text = pcall(title.GetText, title)
+            add("  tooltip first line -> %s", okT and tostring(text) or "ERROR")
+          end
+        end
+        pcall(tip.Hide, tip)
+      end
+
+      local info = resolve(env, "C_TooltipInfo.GetTrainerService")
+      if type(info) == "function" then
+        local r = safeCall(env, info, i)
+        local data = r.ok and r.values[1]
+        if type(data) == "table" then
+          local keys = {}
+          for k, v in pairs(data) do if type(v) ~= "table" and type(v) ~= "function" then keys[#keys + 1] = tostring(k) .. "=" .. tostring(v) end end
+          table.sort(keys)
+          add("  C_TooltipInfo.GetTrainerService(%d) -> %s", i, table.concat(keys, " "))
+          for _, key in ipairs({ "id", "spellID", "spellId" }) do
+            if type(data[key]) == "number" and spellName(env, data[key]) == name then
+              add("    C_TooltipInfo field %s = %d MATCHES the row", key, data[key]); worked["C_TooltipInfo." .. key] = true
+            end
+          end
+        else
+          add("  C_TooltipInfo.GetTrainerService(%d) -> %s", i, r.ok and tostring(data) or ("ERROR " .. tostring(r.err)))
+        end
+      end
+    end
+  end
+
+  -- The row buttons are real frames: any field on one that holds the spell ID would also do.
+  local button = env.ClassTrainerSkill1
+  if type(button) == "table" then
+    local keys = {}
+    local okPairs = pcall(function()
+      for k, v in pairs(button) do
+        if type(v) == "number" or type(v) == "string" then keys[#keys + 1] = tostring(k) .. "=" .. tostring(v) end
+      end
+    end)
+    table.sort(keys)
+    add("")
+    add("ClassTrainerSkill1 plain fields: %s", okPairs and (#keys > 0 and table.concat(keys, " ") or "none") or "unreadable")
+  end
+
+  add("")
+  for _, l in ipairs(Probe.IdentityChecks(env)) do lines[#lines + 1] = l end
+
+  add("")
+  local names = {}
+  for k in pairs(worked) do names[#names + 1] = k end
+  table.sort(names)
+  if #names > 0 then
+    add("RESULT: a spell ID that matches the row is available through: %s", table.concat(names, ", "))
+  else
+    add("RESULT: no method gave an ID that matches the row's spell")
+  end
+  return table.concat(lines, "\n")
+end
+
+-- What the game's own tooltip holds for whatever the mouse is over: hover a trainer row during the countdown.
+function Probe.HoveredSpell(env)
+  env = env or _G
+  local tip = env.GameTooltip
+  if type(tip) ~= "table" then return "GameTooltip is not available" end
+  local out = {}
+  for _, method in ipairs({ "GetSpell", "GetItem", "GetUnit" }) do
+    if type(tip[method]) == "function" then
+      local r = safeCall(env, tip[method], tip)
+      out[#out + 1] = ("GameTooltip:%s() -> %s"):format(method, r.ok and listValues(env, r.values, r.n) or ("ERROR " .. tostring(r.err)))
+    end
+  end
+  local owner = safeCall(env, tip.GetOwner or function() end, tip)
+  local o = owner.ok and owner.values[1]
+  out[#out + 1] = "tooltip owner: " .. (type(o) == "table" and type(o.GetName) == "function" and tostring(o:GetName()) or "none")
+  return table.concat(out, "\n")
+end
+
 function Probe.SpellDataCheck(env)
   env = env or _G
   if not (ns.SpellData and ns.SpellTables and ns.Adapter) then return { "  spell data not loaded" } end
@@ -453,7 +768,7 @@ function Probe.SpellDataCheck(env)
       local flags = {}
       for _, id in ipairs(ids) do flags[#flags + 1] = ("%d=%s"):format(id, tostring(ns.Adapter.IsSpellKnown(env, id))) end
       lines[#lines + 1] = ("  %s%s level %s: known [%s], icon %s"):format(name, row.rank and (" rank " .. row.rank) or "",
-        tostring(row.level), table.concat(flags, " "), tostring((ns.SpellData.IconFor(name, env))))
+        tostring(row.level), table.concat(flags, " "), tostring((ns.SpellData.IconFor(row.id, env))))
     else
       lines[#lines + 1] = ("  %s: not in the bundled tables"):format(name)
     end
@@ -513,6 +828,7 @@ function Probe.Run(env, saved)
     return lines
   end)
   guarded("Skill lines", function() return Probe.SkillLines(env) end)
+  guarded("Spell identity", function() return Probe.SpellIdentity(env) end)
   guarded("Spell data check", function() return Probe.SpellDataCheck(env) end)
   guarded("Observations", function() return Probe.ObservationLines(saved) end)
   if ns.Capture then

@@ -1,5 +1,6 @@
 package.path = "./tests/?.lua;" .. package.path
 local T = require("classtest")
+local H = require("harness")
 
 local s = T.new("SHAMAN", "Shaman")
 
@@ -46,11 +47,11 @@ test("shaman: the redundant totems are defer-low-value", function()
 end)
 
 test("shaman: ranks that add nothing are skipped, the rest are not", function()
-  eq(s.data.skipRanks["Frost Shock"], { 2, 3, 4 })
-  eq(s.data.skipRanks["Healing Wave"], { 10 })
-  eq(s.data.skipRanks["Rockbiter Weapon"], { 5, 6, 7 })
-  eq(s.data.skipRanks["Strength of Earth Totem"], { 5 })
-  eq(s.data.skipRanks["Lightning Bolt"], nil)
+  eq(s.data.skipRanks[H.fid(s.ns, "SHAMAN", "Frost Shock")], { 2, 3, 4 })
+  eq(s.data.skipRanks[H.fid(s.ns, "SHAMAN", "Healing Wave")], { 10 })
+  eq(s.data.skipRanks[H.fid(s.ns, "SHAMAN", "Rockbiter Weapon")], { 5, 6, 7 })
+  eq(s.data.skipRanks[H.fid(s.ns, "SHAMAN", "Strength of Earth Totem")], { 5 })
+  eq(s.data.skipRanks[H.fid(s.ns, "SHAMAN", "Lightning Bolt")], nil)
   for name, ranks in pairs(s.data.skipRanks) do
     truthy(ranks[1] ~= 1, name .. " rank 1 is never skipped")
   end

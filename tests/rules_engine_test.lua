@@ -5,6 +5,9 @@ local ns = {}
 H.load("DontDoThat/Rules/Schema.lua", ns)
 H.load("DontDoThat/Rules/Engine.lua", ns)
 
+-- Synthetic data: the names stand in for family IDs.
+local same = H.sameKeys
+
 local function load()
   ns.Rules.Reset()
   ns.Rules.Load({
@@ -17,7 +20,7 @@ local function load()
     tags = { Pvper = { "PvP" }, Raider = { "Raid" }, Kept = { "PvP" }, PvpRanked = { "PvP" } },
     overrides = { Kept = "keep", Forced = "defer" },
     ranks = { Plain = { { rank = 1, unlockLevel = 4 }, { rank = 2, unlockLevel = 10, cost = 250 } } },
-  })
+  }, same)
 end
 load()
 
@@ -26,7 +29,7 @@ local function profile(specs, state)
     milestone = { current = 40, state = state or "active" } }
 end
 local function spell(name, extra)
-  local a = { kind = "spell", name = name, family = name }
+  local a = { kind = "spell", name = name, familyId = name }
   for k, v in pairs(extra or {}) do a[k] = v end
   return a
 end

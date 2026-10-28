@@ -1,0 +1,158 @@
+DRUID	Barkskin Effect (DND)
+DRUID	Faerie Fire (Feral)
+DRUID	Feral Charge
+DRUID	Gift of Nature
+DRUID	Insect Swarm
+DRUID	Leader of the Pack
+DRUID	Mangle
+DRUID	Moonkin Form
+DRUID	Nature's Grasp
+DRUID	S03 - Tuning and Overrides Passive - Druid
+DRUID	Savage Roar
+DRUID	Thrash (Cat)
+DRUID	Tranquil Spirit
+HUNTER	Aimed Shot
+HUNTER	Auto Shot
+HUNTER	Bestial Wrath
+HUNTER	Concussive Shot
+HUNTER	Counterattack
+HUNTER	Deterrence
+HUNTER	Enchanted Flare
+HUNTER	Intimidation
+HUNTER	Scatter Shot
+HUNTER	Summon Hawk
+HUNTER	Track Beasts
+HUNTER	Tranquilizing Shot
+HUNTER	Trueshot Aura
+HUNTER	Wyvern Sting
+MAGE	Arcane Resilience
+MAGE	Arcane Subtlety
+MAGE	Blast Wave
+MAGE	Burning Soul
+MAGE	Cold Snap
+MAGE	Combustion
+MAGE	Critical Mass
+MAGE	Detect Magic
+MAGE	Elemental Precision
+MAGE	Fire Power
+MAGE	Flame Throwing
+MAGE	Frost Channeling
+MAGE	Frost Warding
+MAGE	Frostbite
+MAGE	Ice Barrier
+MAGE	Ice Block
+MAGE	Ice Shards
+MAGE	Impact
+MAGE	Improved Blizzard
+MAGE	Improved Cone of Cold
+MAGE	Improved Fire Blast
+MAGE	Improved Fireball
+MAGE	Improved Flamestrike
+MAGE	Improved Frost Nova
+MAGE	Improved Frostbolt
+MAGE	Improved Scorch
+MAGE	Magic Absorption
+MAGE	Master of Elements
+MAGE	Permafrost
+MAGE	Piercing Ice
+MAGE	Pyroblast
+MAGE	Shatter
+MAGE	Winter's Chill
+PALADIN	Avenger's Shield
+PALADIN	Beacon of Light
+PALADIN	Blessing of Kings
+PALADIN	Blessing of Salvation
+PALADIN	Blessing of Sanctuary
+PALADIN	Consecration
+PALADIN	Crusader Strike
+PALADIN	Divine Favor
+PALADIN	Divine Steed
+PALADIN	Greater Blessing of Salvation
+PALADIN	Greater Blessing of Sanctuary
+PALADIN	Hand of Reckoning
+PALADIN	Holy Shield
+PALADIN	Holy Shock
+PALADIN	Repentance
+PALADIN	Righteous Vengeance
+PALADIN	Sanctity Aura
+PALADIN	Seal of Command
+PRIEST	Blackout
+PRIEST	Blessed Recovery
+PRIEST	Darkness
+PRIEST	Divine Spirit
+PRIEST	Holy Nova
+PRIEST	Holy Reach
+PRIEST	Improved Fade
+PRIEST	Improved Mind Blast
+PRIEST	Improved Psychic Scream
+PRIEST	Improved Shadow Word: Pain
+PRIEST	Improved Vampiric Embrace
+PRIEST	Lightwell
+PRIEST	Martyrdom
+PRIEST	Mind Flay
+PRIEST	Power Infusion
+PRIEST	Shadow Affinity
+PRIEST	Shadow Focus
+PRIEST	Shadow Reach
+PRIEST	Shadow Weaving
+PRIEST	Shadowform
+PRIEST	Silence
+PRIEST	Spell Warding
+PRIEST	Spirit Tap
+PRIEST	Vampiric Embrace
+ROGUE	Envenom
+ROGUE	Ghostly Strike
+ROGUE	Hemorrhage
+SHAMAN	Ancestral Healing
+SHAMAN	Elemental Devastation
+SHAMAN	Elemental Reach
+SHAMAN	Elemental Warding
+SHAMAN	Elemental Weapons
+SHAMAN	Eye of the Storm
+SHAMAN	Fire Nova Totem
+SHAMAN	Focused Casting
+SHAMAN	Healing Grace
+SHAMAN	Healing Way
+SHAMAN	Improved Weapon Totems
+SHAMAN	Mana Tide Totem
+SHAMAN	Natural Grace
+SHAMAN	Shamanistic Rage
+SHAMAN	Storm Reach
+SHAMAN	Stormstrike
+SHAMAN	Weapon Mastery
+WARLOCK	Conflagrate
+WARLOCK	Create Firestone (Greater)
+WARLOCK	Create Firestone (Lesser)
+WARLOCK	Create Firestone (Major)
+WARLOCK	Create Healthstone (Greater)
+WARLOCK	Create Healthstone (Lesser)
+WARLOCK	Create Healthstone (Major)
+WARLOCK	Create Healthstone (Minor)
+WARLOCK	Create Soulstone (Greater)
+WARLOCK	Create Soulstone (Lesser)
+WARLOCK	Create Soulstone (Major)
+WARLOCK	Create Soulstone (Minor)
+WARLOCK	Create Spellstone (Greater)
+WARLOCK	Create Spellstone (Major)
+WARLOCK	Curse of Agony
+WARLOCK	Curse of Doom
+WARLOCK	Curse of Doom Effect
+WARLOCK	Curse of Shadow
+WARLOCK	Curse of the Elements
+WARLOCK	Dark Pact
+WARLOCK	Detect Greater Invisibility
+WARLOCK	Detect Lesser Invisibility
+WARLOCK	Haunt
+WARLOCK	Master Demonologist
+WARLOCK	Shadowburn
+WARLOCK	Siphon Life
+WARLOCK	Soul Harvesting
+WARLOCK	Summon Dreadsteed
+WARLOCK	Summon Felsteed
+WARRIOR	Bloodthirst
+WARRIOR	Dual Wield Specialization
+WARRIOR	Intervene
+WARRIOR	Mortal Strike
+WARRIOR	Shield Slam
+WARRIOR	Sweeping Strikes
+WARRIOR	Tactical Mastery

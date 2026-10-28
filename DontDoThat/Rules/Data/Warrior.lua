@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -31,15 +32,15 @@ ns.Rules.Load({
 
   specs = {
     ARMS = {
-      name = "Arms", tree = 1, -- TalentTab order verified from the game tables
+      name = L["Arms"], tree = 1, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Mortal Strike", "Sweeping Strikes" }), situational = SHARED_SITUATIONAL },
     },
     FURY = {
-      name = "Fury", tree = 2, -- TalentTab order verified from the game tables
+      name = L["Fury"], tree = 2, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Bloodthirst", "Whirlwind", "Berserker Stance", "Cleave" }), situational = SHARED_SITUATIONAL },
     },
     PROT = {
-      name = "Protection", tree = 3, -- TalentTab order verified from the game tables
+      name = L["Protection"], tree = 3, -- TalentTab order verified from the game tables
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Revenge", "Taunt", "Shield Block", "Defensive Stance", "Shield Slam", "Demoralizing Shout" }), situational = SHARED_SITUATIONAL },
     },
   },
@@ -47,17 +48,17 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Challenging Shout"] = "A group taunt for tanking.",
-    ["Disarm"] = "Mostly useful against other players.",
-    ["Intimidating Shout"] = "Mostly useful against other players.",
-    ["Slam"] = "Slows your swings down. Heroic Strike does the job.",
-    ["Thunder Clap"] = "Costs a lot of rage for little damage while soloing.",
+    ["Challenging Shout"] = L["A group taunt for tanking."],
+    ["Disarm"] = L["Mostly useful against other players."],
+    ["Intimidating Shout"] = L["Mostly useful against other players."],
+    ["Slam"] = L["Slows your swings down. Heroic Strike does the job."],
+    ["Thunder Clap"] = L["Costs a lot of rage for little damage while soloing."],
   },
 
   tags = {

@@ -1,20 +1,28 @@
 ## Interface: 16001
 ## Title: Don't Do That
 ## Notes: Warns you away from unnecessary gold spending until you have bought your level 40 and level 60 mounts.
-## Version: 0.9.0
+## Version: 0.10.0
 ## Author: NullStatBonus
 ## X-Curse-Project-ID: 1766476
 ## X-Wago-ID: mKOa0DNx
 ## SavedVariables: DontDoThatDB
 ## Category: Interface Enhancements
 
-# Load order: libraries, Core, Rules (pure Lua), Model, Data, UI, Debug, then slash commands.
+# Load order: libraries, Core, spell tables (rule data resolves its names against them), Rules (pure Lua), Model, Data, UI, Debug, then slash commands.
 # Later task groups append their files below, keeping that order.
 
 embeds.xml
 
+Locales\enUS.lua
+
 Core\Init.lua
 Core\Addon.lua
+
+Data\SpellData.lua
+Data\RuleSpells.lua
+Data\TalentData.lua
+Data\RuleItems.lua
+Model\SpellData.lua
 
 Rules\Schema.lua
 Rules\Engine.lua
@@ -35,7 +43,6 @@ Model\Settings.lua
 Model\PlayerProfile.lua
 Model\Ledger.lua
 Model\TrainerVisibility.lua
-Model\SpellData.lua
 Model\Savings.lua
 Model\Icons.lua
 Model\SoundList.lua
@@ -46,7 +53,6 @@ Model\ItemWarning.lua
 
 Data\Sounds.lua
 Data\GoldRates.lua
-Data\SpellData.lua
 Data\TrainerPrices.lua
 
 UI\Helpers.lua

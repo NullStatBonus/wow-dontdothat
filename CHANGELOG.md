@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.0
+
+- Works on game clients in any language, recognising spells, talents, trainers, riding and grimoires by ID, and the addon's text can now be translated.
+
 ## 0.9.0
 
 - Every class page lists all its spells by spec and reason, and Progress shows your projected savings.

@@ -2,7 +2,7 @@ package.path = "./tests/?.lua;" .. package.path
 local H = require("harness")
 
 local ns = {}
-for _, f in ipairs({ "Rules/Schema.lua", "Rules/Engine.lua", "Data/SpellData.lua", "Data/TrainerPrices.lua", "Model/SpellData.lua",
+for _, f in ipairs({ "Data/SpellData.lua", "Data/RuleSpells.lua", "Data/TalentData.lua", "Model/SpellData.lua", "Rules/Schema.lua", "Rules/Engine.lua", "Data/TrainerPrices.lua", "Model/SpellData.lua",
   "Model/Ledger.lua", "Model/Savings.lua", "Model/Settings.lua", "Model/Milestones.lua", "UI/Helpers.lua", "Data/Sounds.lua" }) do
   H.load("DontDoThat/" .. f, ns)
 end
@@ -61,13 +61,13 @@ test("savings: switching off a tag or an ability lowers the total", function()
   local base = ns.Savings.Compute(profile("HUNTER", { "BM" }), 60)
   local noRaid = ns.Savings.Compute(profile("HUNTER", { "BM" }, { offTags = { RaidGroup = true } }), 60)
   truthy(noRaid.total < base.total)
-  local noOne = ns.Savings.Compute(profile("HUNTER", { "BM" }, { offAbilities = { ["Distracting Shot"] = true } }), 60)
+  local noOne = ns.Savings.Compute(profile("HUNTER", { "BM" }, { offAbilities = { [H.fid(ns, "HUNTER", "Distracting Shot")] = true } }), 60)
   truthy(noOne.total < base.total)
 end)
 
 test("savings: a price seen at the player's trainer replaces the listed one", function()
   local base = ns.Savings.Compute(profile("HUNTER", { "BM" }), 60)
-  local cache = { [ns.Ledger.CostKey("Distracting Shot", 1)] = 999999 }
+  local cache = { [ns.Ledger.CostKey(H.fid(ns, "HUNTER", "Distracting Shot"), 1)] = 999999 }
   local r = ns.Savings.Compute(profile("HUNTER", { "BM" }), 60, cache)
   truthy(r.total > base.total)
 end)
@@ -124,8 +124,9 @@ test("switch worth: a rule kind, a tag and an ability are each worth their savin
   local skip = ns.Savings.Worth(p, stop, nil, "offKinds", "skipRank")
   eq(skip, ns.Savings.Compute(p, stop).skip, "skipped ranks are worth exactly what they save")
   truthy(ns.Savings.Worth(p, stop, nil, "offTags", "RaidGroup") > 0)
-  local byName = ns.Savings.ByAbility(p, stop)
-  truthy(byName["Distracting Shot"] and byName["Distracting Shot"] > 0)
+  local byFamily = ns.Savings.ByAbility(p, stop)
+  local shot = H.fid(ns, "HUNTER", "Distracting Shot")
+  truthy(byFamily[shot] and byFamily[shot] > 0)
   eq(ns.Savings.Worth(p, stop, nil, "offKinds", "nothing"), 0)
 end)
 
@@ -144,12 +145,12 @@ test("switch worth: switches show their gold, and a switched-off ability still s
   end
   local line = find(hunter.wait)
   truthy(line and desc(line):find("Worth about", 1, true), "abilities show gold")
-  ns.db.profile.ruleOff = { abilities = { HUNTER = { ["Distracting Shot"] = true } } }
+  ns.db.profile.ruleOff = { abilities = { HUNTER = { [H.fid(ns, "HUNTER", "Distracting Shot")] = true } } }
   truthy(desc(line):find("Worth about", 1, true), "still shows what it is worth when switched off")
 end)
 
 test("savings: a rank-less row never takes another spell's seen price, and a missing price is flagged", function()
-  local r = ns.Savings.Compute(profile("PALADIN", nil), 60, { [ns.Ledger.CostKey("Holy Light", nil)] = 5 })
+  local r = ns.Savings.Compute(profile("PALADIN", nil), 60, { [ns.Ledger.CostKey(H.fid(ns, "PALADIN", "Holy Light"), nil)] = 5 })
   local base = ns.Savings.Compute(profile("PALADIN", nil), 60)
   eq(r.total, base.total, "a nil-rank cache key changes nothing")
 end)
@@ -160,6 +161,12 @@ test("switch worth: a price learned at a trainer refreshes the shown value", fun
   local function desc(w) local d = w.desc; if type(d) == "function" then d = d() end; return d end
   local tuning = ns.Options.Tuning().args
   local before = desc(tuning.kind_skipRank)
-  ns.db.char.costCache[ns.Ledger.CostKey("Mend Pet", 6)] = 9999999
+  ns.db.char.costCache[ns.Ledger.CostKey(H.fid(ns, "HUNTER", "Mend Pet"), 6)] = 9999999
   truthy(desc(tuning.kind_skipRank) ~= before, "the value follows the newly seen price")
+end)
+
+test("savings: a price saved under an English name by an earlier version is ignored", function()
+  local base = ns.Savings.Compute(profile("HUNTER", { "BM" }), 60)
+  local r = ns.Savings.Compute(profile("HUNTER", { "BM" }), 60, { ["Distracting Shot1"] = 999999, ["Distracting Shot#1"] = 999999 })
+  eq(r.total, base.total)
 end)

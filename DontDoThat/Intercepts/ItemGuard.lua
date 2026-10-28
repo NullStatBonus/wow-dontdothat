@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The shared flow for vendor and auction purchases: classify the item, decide if it is flagged, then alert,
 -- ask, and either run `proceed` (the real purchase) or drop it. Anything unexpected lets the purchase through,
@@ -20,7 +21,7 @@ function Guard.Disable(reason)
   if ns.Log then ns.Log.Add("items: prompts switched off for the session (%s)", tostring(reason)) end
   if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
     pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME,
-      "Don't Do That: this game version won't let it confirm item purchases, so it will only warn you.")
+      L["Don't Do That: this game version won't let it confirm item purchases, so it will only warn you."])
   end
 end
 
@@ -58,10 +59,11 @@ trace = function(entry)
 end
 Guard.Trace = trace
 
--- Items some classes are warned about by name: a Warlock's demon grimoires, for example. The class's rule data
--- lists the item families to keep; every other "Grimoire of <family>" is flagged at a vendor.
-local function itemName(link)
-  return type(link) == "string" and link:match("%[(.-)%]") or nil
+-- Items some classes are warned about by family: a Warlock's demon grimoires, for example. The class's rule data
+-- lists the item families to keep; every other grimoire is flagged at a vendor. An item is recognised by the item
+-- ID in its link ("|Hitem:1224:..."), which Data/RuleItems.lua maps to a family, so the item's name never matters.
+local function itemId(link)
+  return type(link) == "string" and tonumber(link:match("|Hitem:(%d+)")) or nil
 end
 
 local function classGrimoires()
@@ -73,8 +75,9 @@ end
 -- The grimoire family named by the link, when this class flags grimoires and this one is not kept.
 local function flaggedGrimoire(link)
   local rule = classGrimoires()
-  local name = rule and itemName(link)
-  local family = name and (name:match("^Grimoire of (.-)%s*%(") or name:match("^Grimoire of (.+)$"))
+  local id = rule and itemId(link)
+  local player = rule and ns.Adapter.ReadPlayer(_G)
+  local family = id and player and ns.RuleItems and ns.RuleItems[player.class] and ns.RuleItems[player.class][id]
   if not family then return nil end
   for _, kept in ipairs(rule.keep or {}) do
     if kept == family then return nil end
@@ -92,7 +95,7 @@ function Guard.Inspect(surface, link, total)
   if surface == "vendor" then
     local family, reason = flaggedGrimoire(link)
     if family then
-      info.category, info.reason, info.mode = "grimoires", reason, "class rule"
+      info.category, info.reason, info.mode = "grimoires", reason, L["class rule"]
       if total >= (p.minPrice or 0) then info.flagged = true else info.why = "below minimum price" end
       return info
     end
@@ -145,7 +148,7 @@ function Guard.Run(surface, name, link, total, proceed)
   end
 
   local category = info.category
-  local verdict = { tier = "defer", name = name or "This item", cost = total,
+  local verdict = { tier = "defer", name = name or L["This item"], cost = total,
     reason = info.reason or ns.ItemWarning.Reason(category) }
   local key = surface .. ":" .. tostring(name)
   local settings = alertSettings()

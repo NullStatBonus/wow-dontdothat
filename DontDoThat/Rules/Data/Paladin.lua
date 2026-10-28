@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Source status: every rotation is a judgement call from a short class brief, not a verified guide, so each
 -- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables
@@ -32,15 +33,15 @@ ns.Rules.Load({
 
   specs = {
     HOLY = {
-      name = "Holy", tree = 1, -- TalentTab order verified from the game tables (Holy, Protection, Retribution)
+      name = L["Holy"], tree = 1, -- TalentTab order verified from the game tables (Holy, Protection, Retribution)
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Holy Shock" }), situational = SHARED_SITUATIONAL },
     },
     PROT = {
-      name = "Protection", tree = 2,
+      name = L["Protection"], tree = 2,
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Righteous Fury", "Holy Shield" }), situational = SHARED_SITUATIONAL },
     },
     RET = {
-      name = "Retribution", tree = 3,
+      name = L["Retribution"], tree = 3,
       rotation = { needsReview = true, core = with(SHARED_CORE, { "Sanctity Aura" }), situational = SHARED_SITUATIONAL },
     },
   },
@@ -52,40 +53,40 @@ ns.Rules.Load({
   tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },
 
   tagReasons = {
-    PvP = "Mostly useful against other players.",
-    RaidGroup = "Only needed in groups and raids.",
-    LowValue = "Rarely helps while leveling.",
-    Endgame = "You won't need this until level 60.",
+    PvP = L["Mostly useful against other players."],
+    RaidGroup = L["Only needed in groups and raids."],
+    LowValue = L["Rarely helps while leveling."],
+    Endgame = L["You won't need this until level 60."],
   },
   why = {
-    ["Lay on Hands"] = "Spends your whole mana bar to heal someone else. A group spell.",
-    ["Blessing of Protection"] = "Shields a friend, mostly in PvP and groups.",
-    ["Blessing of Freedom"] = "Frees a friend from roots and slows, mostly in PvP.",
-    ["Blessing of Sacrifice"] = "Takes damage meant for a party member. Only useful in groups.",
-    ["Blessing of Light"] = "Boosts healing on one party member. Only useful in groups.",
-    ["Blessing of Salvation"] = "Lowers a party member's threat. Not needed solo.",
-    ["Salvation"] = "Lowers a party member's threat. Not needed solo.",
-    ["Mass Salvation"] = "Lowers threat for a whole group. Not needed while leveling.",
-    ["Concentration Aura"] = "Keeps group casters from being interrupted. Not needed solo.",
-    ["Divine Intervention"] = "Sacrifices you to save a group member.",
-    ["Seal of Justice"] = "Mostly useful in PvP.",
-    ["Repentance"] = "Crowd control for PvP and groups.",
-    ["Turn Undead"] = "Rarely helps while leveling.",
-    ["Exorcism"] = "Only works on undead and demons.",
-    ["Holy Wrath"] = "Only hits undead and demons.",
-    ["Divine Favor"] = "A talent you can do without while leveling.",
-    ["Blessing of Kings"] = "A group buff you can do without while leveling.",
-    ["Blessing of Sanctuary"] = "A group buff you can do without while leveling.",
-    ["Sense Undead"] = "Only shows where undead are.",
-    ["Fire Resistance Aura"] = "Only matters against specific raid fights.",
-    ["Frost Resistance Aura"] = "Only matters against specific raid fights.",
-    ["Shadow Resistance Aura"] = "Only matters against specific raid fights.",
-    ["Greater Blessing of Might"] = "Costs Symbol of Kings reagents each cast. Not worth it while leveling.",
-    ["Greater Blessing of Wisdom"] = "Costs Symbol of Kings reagents each cast. Not worth it while leveling.",
-    ["Greater Blessing of Light"] = "Costs Symbol of Kings reagents each cast. Not worth it while leveling.",
-    ["Greater Blessing of Kings"] = "Costs Symbol of Kings reagents each cast. Not worth it while leveling.",
-    ["Greater Blessing of Sanctuary"] = "Costs Symbol of Kings reagents each cast. Not worth it while leveling.",
-    ["Greater Blessing of Salvation"] = "Costs Symbol of Kings reagents each cast. Not worth it while leveling.",
+    ["Lay on Hands"] = L["Spends your whole mana bar to heal someone else. A group spell."],
+    ["Blessing of Protection"] = L["Shields a friend, mostly in PvP and groups."],
+    ["Blessing of Freedom"] = L["Frees a friend from roots and slows, mostly in PvP."],
+    ["Blessing of Sacrifice"] = L["Takes damage meant for a party member. Only useful in groups."],
+    ["Blessing of Light"] = L["Boosts healing on one party member. Only useful in groups."],
+    ["Blessing of Salvation"] = L["Lowers a party member's threat. Not needed solo."],
+    ["Salvation"] = L["Lowers a party member's threat. Not needed solo."],
+    ["Mass Salvation"] = L["Lowers threat for a whole group. Not needed while leveling."],
+    ["Concentration Aura"] = L["Keeps group casters from being interrupted. Not needed solo."],
+    ["Divine Intervention"] = L["Sacrifices you to save a group member."],
+    ["Seal of Justice"] = L["Mostly useful in PvP."],
+    ["Repentance"] = L["Crowd control for PvP and groups."],
+    ["Turn Undead"] = L["Rarely helps while leveling."],
+    ["Exorcism"] = L["Only works on undead and demons."],
+    ["Holy Wrath"] = L["Only hits undead and demons."],
+    ["Divine Favor"] = L["A talent you can do without while leveling."],
+    ["Blessing of Kings"] = L["A group buff you can do without while leveling."],
+    ["Blessing of Sanctuary"] = L["A group buff you can do without while leveling."],
+    ["Sense Undead"] = L["Only shows where undead are."],
+    ["Fire Resistance Aura"] = L["Only matters against specific raid fights."],
+    ["Frost Resistance Aura"] = L["Only matters against specific raid fights."],
+    ["Shadow Resistance Aura"] = L["Only matters against specific raid fights."],
+    ["Greater Blessing of Might"] = L["Costs Symbol of Kings reagents each cast. Not worth it while leveling."],
+    ["Greater Blessing of Wisdom"] = L["Costs Symbol of Kings reagents each cast. Not worth it while leveling."],
+    ["Greater Blessing of Light"] = L["Costs Symbol of Kings reagents each cast. Not worth it while leveling."],
+    ["Greater Blessing of Kings"] = L["Costs Symbol of Kings reagents each cast. Not worth it while leveling."],
+    ["Greater Blessing of Sanctuary"] = L["Costs Symbol of Kings reagents each cast. Not worth it while leveling."],
+    ["Greater Blessing of Salvation"] = L["Costs Symbol of Kings reagents each cast. Not worth it while leveling."],
   },
 
   tags = {
@@ -136,6 +137,6 @@ ns.Rules.Load({
   -- Warhorse needs no separate riding purchase. UNVERIFIED: sources put the spell at about 1 to 10 gold.
   milestones = {
     [40] = { riding = 10 * 10000, mount = 0,
-      note = "The Light covers your first ride. The Charger sends the bill later." },
+      note = L["The Light covers your first ride. The Charger sends the bill later."] },
   },
 })

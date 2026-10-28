@@ -45,6 +45,7 @@ Behavior is specified in `openspec/specs/`. A change to behavior goes through an
 
 ## Data
 
+- Translations: see `docs/localization.md`. Player-facing text is written `L["English sentence"]`; a language is one file in `DontDoThat/Locales/`.
 - Class rule data in `DontDoThat/Rules/Data/` follows `docs/rules-data.md`. For Mage, Warlock, Priest, Druid, Shaman, Rogue and Warrior the files are **generated**: edit the plan in `tools/class_plans/<class>.py` and run `python3 tools/scaffold_class_rules.py <CLASS>`. Hunter and Paladin are edited by hand.
 - `DontDoThat/Data/SpellData.lua` and `DontDoThat/Data/TrainerPrices.lua` are **generated** by `tools/build-spell-data.py` and `tools/fetch-trainer-prices.py`. Re-run the tool instead of editing them.
 - **Rank skips and spell tiers come from expert guides, never from a formula.** Cite the guide in the plan or the pull request.

@@ -1,8 +1,7 @@
 local addonName, ns = ...
 
--- Spell icons for the settings pages. The rule data has no spell IDs, so icons are remembered by name
--- whenever a trainer window shows them, and looked up from the spellbook for spells already known.
--- Anything not seen yet gets a question mark until the player next visits a trainer.
+-- Spell icons for the settings pages, by spell family ID. An icon a trainer window showed is remembered; anything
+-- else comes from the game's own spell data. A spell the game cannot name gets a question mark.
 local Icons = {}
 ns.Icons = Icons
 
@@ -12,27 +11,27 @@ local function saved()
   return ns.db and ns.db.global and ns.db.global.icons
 end
 
-function Icons.Remember(name, icon)
+function Icons.Remember(id, icon)
   local store = saved()
-  if store and type(name) == "string" and icon and store[name] ~= icon then store[name] = icon end
+  if store and type(id) == "number" and icon and store[id] ~= icon then store[id] = icon end
 end
 
-local function fromClient(env, name)
+local function fromClient(env, id)
   if type(env.C_Spell) == "table" and type(env.C_Spell.GetSpellInfo) == "function" then
-    local ok, info = pcall(env.C_Spell.GetSpellInfo, name)
+    local ok, info = pcall(env.C_Spell.GetSpellInfo, id)
     if ok and type(info) == "table" and info.iconID then return info.iconID end
   end
   if type(env.GetSpellInfo) == "function" then
-    local ok, _, _, icon = pcall(env.GetSpellInfo, name)
+    local ok, _, _, icon = pcall(env.GetSpellInfo, id)
     if ok and icon then return icon end
   end
 end
 
-function Icons.Lookup(name, env)
+function Icons.Lookup(id, env)
   local store = saved()
-  if store and store[name] then return store[name] end
+  if store and store[id] then return store[id] end
   env = env or _G
-  -- The bundled spell IDs let the game supply the icon for any spell, learned or not.
-  local byId = ns.SpellData and ns.SpellData.IconFor(name, env)
-  return byId or fromClient(env, name) or Icons.Fallback
+  -- The game supplies the icon for any spell ID, learned or not.
+  local byId = ns.SpellData and ns.SpellData.IconFor(id, env)
+  return byId or fromClient(env, id) or Icons.Fallback
 end

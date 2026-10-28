@@ -6,6 +6,9 @@ in a rotation, a tag, an override, or the generated `reviewed` list. Names in th
 families, and a spell that is both in a rotation and tagged, are reported and stop the run.
 Rank skips are the plan's own `skip`, taken from expert leveling guides (Wowhead "Spells to Buy").
 
+The generated names are resolved to spell IDs when the addon loads (see docs/rules-data.md). A name added to a plan
+that the spell tables do not hold goes in tools/rule-spell-names.txt, then run tools/build-rule-spells.py.
+
 Usage: tools/scaffold_class_rules.py CLASS [CLASS ...]      e.g. MAGE WARLOCK
 """
 import importlib
@@ -123,7 +126,7 @@ def build(cls):
     talent_spells = sorted((talents & fams) | (talents & classified))
     reviewed = sorted(fams - classified)
 
-    L = ["local addonName, ns = ...\n"]
+    L = ["local addonName, ns = ...\nlocal L = ns.L\n"]
     L += ["-- Source status: every rotation is a judgement call from common leveling builds, not a verified guide, so each",
           "-- carries needsReview = true. Spell names, levels, talents and tab order come from the game's own tables",
           "-- (WoW Forever 1.60.1.70532 and Classic Era 1.15.9.70003); what the trainer sells and what it charges are",
@@ -140,12 +143,12 @@ def build(cls):
     for key, name, tree, spec_core, spec_sit in specs:
         extra = "{ " + ", ".join(q(n) for n in spec_core) + " }" if spec_core else "{}"
         sit_expr = "with(SHARED_SITUATIONAL, { " + ", ".join(q(n) for n in spec_sit if n not in sit) + " })" if [n for n in spec_sit if n not in sit] else "SHARED_SITUATIONAL"
-        L += [f"    {key} = {{", f"      name = {q(name)}, tree = {tree}, -- TalentTab order verified from the game tables",
+        L += [f"    {key} = {{", f"      name = L[{q(name)}], tree = {tree}, -- TalentTab order verified from the game tables",
               f"      rotation = {{ needsReview = true, core = with(SHARED_CORE, {extra}), situational = {sit_expr} }},", "    },"]
     L += ["  },\n", '  tagTiers = { PvP = "deferLow", RaidGroup = "defer", LowValue = "deferLow", Endgame = "defer" },\n',
-          '  tagReasons = {\n    PvP = "Mostly useful against other players.",\n    RaidGroup = "Only needed in groups and raids.",\n'
-          '    LowValue = "Rarely helps while leveling.",\n    Endgame = "You won\'t need this until level 60.",\n  },', "  why = {"]
-    L += [f"    [{q(n)}] = {q(why[n])}," for n in sorted(why)]
+          '  tagReasons = {\n    PvP = L["Mostly useful against other players."],\n    RaidGroup = L["Only needed in groups and raids."],\n'
+          '    LowValue = L["Rarely helps while leveling."],\n    Endgame = L["You won\'t need this until level 60."],\n  },', "  why = {"]
+    L += [f"    [{q(n)}] = L[{q(why[n])}]," for n in sorted(why)]
     L += ["  },\n", "  tags = {"]
     L += [f"    [{q(n)}] = {{ {q(t)} }}," for t, ns in tags.items() for n in ns]
     L += ["  },\n"]

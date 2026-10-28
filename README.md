@@ -31,6 +31,7 @@ Type **`/ddt`** to open the settings (also under Options > AddOns). Pick how fir
 
 - Spell advice follows expert guides. You can switch off any spell or kind of advice.
 - Talent choices aren't judged; only the cost of resetting is warned about.
+- The addon's own text is English. Spell names follow your game's language, and other languages can be added; see [docs/localization.md](docs/localization.md).
 
 ## Problems?
 

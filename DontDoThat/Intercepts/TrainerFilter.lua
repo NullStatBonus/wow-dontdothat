@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The "Recommended" entry in the trainer window's filter menu. Hiding rows means re-drawing the list:
 -- Blizzard shows service (row number + scroll offset) in each of its 11 row buttons, so after Blizzard
@@ -212,7 +213,7 @@ function Filter.Enable(env)
     -- built: with the addon off, or the What to watch switch off, the entry is simply not offered.
     if not offered() then return end
     pcall(function()
-      rootDescription:CreateCheckbox("Recommended |cff9d9d9d(Don't Do That)|r", isSelected, function() setSelected(env) end)
+      rootDescription:CreateCheckbox(L["Recommended |cff9d9d9d(Don't Do That)|r"], isSelected, function() setSelected(env) end)
     end)
   end)
   if ns.Log then ns.Log.Add("filter: menu entry %s", registered and "registered" or "FAILED to register") end

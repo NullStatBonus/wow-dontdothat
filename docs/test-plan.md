@@ -95,6 +95,16 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] Items page: turn each of the three switches off and confirm the game's own dialog returns untouched.
 - [ ] `/ddt export`: the Items section lists each guarded dialog as on and "lastSeen" with the dialog name and price read. Send it if a dialog never triggered.
 
+## 11. Language and spell identity
+- [ ] On an English client, `/ddt export`: the **Spell identity** section lists what the trainer row and the talent call return. Paste it into the change notes: it settles whether Forever gives the trainer a spell ID directly.
+- [ ] Open any trainer and type `/ddt trainerids`: a window lists, per row, what every known call returns, and ends with a `RESULT:` line. Then `/ddt trainerids hover`, hover a trainer row within 5 seconds, and read the **hovered row** section. Paste both into the change notes. The report also ends with **identity checks**: talent links (do they carry a talent ID the table knows), the riding spell IDs, the profession apprentice spells and which trainer window is open. Run it once at a class trainer, once at a profession trainer, once at the Pet Trainer and once with no trainer open. So far this has only been done on a Hunter with no talent points; repeat it on another class that has spent talent points (the report should say "with points" and resolve them), ideally a Paladin or Warlock to see the class mount spells as known.
+- [ ] A talent you have points in (for example Aimed Shot for a Hunter) counts as active: the spell is judged as part of your rotation, and `/ddt export` shows what `GetTalentLink` returns.
+- [ ] Switch a spell off on the Rules page (for example Distracting Shot), `/reload`, and open the trainer: the row has no (i). Switch it back on and the (i) returns.
+- [ ] If you can run the client in another language (the locale is set in the Battle.net launcher): the trainer marks, the Rules page and the toggles from the two lines above behave exactly the same, with spell names in that language and the addon's own text in English. A switch set in English is still set.
+- [ ] Learn a profession's first tier from its trainer (Alchemy, Cooking, Tailoring…): you are asked once. Learning a gathering profession asks nothing. A second tier (Journeyman) asks nothing.
+- [ ] Warlock: at a demon trainer or vendor, a secondary grimoire (Soothing Kiss, Devour Magic…) is asked about and one the guides recommend (Firebolt, Torment…) is not. Works the same on a client in another language.
+- [ ] The Milestones page notices riding once learned: Apprentice Riding on Forever, or your race's riding spell (Horse Riding, Wolf Riding…) on Classic Era. On Classic Era level 60 riding shows once the racial riding skill has a max rank of 150; the identity checks print the skill line's rank and what `ReadRiding` says.
+
 ## Not covered yet
-- Profession trainer row names are unverified. Learning Alchemy, Cooking and the like should ask once; Fishing, Herbalism, Mining and Skinning should never ask. With debug on, open each trainer and `/ddt export`.
+- Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt export`.
 - Anything on WoW Forever itself. Everything here is Classic Era until Forever is available.

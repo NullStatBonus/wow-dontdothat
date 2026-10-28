@@ -45,7 +45,7 @@ ns.defaults = {
     global = {
         log = {},
         probe = {},
-        icons = {}, -- spell name -> icon, learned from trainer windows
+        icons = {}, -- spell family ID -> icon, learned from trainer windows
         itemTrace = {}, -- recent vendor and auction decisions, shown by /ddt export
     },
 }
