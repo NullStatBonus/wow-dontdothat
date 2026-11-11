@@ -35,7 +35,9 @@ Don't Do That is the leveling addon that keeps your gold for your **level 40** a
   - Red: save your gold. You do not need this spell until later.
   - Gold: not worth buying yet.
   - Blue: optional.
-- **Get a "Buy anyway?" before you waste gold.** The addon asks before you buy a spell you can skip, a bank or stable slot, COD mail, a talent reset, or armor and bags you do not need. It tells you how long it takes to farm that gold again. You can always choose Yes.
+- **Get a "Buy anyway?" before you waste gold.** The addon asks before you buy a spell you can skip. It tells you how long it takes to farm that gold again. You can always choose Yes.
+- **Shop smart.** The addon also asks before you buy gear, bags, potions and more, at vendors and the auction house. It guards bank slots, stable slots, COD mail, talent resets and your first profession lesson too.
+- **Hear it coming.** A loud sound and an on-screen banner tell you before you spend gold you do not need to spend yet.
 - **Advice for your class and spec.** It follows the Wowhead leveling guides and the game's spell data.
 - **See your savings grow.** The Progress page shows the gold you kept and how close you are to your mount.
 - **A trainer filter.** Hide every spell that the addon marks as skippable.

@@ -14,30 +14,53 @@ This helps you to buy your **level 40** and **level 60** mounts on time.
 
 ## What it does
 
-The addon is on from level 1 until you buy the mount that you chose to stop at (default: the level **60** mount).
+The addon is on from level 1 until you buy the mount that you chose to stop at.
+You can stop at your level **40** mount or your level **60** mount (default: level **60**).
 It only asks. It never stops a purchase.
 You can turn off each part.
 
-- **Marks spells you can skip** in the trainer window. A colored **(i)** shows next to each one. Hover over it to see the reason and the cost.
+### At the trainer
+
+- **Marks spells you can skip.** A colored **(i)** shows next to each one. Hover over it to see the reason and the cost.
   - Red, "Save your gold": you do not need this spell until a later level.
   - Gold, "Not worth buying yet": this spell gives little for its price.
   - Blue, "Optional": you use this spell only sometimes. You can play without it.
-- **Asks before you spend gold you do not need to spend.** The addon shows a "Buy anyway?" question. You can always choose Yes.
-  - By default, the question is for spells with a red mark.
-  - The question tells you about how long it takes to farm that gold again.
-  - You can also choose to be asked about gold and blue spells, or to get marks only.
-- **Warns about other purchases.** The addon watches these purchases:
-  - non-essential items: armor, weapons, vanity items, bags, recipes and other kinds that you choose
-  - bank slots, stable slots and COD mail
-  - talent resets
-  - your first lesson in a new profession
-  - Armor, weapons and vanity items are watched at vendors and at the auction house. The other item kinds are watched at the auction house only. Mounts are not watched. You can change each one.
-  - The addon does not warn about purchases that cost less than **10 silver**. You can change this price.
+- **Asks "Buy anyway?"** before you buy a spell with a red mark. You can always choose Yes.
+  The question tells you about how long it takes to farm that gold again.
+  You can also choose to be asked about gold and blue spells, or to get marks only.
 - **Knows your class and spec.** The advice depends on your spec. The addon reads your talents, or you can choose a spec.
-- **Shows how much gold you saved.** The Progress page adds up the gold you kept. It also shows how much you can save before the mount that you chose.
-- **Has a Recommended trainer filter.** Use the trainer's Filters menu to hide the spells that the addon marks as skippable. On Forever, the filter fades the rows. It does not remove them.
+- **Has a Recommended filter.** Use the trainer's Filters menu to hide the spells that the addon marks as skippable.
+  On Forever, the filter fades the rows. It does not remove them.
+- **Marks profession ranks that you cannot use yet.**
 
-If you buy the same kind of thing again and again, the addon warns you at most once every **3** seconds for each item.
+### At vendors and the auction house
+
+The addon asks before you buy items that you do not need while you level.
+These are the item kinds: armor, weapons, vanity items, bags, recipes, potions, gems and enchants, food, trade goods, ammo, class reagents, mounts, and other items.
+For each kind, you choose where the addon asks: at vendors, at the auction house, at both, or nowhere.
+By default, armor, weapons and vanity items are watched at both. The other kinds are watched at the auction house only. Mounts are not watched.
+The addon does not ask about purchases that cost less than **10 silver**. You can change this price.
+
+### Other ways to lose gold
+
+The addon also asks before you pay for:
+
+- a bank slot
+- a stable slot
+- COD mail
+- a talent reset
+- your first lesson in a new profession (not gathering professions)
+
+### Warnings you can see and hear
+
+- A loud sound and an on-screen banner tell you when a purchase is not advised. You choose the sound and the volume.
+- You choose how strongly the addon warns you: marks only, ask about spells to wait for, or ask about everything.
+- The addon warns you at most once every **3** seconds for the same item.
+
+### Your savings
+
+The Progress page adds up the gold you kept.
+It also shows how close you are to your mount.
 
 ## How the advice is made
 
