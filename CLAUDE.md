@@ -1,5 +1,24 @@
 # Don't Do That
 
+## Delegation
+- Use subagents for self-contained work that would clutter the main context: broad codebase searches, independent research threads, parallel edits across unrelated files, and reviews.
+- Pick the subagent model by difficulty: haiku for search and lookup, sonnet for routine implementation, opus (or inherit) for design, debugging, and anything requiring judgment.
+- Do small or tightly coupled work inline. Don't delegate just to delegate.
+
+## Documentation
+
+Update the supporting docs in the same change as any user-visible addon behavior, setting or command:
+
+- `README.md`: features, settings page, command list (`tests/test_readme.lua` checks the commands), and "Good to know" limits.
+- `docs/listing.md`: the CurseForge/Wago listing text, including the summary line if the headline behavior changes.
+- `docs/test-plan.md`: manual in-game checks for the new behavior; keep section numbers unique and in order.
+- The debug report header in `Core.lua` (`reportText`) lists any new setting.
+- `CHANGELOG.md` is written at archive (see Releases), not before.
+
+## Git and PRs
+
+- **Archive before git.** Before any commit, push or PR for a change, run `/opsx:archive` first (sync specs, bump the version, write the CHANGELOG section), so the archive and the code ship in the same commit/PR. Commit nothing for a change that is still active in `openspec/changes/`.
+
 ## Releases
 
 Bump the addon's semantic version every time a change's specs are applied to `openspec/specs/` (at `/opsx:sync` or `/opsx:archive`).
