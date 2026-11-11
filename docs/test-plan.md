@@ -11,15 +11,16 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] `/ddt debug on` (so the report has details).
 
 ## 1. Settings window
-- [ ] `/ddt` opens a window with seven pages: General, Alerts, Rules, Milestones, Tally, Debug, About.
+- [ ] Type `/ddt`. The settings window opens with five pages: Home, What to watch, Progress, Advanced, About.
 - [ ] Options > AddOns shows "Don't Do That" with the same pages under it.
-- [ ] General: an introduction, a **Master switch** section with one checkbox, and a **What it does** section with four more. Each checkbox has its explanation written underneath it (no need to hover), with space between them. All five are on. Turning the first one off greys out the other four. Turn it back on.
-- [ ] Alerts: three ruled sections, **Warning sound** (a picker that starts with common sounds such as Raid warning, Ready check, Alarm clock 1-3 and Murloc aggro, then any sound-pack sounds; a **Play sound** button that plays the one you picked; and a note), **On-screen message** (a checkbox with its explanation under it), and **How often** (the slider with a note). Space between sections.
-- [ ] Rules: the tree has **How this works** and **Classes**. Open **Classes > Hunter**; the categories show counts. Open **Save your gold**: each spell has its **real icon straight away**, even before you've opened any trainer (the icons come from the game by spell ID), the name, and a gray reason. A question mark means the game returned no icon for that spell; tell me which.
-- [ ] Milestones: a gold status line, a progress line ("You have 12g of the 100g you need (12%)."), a **The mounts** heading with the two mounts (icon, price, gray note) separated by blank lines, and a **Not right?** section with the two "I've already bought" switches.
-- [ ] Tally: sections **Kept**, **Spent anyway** and **Start over**, with the amounts in large type, a gray explanation under each, and the same style as the other pages. It already shows numbers before you visit any trainer (it reads your spellbook and the bundled spell list). "Kept so far" is roughly the cost of everything marked that you could buy at your level but haven't.
-- [ ] About: a gold title and gray version, then three ruled sections (What the marks mean, How to use it, Good to know). Each mark is a **bulleted**, colored line with a gray explanation beneath, the three usage tips are bulleted too, and there is space between sections.
-- [ ] Debug: ruled sections **Recording** (a checkbox with its explanation), **Report** (a note and **Show the report**) and **Clear** (a note and **Clear the recording**).
+- [ ] Home: an introduction, the switch **Turn on Don't Do That**, the three warning levels (**Mark it, but let me buy**, **Ask me first**, **Ask me about everything**), **When to stop warning me** (after the level 60 or level 40 mount), and **Start over**. Turn the first switch off. The other controls grey out. Turn it back on.
+- [ ] What to watch: the areas Spells, Professions and Shopping, each with an on/off switch, the **Recommended filter** switch, the item kinds with their vendor and auction house choices, and the minimum price.
+- [ ] Progress: three boxes. **Milestones** shows a gold status line, a progress line ("You have 12g of the 100g you need (12%)."), the two mounts (icon, price, gray note) and the two "I've already bought" switches. **Projected savings** shows what you could still save. **Tally** shows **Kept**, **Spent anyway** and **Start over**. The Tally shows numbers before you visit any trainer, because it reads your spellbook and the bundled spell list. "Kept so far" is about the cost of everything marked that you could buy at your level but have not.
+- [ ] Advanced: a tree with **Sound & messages**, **Tuning**, **Classes** and **Debug**.
+- [ ] Advanced > Sound & messages: **Warning sound** (a picker that starts with common sounds such as Raid warning, Ready check, Alarm clock 1-3 and Murloc aggro, then any sound-pack sounds, and a **Play sound** button), the on-screen message switch, and the slider for how often the same warning repeats.
+- [ ] Advanced > Classes: the tree has **How this works** and the classes. Open **Hunter**. The categories show counts. Open **Save your gold**. Each spell has its **real icon at once**, even before you open a trainer (the icons come from the game by spell ID), the name and a gray reason. A question mark means the game returned no icon for that spell. Tell me which spell.
+- [ ] About: a gold title and the version, then three sections (What the marks mean, How to use it, Good to know). Each mark is a colored bullet with a gray explanation under it.
+- [ ] Advanced > Debug: **Recording** (a switch with its explanation), **Report** (a note and **Show the report**) and **Clear** (a note and **Clear the recording**).
 
 ## 2. Marks in the trainer
 - [ ] Open your **Hunter trainer**. Flagged rows show a colored **(i)** at the right edge; kept rows show nothing (for example Aspect of the Hawk, Serpent Sting, Wing Clip, Mend Pet, Dual Wield).
@@ -32,10 +33,10 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 
 ## 3. Warning and question
 - [ ] `/ddt test`: you hear the sound and get **a dialog only, no banner**. **Cancel** prints "test: you declined". Run it again and press **Accept**: it prints "test: you chose to buy it anyway (nothing was bought)". If Accept does nothing, or you see "Don't Do That: that didn't work (…)" in chat, copy that text and `/ddt export` (the `popup:` lines say what happened).
-- [ ] (L12) Select **Distracting Shot, Rank 1** (6 silver) and click **Train**: sound plus the "Buy anyway?" dialog. **Cancel**: nothing is bought, the spell is still listed.
+- [ ] (L12) Select **Distracting Shot, Rank 1** (6 silver) and click **Train** (on Forever, the click lands on the addon's own button on top of Train): sound plus the "Buy anyway?" dialog. **Cancel**: nothing is bought, the spell is still listed.
 - [ ] Click Train again and choose **Buy anyway**: the spell **is learned** and the list updates. (This is the key check. If a "blocked from an action" popup appears, or it isn't bought, tell me; the addon will also say in chat that it is turning the question off.)
 - [ ] Buy a gold row such as **Track Humanoids**: **no** dialog and **no** sound; it just buys.
-- [ ] General > turn off **Ask before buying**, then try a red row: you hear the sound and see the **on-screen message**, and the purchase goes ahead.
+- [ ] Home > choose **Mark it, but let me buy**, then try a red row: you hear the sound and see the **on-screen message**, and the purchase goes ahead.
 - [ ] Turn off **Play a warning sound**: no sound at all. Turn everything back on afterwards.
 - [ ] Turn the whole addon off: no marks, no sound, no dialog.
 
@@ -48,15 +49,15 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] Select a visible spell, click Train (use a cheap one): **the spell you selected is the one bought**.
 - [ ] Scroll the list; click a category header to collapse and expand it; use the collapse-all button. Nothing looks broken and rows stay in order.
 - [ ] Untick Recommended: every row comes back. Tick it again.
-- [ ] With the trainer open, untick **Add a Recommended filter to trainers** in General settings: all rows return at once and the **Recommended entry is gone** from the Filter menu. Tick it again and it comes back.
-- [ ] With the trainer open, turn off **Turn on Don't Do That** in General: all rows return, the (i) marks disappear and the Recommended entry is gone from the Filter menu. Turn it back on.
+- [ ] With the trainer open, untick **Add a Recommended filter to trainers** on the What to watch page: all rows return at once and the **Recommended entry is gone** from the Filter menu. Tick it again and it comes back.
+- [ ] With the trainer open, turn off **Turn on Don't Do That** on Home: all rows return, the (i) marks disappear and the Recommended entry is gone from the Filter menu. Turn it back on.
 - [ ] Untick the **Recommended checkbox inside the Filter menu**: all rows return but the entry stays, so you can tick it again.
 - [ ] Switch the Available/Unavailable/Already known boxes: the list still behaves normally.
 - [ ] If anything looks wrong, the filter turns itself off and the normal window returns. `/ddt export` then contains a line "filter: turned off (reason)". Send it to me.
 
 ## 5. Tally and milestones
-- [ ] Buy one marked spell and reopen the Tally page: the number moves from "Kept so far" to **Spent** straight after the purchase, without needing another trainer visit.
-- [ ] After visiting both trainers, **Tally** shows "Kept so far" with a number (the cost of flagged things you could buy now but haven't).
+- [ ] Buy one marked spell and reopen the Progress page: the number moves from "Kept so far" to **Spent** straight after the purchase, without needing another trainer visit.
+- [ ] After visiting both trainers, the **Tally** box on the Progress page shows "Kept so far" with a number (the cost of flagged things you could buy now but haven't).
 - [ ] Buy one marked spell: **Spent on things the addon marked** goes up by its price.
 - [ ] (L18) Skip Serpent Sting rank 2 and buy rank 3 straight away. It should be allowed, which confirms ranks can be bought out of order. The tally doesn't change, because those ranks aren't marked.
 - [ ] **Start the count over** asks for confirmation and sets everything to zero.
@@ -103,21 +104,21 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] On an English client, `/ddt export`: the **Spell identity** section lists what the trainer row and the talent call return. Paste it into the change notes: it settles whether Forever gives the trainer a spell ID directly.
 - [ ] Open any trainer and type `/ddt trainerids`: a window lists, per row, what every known call returns, and ends with a `RESULT:` line. Then `/ddt trainerids hover`, hover a trainer row within 5 seconds, and read the **hovered row** section. Paste both into the change notes. The report also ends with **identity checks**: talent links (do they carry a talent ID the table knows), the riding spell IDs, the profession apprentice spells and which trainer window is open. Run it once at a class trainer, once at a profession trainer, once at the Pet Trainer and once with no trainer open. So far this has only been done on a Hunter with no talent points; repeat it on another class that has spent talent points (the report should say "with points" and resolve them), ideally a Paladin or Warlock to see the class mount spells as known.
 - [ ] A talent you have points in (for example Aimed Shot for a Hunter) counts as active: the spell is judged as part of your rotation, and `/ddt export` shows what `GetTalentLink` returns.
-- [ ] Switch a spell off on the Rules page (for example Distracting Shot), `/reload`, and open the trainer: the row has no (i). Switch it back on and the (i) returns.
-- [ ] If you can run the client in another language (the locale is set in the Battle.net launcher): the trainer marks, the Rules page and the toggles from the two lines above behave exactly the same, with spell names in that language and the addon's own text in English. A switch set in English is still set.
+- [ ] Switch a spell off in Advanced > Classes (for example Distracting Shot), `/reload`, and open the trainer: the row has no (i). Switch it back on and the (i) returns.
+- [ ] If you can run the client in another language (the locale is set in the Battle.net launcher): the trainer marks, the Classes page and the toggles from the two lines above behave exactly the same, with spell names in that language and the addon's own text in English. A switch set in English is still set.
 - [ ] Learn a profession's first tier from its trainer (Alchemy, Cooking, Tailoring…): you are asked once. Learning a gathering profession asks nothing. A second tier (Journeyman) asks nothing.
 - [ ] Warlock: at a demon trainer or vendor, a secondary grimoire (Soothing Kiss, Devour Magic…) is asked about and one the guides recommend (Firebolt, Torment…) is not. Works the same on a client in another language.
-- [ ] The Milestones page notices riding once learned: Apprentice Riding on Forever, or your race's riding spell (Horse Riding, Wolf Riding…) on Classic Era. On Classic Era level 60 riding shows once the racial riding skill has a max rank of 150; the identity checks print the skill line's rank and what `ReadRiding` says.
+- [ ] The Milestones box on the Progress page notices riding once learned: Apprentice Riding on Forever, or your race's riding spell (Horse Riding, Wolf Riding…) on Classic Era. On Classic Era level 60 riding shows once the racial riding skill has a max rank of 150; the identity checks print the skill line's rank and what `ReadRiding` says.
 
 ## 12. Skip list revisions
 - [ ] First load after installing or updating (use a fresh `WTF` profile, or delete `revisionNotice` from the saved variables): the chat prints, once, that skip list revision 2 is in use, that its rules changed significantly (many more ranks skipped, decided for your spec, each with its reason), and how to change it (`/ddt revision 1`, Advanced > Tuning). `/reload`: it is not printed again.
-- [ ] `/ddt revision` prints the revision in use and the revisions available. `/ddt revision 1` says "Now using skip list revision 1." and the Rules page and the Tuning page agree. `/ddt revision 9` changes nothing and lists the valid revisions. `/ddt revision 2` goes back.
-- [ ] Advanced > Tuning > Skip list: a select with "Revision 2 (default): ..." and "Revision 1: ...". Picking Revision 1 and reopening the Rules page shows its ranks to skip, and the line at the top of the class page names revision 1.
+- [ ] `/ddt revision` prints the revision in use and the revisions available. `/ddt revision 1` says "Now using skip list revision 1." and the Classes page and the Tuning page agree. `/ddt revision 9` changes nothing and lists the valid revisions. `/ddt revision 2` goes back.
+- [ ] Advanced > Tuning > Skip list: a select with "Revision 2 (default): ..." and "Revision 1: ...". Picking Revision 1 and reopening Advanced > Classes shows its ranks to skip, and the line at the top of the class page names revision 1.
 - [ ] Warrior at a trainer on revision 2: Thunder Clap rank 2 and later are marked, and the tooltip says the leveling guide says to buy only the first rank of this spell. Rend rank 5 says to buy it only up to rank 4. On revision 1 the same ranks give the same guide reasons. Neither tooltip names Wowhead or "computed".
 - [ ] A rank skipped for some specs only (for example a Mage spell skipped for Frost and Fire): with Frost chosen as the spec it is marked; with Arcane chosen it is not; with the spec undecided and talents split, it is not marked.
 - [ ] At level 60 without the mount: a utility spell's later rank says it can wait until the level 60 mount; the first rank of a new level 60 spell and a damage or healing rank are not marked. After buying the mount nothing is marked.
-- [ ] Switch an ability off on the Rules page, then change revision: it stays off under both. Switch off Skip ranks on Tuning: no rank is marked under either revision.
-- [ ] The Rules page's Ranks to skip lists each rank with its reason and, beneath it, where it came from ("From the Wowhead leveling guide.", "Computed from the game data.", "From the earlier skip list.").
+- [ ] Switch an ability off in Advanced > Classes, then change revision: it stays off under both. Switch off Skip ranks on Tuning: no rank is marked under either revision.
+- [ ] The Ranks to skip list in Advanced > Classes lists each rank with its reason and, beneath it, where it came from ("From the Wowhead leveling guide.", "Computed from the game data.", "From the earlier skip list.").
 
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt export`.
