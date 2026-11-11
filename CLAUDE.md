@@ -9,7 +9,7 @@
 
 Update the supporting docs in the same change as any user-visible addon behavior, setting or command:
 
-- `README.md`: features, settings page, command list (`tests/test_readme.lua` checks the commands), and "Good to know" limits.
+- `README.md`: features, settings page, command list, and "Good to know" limits.
 - `docs/listing.md`: the CurseForge/Wago listing text, including the summary line if the headline behavior changes.
 - `docs/test-plan.md`: manual in-game checks for the new behavior; keep section numbers unique and in order.
 - The debug report header in `Core.lua` (`reportText`) lists any new setting.
