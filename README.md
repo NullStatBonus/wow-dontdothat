@@ -1,47 +1,150 @@
 # Don't Do That
 
-A World of Warcraft addon for WoW Forever and Classic Era that safeguards your gold to ensure you can save up for your mount. It warns you off gold you don't need to spend yet, so you can afford your **level 40** and **level 60** mounts, for all nine classes.
+Don't Do That is a World of Warcraft addon for WoW Forever and Classic Era.
+It helps you save gold for your mount, for all nine classes.
+It warns you before you spend gold that you do not need to spend yet.
+This helps you to buy your **level 40** and **level 60** mounts on time.
+
+## Quick start
+
+1. Copy the `DontDoThat` folder into your AddOns folder (see [Install](#install)).
+2. Start the game, or type `/reload`.
+3. Open a trainer. Look for the colored **(i)** marks next to the spells.
+4. Type `/ddt` to open the settings.
 
 ## What it does
 
-- **Marks spells you can skip** in the trainer window. A colored **(i)** appears next to each one; hover it for the reason and the cost.
-  - Red: *Save your gold*. You won't need it until later.
-  - Gold: *Not worth buying yet*. A low-value spell.
-  - Blue: *Optional*. Handy now and then, but you can get by without it.
-- **Asks before you waste gold.** Buying a spell that isn't recommended, or a non-essential item (armor, weapons, vanity, bags, recipes), a bank or stable slot, COD mail, a talent reset, or your first lesson in a new profession gets a "Buy anyway?" question that says roughly how long it takes to grind that gold back. You can always say yes.
-- **Knows your class and spec.** The advice follows your talents, or the spec you choose, and comes from common leveling builds, the Wowhead leveling guides and a review of the game's spell data. Which ranks to skip is a numbered revision you can change with `/ddt revision`.
-- **Shows what you've saved.** The Progress page tallies the gold you've kept and projects your savings up to the mount you're saving for.
+The addon is on from level 1 until you buy the mount that you chose to stop at (default: the level **60** mount).
+It only asks. It never stops a purchase.
+You can turn off each part.
 
-It stays on from level 1 until you've bought the mount you chose to stop at. It only ever asks, and you can turn any part off.
+- **Marks spells you can skip** in the trainer window. A colored **(i)** shows next to each one. Hover over it to see the reason and the cost.
+  - Red, "Save your gold": you do not need this spell until a later level.
+  - Gold, "Not worth buying yet": this spell gives little for its price.
+  - Blue, "Optional": you use this spell only sometimes. You can play without it.
+- **Asks before you spend gold you do not need to spend.** The addon shows a "Buy anyway?" question. You can always choose Yes.
+  - By default, the question is for spells with a red mark.
+  - The question tells you about how long it takes to farm that gold again.
+  - You can also choose to be asked about gold and blue spells, or to get marks only.
+- **Warns about other purchases.** The addon watches these purchases:
+  - non-essential items: armor, weapons, vanity items, bags, recipes and other kinds that you choose
+  - bank slots, stable slots and COD mail
+  - talent resets
+  - your first lesson in a new profession
+  - Armor, weapons and vanity items are watched at vendors and at the auction house. The other item kinds are watched at the auction house only. Mounts are not watched. You can change each one.
+  - The addon does not warn about purchases that cost less than **10 silver**. You can change this price.
+- **Knows your class and spec.** The advice depends on your spec. The addon reads your talents, or you can choose a spec.
+- **Shows how much gold you saved.** The Progress page adds up the gold you kept. It also shows how much you can save before the mount that you chose.
+- **Has a Recommended trainer filter.** Use the trainer's Filters menu to hide the spells that the addon marks as skippable. On Forever, the filter fades the rows. It does not remove them.
+
+If you buy the same kind of thing again and again, the addon warns you at most once every **3** seconds for each item.
+
+## How the advice is made
+
+The advice comes from three sources:
+
+- **Expert guides.** The addon follows the Wowhead leveling guides where they say which ranks to buy or skip.
+- **The game's spell data.** Where a guide says nothing, the addon compares the price of a rank with how much stronger the rank is.
+  It also uses how long you stay at each level. A rank that gives little for its price is skipped.
+- **Common leveling builds.** These decide which spells are useful for your spec.
+
+The list of ranks to skip has numbered revisions.
+Revision 1 is the original list. Revision 2 is the newer list, and it is the default.
+To see or change the revision, type `/ddt revision` or `/ddt revision 1`.
+The addon never changes a spell that you turned on or off yourself.
 
 ## Install
 
-Install it from CurseForge or Wago with your addon manager, or by hand:
+Install the addon from CurseForge or Wago with your addon manager.
+To install it by hand:
 
 1. Copy the `DontDoThat` folder into your AddOns folder:
    - Classic Era: `World of Warcraft/_classic_era_/Interface/AddOns/`
    - WoW Forever: `World of Warcraft/_classic_beta_/Interface/AddOns/`
 2. Start the game, or type `/reload`.
 
-## Using it
+## Settings
 
-Type **`/ddt`** to open the settings (also under Options > AddOns). Pick how firmly it nudges you, which kinds of purchases to watch, and which mount to stop at. `/ddt test` shows a sample warning without buying anything.
+Type `/ddt` to open the settings. You can also find them under Options > AddOns.
+The settings have these pages:
+
+- **Home:** turn the addon on or off, and choose how strongly it warns you.
+- **What to watch:** choose Spells, Professions and Shopping, and which purchases the addon watches.
+- **Progress:** the gold you saved, and how close you are to your mounts.
+- **Advanced:** fine controls, the skip list revision, the spells and rules for each class, and the debug tools.
+- **About:** what the marks mean and how to use the addon.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `/ddt` | Opens the settings. |
+| `/ddt test` | Shows a sample warning. It does not buy anything. |
+| `/ddt revision` | Shows the revision of the skip list in use. |
+| `/ddt revision <number>` | Changes the revision (1 or 2). |
+| `/ddt version` | Shows the addon version and the game build. |
+| `/ddt debug on` and `/ddt debug off` | Starts or stops the recording of what the addon sees. |
+| `/ddt export` | Opens the debug report. |
+| `/ddt clear` | Clears the recording. |
+
+Two more commands are for developers: `/ddt probe` and `/ddt trainerids [hover]`.
 
 ## Known limits
 
-- Spell advice follows expert guides. You can switch off any spell or kind of advice.
-- A hunter's beast training (pet abilities paid in training points) is never marked or questioned, only the Pet Trainer NPC is.
-- Talent choices aren't judged; only the cost of resetting is warned about.
-- The addon's own text is English. Spell names follow your game's language, and other languages can be added; see [docs/localization.md](docs/localization.md).
+### Spells
+
+- The spell advice comes from expert guides and spell data. You can turn off the advice for each spell, or for each kind of advice.
+- Wowhead has leveling guides for Priest, Mage, Druid, Shaman and Warrior. The other classes have no guide check.
+- The addon does not mark or question beast training. Beast training is the pet abilities that cost training points. The addon does check the Pet Trainer NPC.
+- The addon does not judge talent choices. It only warns you about the cost of a talent reset.
+
+### WoW Forever
+
+- The addon asks "Buy anyway?" from its own button on top of the Train button.
+- If you use the keyboard instead of the mouse, you get a sound and a banner, but no question. The purchase goes ahead.
+- The Recommended filter fades the rows. It cannot remove them.
+
+### Language
+
+- The text of the addon is in English.
+- Spell names use the language of your game. The addon finds spells, talents and trainers by ID.
+- You can add other languages. See [docs/localization.md](docs/localization.md).
 
 ## Problems?
 
-Turn on **Advanced > Debug > Record what the addon sees**, do the thing that went wrong, then **Show the report**, copy it and send it with a description and your client (Classic Era or Forever).
+1. Type `/ddt debug on`.
+2. Do the action that went wrong.
+3. Type `/ddt export`. A window opens with a report.
+4. Select all (Ctrl+A) and copy (Ctrl+C).
+5. Send the report with a description and your client (Classic Era or Forever).
+6. Type `/ddt debug off` to stop the recording.
+
+You can also use **Advanced > Debug**: turn on **Record what the addon sees**, then select **Show the report**.
+
+The report holds:
+
+- The addon version.
+- Your settings and your gold tally.
+- The items and the vendor and auction decisions that the addon saw.
+- A log of what the addon saw and decided.
+- The libraries that the game loaded, and the game functions that the addon uses.
+
+Read the report before you send it.
 
 ## For developers
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). In short:
 
-## License
+```
+make test     # the Lua tests (luajit tests/run.lua [pattern])
+make check    # TOC, embed and version checks, the same ones the release workflow runs
+```
 
-[MIT](LICENSE). The bundled Ace3 libraries keep their own license (`DontDoThat/Libs/LICENSE-Ace3.txt`).
+The skip lists are generated. Do not edit `DontDoThat/Data/SkipRevisions.lua` by hand.
+See [tools/skip-revision/README.md](tools/skip-revision/README.md).
+
+## License and data
+
+MIT, see [LICENSE](LICENSE).
+The Ace3 libraries in the addon keep their own license (`DontDoThat/Libs/LICENSE-Ace3.txt`).
+The spell and price data comes from the Wowhead leveling guides and trainer lists, and from wago.tools game data tables.

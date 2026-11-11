@@ -1,6 +1,6 @@
 # Store listing
 
-Copy-ready text and field values for the CurseForge and Wago projects. The project IDs are already in both TOC files (`## X-Curse-Project-ID`, `## X-Wago-ID`); see [publishing.md](publishing.md) for releasing. Category names and field limits below are from memory of the site forms: confirm them while you fill the forms in, and pick the closest match if a name differs.
+This page has the text and field values for the CurseForge and Wago projects. Both TOC files already have the project IDs (`## X-Curse-Project-ID`, `## X-Wago-ID`). To release, see [publishing.md](publishing.md). The category names and field limits below come from memory of the site forms. Check them when you fill in the forms. If a name is different, choose the closest match.
 
 ## Fields
 
@@ -8,7 +8,7 @@ Copy-ready text and field values for the CurseForge and Wago projects. The proje
 |---|---|
 | Project name | Don't Do That |
 | Slug / URL name | dont-do-that (use whatever is free) |
-| Summary (one line, keep under 250 characters) | Safeguards your gold so you can save up for your mount. Marks skippable trainer spells and asks before wasteful purchases. All nine classes. Forever and Classic Era. |
+| Summary (one line, keep under 250 characters) | Save your gold for your mount. Marks trainer spells you can skip and asks "Buy anyway?" before you waste gold. For all nine classes, on WoW Forever and Classic Era. |
 | Main category | Auction & Economy |
 | Additional categories | Quests & Leveling, Miscellaneous |
 | Game versions | CurseForge calls Classic Era **Classic**: tick Classic (1.15.x) and Forever (1.60.x). The packager reads `## Interface` from each TOC: 11509 for `DontDoThat_Vanilla.toc`, 16001 for `DontDoThat_Camelot.toc`. |
@@ -27,31 +27,26 @@ Paste this into the description box (CurseForge and Wago both take Markdown or H
 
 ---
 
-**Don't Do That** is a World of Warcraft addon for WoW Forever and Classic Era that safeguards your gold to ensure you can save up for your mount. It warns you off gold you don't need to spend yet, so you can afford your **level 40** and **level 60** mounts, for all nine classes.
+**Your trainer wants your gold. Your mount needs it more.**
 
-- **Marks spells you can skip** in the trainer window. A colored **(i)** appears next to each one; hover it for the reason and the cost.
-  - Red: *Save your gold*. You won't need it until later.
-  - Gold: *Not worth buying yet*. A low-value spell.
-  - Blue: *Optional*. Handy now and then, but you can get by without it.
-- **Asks before you waste gold.** Buying a spell that isn't recommended, a non-essential item (armor, weapons, vanity, bags, recipes), a bank or stable slot, COD mail, a talent reset, or your first lesson in a new profession gets a "Buy anyway?" question that says roughly how long it takes to grind that gold back. You can always say yes.
-- **Recommended trainer filter.** Hide everything the addon would skip, from the trainer's Filters menu (on Forever the rows are faded rather than removed).
-- **Knows your class and spec.** The advice follows your talents, or the spec you choose, and comes from common leveling builds, the Wowhead leveling guides and a review of the game's spell data. Which ranks to skip is a numbered revision you can change with `/ddt revision`.
-- **Shows what you've saved.** The Progress page tallies the gold you've kept and projects your savings up to the mount you're saving for.
+Don't Do That is the leveling addon that keeps your gold for your **level 40** and **level 60** mounts. It works on WoW Forever and Classic Era, for all nine classes.
 
-It stays on from level 1 until you've bought the mount you chose to stop at. It only ever asks, and you can turn any part off.
+- **Skip spells you do not need yet.** A colored **(i)** shows in the trainer window. Hover over it to see why, and how much gold you keep.
+  - Red: save your gold. You do not need this spell until later.
+  - Gold: not worth buying yet.
+  - Blue: optional.
+- **Get a "Buy anyway?" before you waste gold.** The addon asks before you buy a spell you can skip, a bank or stable slot, COD mail, a talent reset, or armor and bags you do not need. It tells you how long it takes to farm that gold again. You can always choose Yes.
+- **Advice for your class and spec.** It follows the Wowhead leveling guides and the game's spell data.
+- **See your savings grow.** The Progress page shows the gold you kept and how close you are to your mount.
+- **A trainer filter.** Hide every spell that the addon marks as skippable.
 
-**Settings.** Type `/ddt` or go to Options, AddOns, **Don't Do That**. Pick how firmly it nudges you (marks only, ask about what to wait on, or ask about everything), which kinds of purchases to watch, the minimum price below which nothing is flagged, and which mount to stop at. `/ddt test` shows a sample warning without buying anything.
+It only asks. It never stops a purchase. It turns off when you buy your mount, and you can turn off each part before that.
 
-**Good to know**
+**Start:** type `/ddt` to open the settings. Type `/ddt test` to see a sample warning.
 
-- Spell advice follows expert guides. You can switch off any spell or kind of advice.
-- Talent choices aren't judged; only the cost of resetting is warned about.
-- Auction house purchases are checked on both clients. On WoW Forever the trainer's Train button is left alone, so a flagged spell gets a sound and banner but the purchase always goes through.
-- Works on game clients in any language: spells, talents and trainers are recognised by ID. The addon's own text is English and can be translated; see the source repository.
+**Problems?** Type `/ddt debug on`, repeat what went wrong, then type `/ddt export`. Copy the report and send it with your client (Classic Era or Forever).
 
-**Problems?** Turn on Advanced, Debug, **Record what the addon sees**, repeat what went wrong, then **Show the report**. Copy it and send it with a description and your client (Classic Era or Forever).
-
-Free and open source (MIT). The bundled Ace3 libraries keep their own license.
+Free and open source (MIT). The Ace3 libraries in the addon keep their own license.
 
 ---
 
