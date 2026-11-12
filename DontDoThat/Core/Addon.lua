@@ -41,6 +41,8 @@ ns.defaults = {
         ledger = {},
         costCache = {},
         catalog = {},
+        professionAsked = {},       -- profession -> true once this character was asked about learning it
+        milestoneOverride = {},     -- mount level -> true when the player says this character already bought it
     },
     global = {
         log = {},
@@ -53,7 +55,10 @@ ns.defaults = {
 function addon:OnInitialize()
     self.db = AceDB:New("DontDoThatDB", ns.defaults, true)
     ns.db = self.db
-    if ns.Settings then ns.Settings.ClearDebug(self.db.profile) end
+    if ns.Settings then
+        ns.Settings.ClearDebug(self.db.profile)
+        ns.Settings.MigrateCharState(self.db)
+    end
     if ns.Tally then ns.Tally.Init(self.db) end
 
     if ns.Log then
@@ -67,6 +72,7 @@ function addon:OnInitialize()
         ns.Export.sourceProvider = function()
             return {
                 settings = self.db.profile,
+                character = { professionAsked = self.db.char.professionAsked, milestoneOverride = self.db.char.milestoneOverride },
                 ledger = self.db.char.ledger,
                 log = ns.Log and ns.Log.Entries() or {},
                 items = function() return ns.ItemGuard and ns.ItemGuard.Report(_G) or nil end,
@@ -81,7 +87,7 @@ function addon:OnEnable()
     if ns.TrainerFilter then ns.TrainerFilter.Enable(_G) end
     if ns.Resets then ns.Resets.Enable(LibStub("AceEvent-3.0"):Embed({}), _G) end
     if ns.Merchant then ns.Merchant.Enable(LibStub("AceEvent-3.0"):Embed({}), _G) end
-    if ns.Auction then ns.Auction.Enable(_G) end
+    if ns.Auction then ns.Auction.Enable(_G, LibStub("AceEvent-3.0"):Embed({})) end
     if ns.TrainerOverlay then
         -- Its own event object: AceEvent keeps one handler per event per object, and the
         -- debug capture below registers the same trainer events on the addon itself.

@@ -104,6 +104,7 @@ function Export.Build(sources)
   end
 
   section("Settings", function() return dumpTable(sources.settings) end)
+  section("Character", function() return dumpTable(sources.character) end)
   section("Ledger", function() return dumpTable(sources.ledger) end)
   section("Items", function()
     local r = sources.items

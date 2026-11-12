@@ -436,16 +436,28 @@ test("custom detail says what is set", function()
   eq(ns.Options.CustomDetail(), "Marks are on. It asks about Save your gold, Not worth buying yet and Optional.")
 end)
 
+test("the mount override is saved for this character, not the shared profile", function()
+  local ns = fresh()
+  ns.db.char = {}
+  local m = ns.Options.Milestones().args
+  m.have40.set(nil, true)
+  eq(ns.db.char.milestoneOverride, { [40] = true }); eq(ns.db.profile.milestoneOverride, nil)
+  eq(m.have40.get(), true)
+  m.have40.set(nil, false)
+  eq(m.have40.get(), false)
+end)
+
 test("reset all lives on Home, and no other settings page has a reset", function()
-  local ns = fresh({ enabled = false, alert = { cooldown = 9 }, tuning = { stopAfter = 40 }, professionAsked = { [4036] = true },
-    milestoneOverride = { [40] = true }, debug = true, traceItems = true })
+  local ns = fresh({ enabled = false, alert = { cooldown = 9 }, tuning = { stopAfter = 40 }, debug = true, traceItems = true })
+  ns.db.char = { professionAsked = { [4036] = true }, milestoneOverride = { [40] = true } }
+  ns.db.profile.professionAsked = { [1] = true }
   local reset = ns.Options.Home().args.resetAll
   eq(reset.type, "execute"); truthy(reset.confirm)
   reset.func()
   eq(ns.db.profile.enabled, nil); eq(ns.db.profile.alert, nil); eq(ns.db.profile.tuning, nil)
   eq(ns.db.profile.debug, nil); eq(ns.db.profile.traceItems, nil)
-  eq(ns.db.profile.professionAsked, { [4036] = true }, "what you have already done is kept")
-  eq(ns.db.profile.milestoneOverride, { [40] = true })
+  eq(ns.db.char.professionAsked, { [4036] = true }, "what this character has done is kept")
+  eq(ns.db.char.milestoneOverride, { [40] = true })
   for _, page in ipairs({ ns.Options.Tuning(), ns.Options.Watch(), ns.Options.Rules() }) do
     local function find(group)
       for key, child in pairs(group.args or {}) do
@@ -584,4 +596,22 @@ test("rules page: each class page names the revision its ranks to skip follow", 
   local again = ns.Options.Rules()
   truthy(again.args.WARRIOR.args.revisionLine.name:find("skip list revision 1", 1, true))
   falsy(rules.args.WARRIOR.args.skipped.name == again.args.WARRIOR.args.skipped.name, "the count of ranks to skip follows the revision")
+end)
+
+test("a redraw asks the tally once, and a changed setting makes it ask again", function()
+  local ns = fresh()
+  ns.db.char = {}
+  local calls, now = 0, 100
+  _G.GetTime = function() return now end
+  ns.Tally = { Entries = function() calls = calls + 1; return { verified = 5, projected = 7, spentAgainst = 1 } end }
+  local t = ns.Options.Tally().args
+  t.verified.name(); t.projected.name(); t.spent.name()
+  eq(calls, 1, "three labels share one answer")
+  ns.Options.Milestones().args.have40.set(nil, true)
+  t.verified.name()
+  eq(calls, 2, "a setting change forgets it")
+  now = now + 1
+  t.verified.name()
+  eq(calls, 3, "and it expires on its own")
+  _G.GetTime = nil
 end)

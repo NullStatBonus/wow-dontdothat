@@ -40,12 +40,7 @@ local function promptsEnabled()
 end
 
 -- The alert module's settings, mapped from the saved profile.
-local function alertSettings()
-  local p = profile()
-  local a = p.alert or {}
-  return { alertsEnabled = p.alerts ~= false, alertBanner = a.banner ~= false,
-    alertSound = a.sound, alertCooldown = a.cooldown, alertChannel = a.channel }
-end
+local function alertSettings() return ns.Prompt.AlertSettings() end
 
 Confirm.AlertSettings = alertSettings
 
@@ -96,10 +91,7 @@ local function run(env, verdict, proceed, ...)
 
   -- The dialog says everything the banner would, so a prompt gets the sound alone.
   local args = { ... }
-  local soundOnly = {}
-  for k, v in pairs(settings) do soundOnly[k] = v end
-  soundOnly.alertBanner = false
-  pcall(ns.Alert.Trigger, verdict, key, soundOnly)
+  pcall(ns.Alert.Trigger, verdict, key, ns.Prompt.SoundOnly(settings))
   local shown = false
   -- A profession is asked about once: either answer counts.
   local function markAsked()
@@ -124,9 +116,7 @@ local function run(env, verdict, proceed, ...)
   end)
   if not shown then
     -- Cannot prompt on this client: never block silently, and show the banner instead.
-    if settings.alertBanner and settings.alertsEnabled and ns.AlertBanner then
-      pcall(ns.AlertBanner.Show, verdict, verdict.name)
-    end
+    ns.Prompt.BannerInstead(settings, verdict, verdict.name)
     if ns.Log then ns.Log.Add("confirm: no prompt available for %s, letting it through", tostring(verdict.name)) end
     return proceed(...)
   end
@@ -294,10 +284,7 @@ function Confirm.Disable(reason)
   if restore then restore(); restore = nil end
   Confirm.Sync()
   if ns.Log then ns.Log.Add("confirm: prompts disabled (%s)", tostring(reason)) end
-  if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
-    pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME,
-      L["Don't Do That: this game version won't let it confirm purchases, so it will only mark them."])
-  end
+  ns.Prompt.Say(L["Don't Do That: this game version won't let it confirm purchases, so it will only mark them."])
 end
 
 function Confirm.Watch(eventTarget)
@@ -329,10 +316,7 @@ function Confirm.Test(say)
       or L["test: \"Ask before buying\" and the warning sound are both off, so nothing would happen."])
     return
   end
-  local soundOnly = {}
-  for k, v in pairs(settings) do soundOnly[k] = v end
-  soundOnly.alertBanner = false
-  pcall(ns.Alert.Trigger, verdict, key, soundOnly)
+  pcall(ns.Alert.Trigger, verdict, key, ns.Prompt.SoundOnly(settings))
   local shown = ns.ConfirmPopup.Ask(verdict,
     function() say(L["test: you chose to buy it anyway (nothing was bought)"]) end,
     function() say(L["test: you declined"]) end)

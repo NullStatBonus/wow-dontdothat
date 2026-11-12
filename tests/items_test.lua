@@ -110,7 +110,7 @@ local function guarded(over)
   local ns = fresh()
   over = over or {}
   local shown = {}
-  for _, f in ipairs({ "Intercepts/ItemGuard.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
+  for _, f in ipairs({ "Intercepts/Prompt.lua", "Intercepts/ItemGuard.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
   ns.db = { profile = { enabled = true, blockingConfirmations = true, alerts = true, minPrice = 100,
       traceItems = over.trace ~= false,
       itemModes = over.modes or { armor = "both", food = "ah" } },
@@ -134,6 +134,16 @@ test("a flagged purchase is traced, asked about, and recorded when declined", fu
   ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() bought = true end)
   shown.yes()
   truthy(bought); eq(ns.db.char.ledger.spentAgainst, 5000)
+  _G.GetItemInfoInstant = nil
+end)
+
+test("a flagged purchase plays its alert on the chosen sound channel", function()
+  local ns = guarded()
+  ns.db.profile.alert = { channel = "Dialog" }
+  local got
+  ns.Alert.Trigger = function(_, _, settings) got = settings; return true end
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() end)
+  eq(got.alertChannel, "Dialog")
   _G.GetItemInfoInstant = nil
 end)
 

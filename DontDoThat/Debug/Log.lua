@@ -41,8 +41,6 @@ function Log.IsEnabled()
   return store ~= nil and store.enabled == true
 end
 
-function Log.Enable() if store then store.enabled = true end end
-function Log.Disable() if store then store.enabled = false end end
 
 -- Slash handlers call these.
 function Log.SetEnabled(on)

@@ -19,8 +19,12 @@ local function isOn(key)
   return p == nil or p[key] ~= false
 end
 
+-- Answers a redraw asks for again and again (see recent() below). A changed setting forgets them.
+local recentAnswers = {}
+
 -- A changed setting should show in an open trainer window straight away, not at its next refresh.
 local function applyNow()
+  for key in pairs(recentAnswers) do recentAnswers[key] = nil end
   if ns.TrainerFilter then
     pcall(ns.TrainerFilter.RebuildMenu, _G)
     pcall(ns.TrainerFilter.Refresh, _G)
@@ -114,7 +118,6 @@ end
 local worthMemo, worthCount = {}, 0
 
 -- A redraw asks the same question many times; answers are reused for a quarter of a second. Without a clock, never reused.
-local recentAnswers = {}
 local function recent(key, compute)
   local now = type(_G.GetTime) == "function" and _G.GetTime() or nil
   local held = recentAnswers[key]
@@ -124,8 +127,12 @@ local function recent(key, compute)
   return value
 end
 
+local function playerProfile()
+  return recent("profile", function() return ns.Context and ns.Context.Profile(_G) end)
+end
+
 local function savingsProfile(classKey)
-  local ok, p = pcall(function() return recent("profile", function() return ns.Context and ns.Context.Profile(_G) end) end)
+  local ok, p = pcall(playerProfile)
   if ok and p and (classKey == nil or p.class == classKey) then return p end
   if not classKey or not ns.Settings or not ns.Rules then return nil end
   local data = ns.Rules.GetClass(classKey)
@@ -850,7 +857,7 @@ function Options.MilestoneItems(class)
 end
 
 function Options.MilestoneStatus()
-  local ok, p = pcall(function() return ns.Context and ns.Context.Profile(_G) end)
+  local ok, p = pcall(playerProfile)
   if not ok or not p then return L["Log in on a supported character to see your progress."] end
   local m = p.milestone or {}
   if m.state == "finished" then
@@ -866,7 +873,10 @@ end
 -- "You have 12g of the 100g you need (12%)." for the mount being saved for; nil when it can't be worked out.
 function Options.MilestoneProgress(env)
   env = env or _G
-  local okProfile, p = pcall(function() return ns.Context and ns.Context.Profile(env) end)
+  local okProfile, p = pcall(function()
+    if env == _G then return playerProfile() end
+    return ns.Context and ns.Context.Profile(env)
+  end)
   local m = okProfile and p and p.milestone
   local d = milestoneTargets(p and p.class)
   if not (m and m.current and d[m.current] and type(env.GetMoney) == "function") then return nil end
@@ -897,14 +907,14 @@ function Options.Milestones()
 
   -- The addon reads your riding skill to know when a mount is bought. If it gets that wrong, set it here.
   local function overridden(level)
-    local p = profile()
-    return p ~= nil and p.milestoneOverride ~= nil and p.milestoneOverride[level] == true
+    local c = ns.db and ns.db.char
+    return c ~= nil and c.milestoneOverride ~= nil and c.milestoneOverride[level] == true
   end
   local function override(level, value)
-    local p = profile()
-    if not p then return end
-    p.milestoneOverride = p.milestoneOverride or {}
-    p.milestoneOverride[level] = value or nil
+    local c = ns.db and ns.db.char
+    if not c then return end
+    c.milestoneOverride = c.milestoneOverride or {}
+    c.milestoneOverride[level] = value or nil
     applyNow()
   end
   page:section("fixHeading", L["Not right?"])
@@ -930,9 +940,9 @@ end
 -- The tally's numbers, or nil when they can't be worked out yet.
 local function tallyEntries()
   if not (ns.Tally and ns.Tally.Entries) then return nil, L["The tally isn't available right now."] end
-  local ok, entries, message = pcall(ns.Tally.Entries)
+  local ok, answer = pcall(recent, "tally", function() return { ns.Tally.Entries() } end)
   if not ok then return nil, L["The tally isn't available right now."] end
-  return entries, message
+  return answer[1], answer[2]
 end
 
 local function amount(label, hex, key)

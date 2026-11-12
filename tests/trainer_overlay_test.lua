@@ -411,3 +411,16 @@ test("Forever's trainer rows come in Blizzard's mainline order and are read by i
   eq({ ns.Adapter.TrainerServiceInfo("Survival", nil, "header", 1) }, { "Survival", nil, "header", 1 })
   eq({ ns.Adapter.TrainerServiceInfo("Track Humanoids", nil, "available", 1) }, { "Track Humanoids", nil, "available", 1 })
 end)
+
+test("one refresh pass works the verdicts out once for the filter and the overlay, a later ask is fresh", function()
+  local env = fakeEnv()
+  local widgets = buttons(env, { 6 })
+  local reads, read = 0, ns.Adapter.ReadTrainer
+  ns.Adapter.ReadTrainer = function(...) reads = reads + 1; return read(...) end
+  ns.TrainerFilter = { Apply = function(e) ns.TrainerOverlay.Compute(e) end }
+  truthy(ns.TrainerOverlay.SafeRefresh(env, widgets))
+  eq(reads, 1, "filter and overlay share one read")
+  ns.TrainerOverlay.Compute(env); ns.TrainerOverlay.Compute(env)
+  eq(reads, 3, "outside a pass every ask reads the trainer again")
+  ns.TrainerFilter, ns.Adapter.ReadTrainer = nil, read
+end)

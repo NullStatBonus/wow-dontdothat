@@ -113,11 +113,19 @@ The system SHALL show verified savings, projected savings, spent-against-rules, 
 - **THEN** verified and projected totals are shown separately
 
 ### Requirement: Settings persistence
-The system SHALL persist settings across sessions and apply changes immediately without a reload.
+The system SHALL persist settings across sessions and apply changes immediately without a reload. What a character has done (the professions it was asked about and the mounts marked as bought) SHALL be saved for that character only, so one character's answers do not change another's. The first time a character logs in after this was introduced, the system SHALL copy the values that were saved for all characters into that character, so no one loses what they had.
 
 #### Scenario: Toggle takes effect
 - **WHEN** the player turns off alerts
 - **THEN** the next flagged attempt produces no sound
+
+#### Scenario: Answers are per character
+- **WHEN** the player marks the level 40 mount as bought on one character and logs in another
+- **THEN** the other character does not have it marked and is still warned
+
+#### Scenario: Existing answers carried over
+- **WHEN** a character with answers saved before this change logs in for the first time afterwards
+- **THEN** it keeps those answers, and a later change on one character does not change the other
 
 ### Requirement: Slash commands
 The system SHALL provide `/ddt` and `/dontdothat` to open settings and run debug commands.
@@ -215,11 +223,15 @@ The system SHALL provide a Tuning section on Advanced with the marks and questio
 - **THEN** the profession margin and prompt tiers return to their defaults
 
 ### Requirement: Alert channel control
-The system SHALL let the player pick the sound channel used for the warning sound from Master, Sound effects, Music, Ambience and Dialog, defaulting to Master.
+The system SHALL let the player pick the sound channel used for the warning sound from Master, Sound effects, Music, Ambience and Dialog, defaulting to Master, and SHALL use it for every warning sound: trainer, vendor and auction house.
 
 #### Scenario: Picking a channel
 - **WHEN** the player picks Dialog
 - **THEN** the next warning sound plays on that channel
+
+#### Scenario: Items use the channel
+- **WHEN** the player picks Dialog and a flagged item is bought at a vendor or the auction house
+- **THEN** its warning sound plays on Dialog
 
 ### Requirement: Home page and nudge level
 The system SHALL provide a Home page with the overall on/off control, a choice of how firmly the addon nudges the player, and the "stop warning me after" mount choice. The nudge choice SHALL offer Just mark things (marks only, never asks), Ask me first (marks, asks before buying what the player should wait on) and Ask about everything (also asks about low-value and informational items). Ask me first SHALL be the default. Each option SHALL carry its own one-line explanation. The choice SHALL be read from the saved marks, "Ask before buying" and prompt-tier settings rather than stored on its own, and SHALL show Custom as selected when those settings match none of the three, with a line that says what is set (whether marks are on, whether it asks, and which kinds of spell it asks about) and that choosing a level resets them or that they can be fine-tuned under Advanced > Tuning. Choosing a nudge level SHALL set those settings, and choosing Custom SHALL change nothing.
@@ -275,7 +287,7 @@ The system SHALL keep the deeper controls on an Advanced page and out of the way
 - **THEN** the addon behaves with its default tuning, sound and rule switches
 
 ### Requirement: Reset all settings
-The system SHALL provide one control, on Home, that puts every setting back to its default after the player confirms, and SHALL NOT provide any other settings reset. It SHALL keep the tally and what the addon already knows the player has done (professions asked about and milestones marked complete), and SHALL turn debug recording off.
+The system SHALL provide one control, on Home, that puts every setting back to its default after the player confirms, and SHALL NOT provide any other settings reset. It SHALL keep the tally and what the addon already knows the player has done (professions asked about and milestones marked complete, saved per character), and SHALL turn debug recording off.
 
 #### Scenario: Resetting
 - **WHEN** the player has changed settings on several pages and confirms Reset all settings

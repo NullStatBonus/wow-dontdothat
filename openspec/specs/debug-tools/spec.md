@@ -41,11 +41,11 @@ The system SHALL record respec price quotes shown by the client and the intercep
 - **THEN** it is stored with the respec count and time
 
 ### Requirement: Copyable export
-The system SHALL show the export in a text window whose contents can be selected and copied, and SHALL include settings, ledger, recent log, and library versions.
+The system SHALL show the export in a text window whose contents can be selected and copied, and SHALL include settings, the per-character answers (professions asked about and mounts marked as bought), ledger, recent log, and library versions.
 
 #### Scenario: Export
 - **WHEN** the player enters `/ddt export`
-- **THEN** a window opens with the full report selected for copying
+- **THEN** a window opens with the full report selected for copying, including a Character section
 
 ### Requirement: Debug log
 The system SHALL keep a bounded in-memory and saved log of interception events when debug logging is on, and allow clearing it.

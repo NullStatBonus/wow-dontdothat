@@ -214,10 +214,12 @@ function SpellData.Services(classKey, known)
     for i, row in ipairs(rows) do
       local cost, isEstimate = SpellData.Cost(classKey, row)
       if cost and (row.level or 0) > 1 then
+        local learned
+        if known then learned = known(row) end -- false must stay false: only nil means the game could not say
         out[#out + 1] = {
           familyId = familyIndex(classKey).byId[row.id], name = row.name, rank = row.rank, unlockLevel = row.level, cost = cost,
           costIsEstimate = isEstimate,
-          learned = known and known(row) or nil, id = row.id,
+          learned = learned, id = row.id,
         }
       end
     end

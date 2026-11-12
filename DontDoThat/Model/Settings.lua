@@ -137,13 +137,28 @@ end
 
 -- Remembers that the player was asked about learning a profession, so it is asked about only once.
 function Settings.MarkProfessionAsked(profession, p)
-  p = p or saved()
+  p = p or (ns.db and ns.db.char)
   if not p then return end
   p.professionAsked = p.professionAsked or {}
   p.professionAsked[profession] = true
 end
 
--- Settings that record what the player has already done rather than how they like things.
+-- What a character has done used to be saved in the shared profile. Each character copies those values once on its first
+-- login after the upgrade, so everyone keeps what they had; the profile copy stays for the characters not yet migrated.
+function Settings.MigrateCharState(db)
+  local p, c = db and db.profile, db and db.char
+  if not p or not c or c.perCharState then return end
+  for _, key in ipairs({ "professionAsked", "milestoneOverride" }) do
+    if type(p[key]) == "table" then
+      c[key] = c[key] or {}
+      for k, v in pairs(p[key]) do c[key][k] = v end
+    end
+  end
+  c.perCharState = true
+end
+
+-- Settings that are kept on reset. professionAsked and milestoneOverride are the old shared copies, kept because the
+-- characters that have not logged in since the upgrade still need them to migrate from.
 local KEEP_ON_RESET = { professionAsked = true, milestoneOverride = true, revisionNotice = true }
 
 -- Puts every setting back to its default. With AceDB, removing a saved key lets the default show through again.

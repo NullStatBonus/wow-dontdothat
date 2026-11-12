@@ -62,6 +62,9 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] (L18) Skip Serpent Sting rank 2 and buy rank 3 straight away. It should be allowed, which confirms ranks can be bought out of order. The tally doesn't change, because those ranks aren't marked.
 - [ ] **Start the count over** asks for confirmation and sets everything to zero.
 - [ ] Milestones: tick "I've already bought my level 40 mount": the status changes to saving for level 60. Untick it.
+- [x] Milestones and professions are per character: tick the level 40 mount on one character, log in another. It is unticked there and still warns. A profession question answered on one is still asked on the other. (Verified by hand 2026-11-11 with two characters.)
+- [ ] After an upgrade from an older version, a character that already had a mount ticked or a profession answered still shows it, and a second character gets the same values once, then diverges.
+- [ ] `/ddt export` has a **Character** section listing the mounts marked and the professions asked about.
 - [ ] After you actually learn Apprentice Riding, the status moves on by itself. (If it doesn't, the override above is the workaround, and tell me.)
 
 ## 6. Resets
@@ -90,6 +93,8 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [x] Purchases page (was Items): every category has a dropdown; changing one takes effect without a reload; gold/silver/copper boxes show 0 / 10 / 0 and reject letters.
 - [x] Auction house: a flagged item shows the question and Cancel buys nothing. (Checked 2026-10-24 with Malachite, 18c, three times; `PlaceAuctionBid` wrapped and the game still calls ours.)
 - [x] Auction house: both a bid and a buyout show the question, and Accept completes them. (Verified by hand 2026-10-24.) If instead the chat says item purchases are only warned, `/ddt export` and send the "items:" lines (task 1.1).
+- [x] Auction house, Forever: after opening the auction window, `/ddt export` shows `modernPlaceBid = true`, and a flagged bag buyout shows the question when you commit to buying. If another addon or the game replaces the function, the log shows "C_AuctionHouse purchases wrapped" again at the next opening. (Verified by hand 2026-11-11.)
+- [ ] With a sound channel other than Master picked on the Alerts page, a flagged vendor or auction purchase plays its warning on that channel.
 - [x] Talent-reset questions show the earn-back line. (Verified by hand 2026-10-24.)
 - [ ] Trainer questions show the earn-back line.
 

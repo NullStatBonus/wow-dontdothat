@@ -147,11 +147,11 @@ local function question(kind, cost)
     earn and ("\n\n" .. earn) or "", kind.ask)
 end
 
-local function textObject(frame)
+local function textObject(env, frame)
   if type(frame.text) == "table" then return frame.text end
   if type(frame.GetName) == "function" then
     local name = frame:GetName()
-    if name and type(_G[name .. "Text"]) == "table" then return _G[name .. "Text"] end
+    if name and type(env[name .. "Text"]) == "table" then return env[name .. "Text"] end
   end
 end
 
@@ -168,7 +168,7 @@ end
 
 -- Fallback when our question cannot be used: leave the game's dialog and add our note to it.
 local function annotate(env, frame, kind, which)
-  local text = textObject(frame)
+  local text = textObject(env, frame)
   if not text then return end
   local current = text:GetText()
   if not current or current:find(MARK, 1, true) then return end
@@ -191,7 +191,7 @@ end
 
 local function warn(key, kind, ownDialogUp)
   if not (ns.Alert and ns.TrainerConfirm) then return end
-  local settings = ns.TrainerConfirm.AlertSettings()
+  local settings = ns.Prompt.AlertSettings()
   if ownDialogUp then settings.alertBanner = false end -- our question is on screen, no banner needed
   pcall(ns.Alert.Trigger, { tier = "defer", name = kind.label, cost = lastQuote[key], reason = kind.advice },
     "reset:" .. key, settings)
@@ -214,16 +214,9 @@ local function present(env, key, kind, which, data)
     local shown = ns.ConfirmPopup.Show(question(kind, lastQuote[key]),
       function()
         if ns.Log then ns.Log.Add("reset: %s accepted", kind.label) end
-        local ok, err
-        if kind.accept then
-          accepting = true
-          ok, err = pcall(kind.accept, env, data, which)
-          accepting = false
-        else
-          local fn = env[kind.confirmFn]
-          if type(fn) ~= "function" then return end
-          ok, err = pcall(fn)
-        end
+        accepting = true
+        local ok, err = pcall(kind.accept, env, data, which)
+        accepting = false
         if not ok and ns.Log then ns.Log.Add("reset: %s call failed: %s", kind.label, tostring(err)) end
       end,
       function()
@@ -232,7 +225,6 @@ local function present(env, key, kind, which, data)
         local state = ledgerState()
         if state then kind.avoided(state, lastQuote[key]) end
         if ns.Log then ns.Log.Add("reset: %s skipped", kind.label) end
-        if kind.afterCancel then pcall(kind.afterCancel, env) end
       end)
     if shown then
       -- Ours is up, so put the game's away. Hiding it does not run its Cancel.
@@ -255,7 +247,7 @@ end
 -- Is this CONFIRM_TALENT_WIPE really the pet trainer's? Its text talks about the pet (the client's word for it, or English).
 local function isPetWipe(env, which)
   local frame = findFrame(env, which)
-  local text = frame and textObject(frame)
+  local text = frame and textObject(env, frame)
   local current = text and type(text.GetText) == "function" and text:GetText()
   if type(current) ~= "string" then return false end
   current = current:lower()
@@ -295,10 +287,7 @@ end
 local function refuse(env, func)
   disabledReason = "blocked: " .. tostring(func)
   if ns.Log then ns.Log.Add("reset: our question switched off (%s)", disabledReason) end
-  if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
-    pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME,
-      "|cffff3333" .. L["Don't Do That:"] .. "|r " .. L["this game version won't let it confirm these for you. Try again; it will add a warning to the game's own question instead."])
-  end
+  ns.Prompt.Say("|cffff3333" .. L["Don't Do That:"] .. "|r " .. L["this game version won't let it confirm these for you. Try again; it will add a warning to the game's own question instead."])
 end
 
 function Resets.Enable(eventTarget, env)

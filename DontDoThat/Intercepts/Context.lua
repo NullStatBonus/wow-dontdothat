@@ -19,6 +19,7 @@ function Context.Profile(env)
   end
   local riding = ns.Adapter.ReadRiding(env)
   local saved = ns.db and ns.db.profile
+  local char = ns.db and ns.db.char
   local pick = ns.Settings and ns.Settings.SpecOverride(player.class, classData, saved)
   return ns.PlayerProfile.Build({
     plausibleSpecs = pick and { pick } or nil,
@@ -30,9 +31,9 @@ function Context.Profile(env)
     classData = classData,
     professions = ns.Adapter.ReadProfessions(env),
     activeTalents = ns.Adapter.ReadActiveTalents(env),
-    professionAsked = saved and saved.professionAsked,
+    professionAsked = char and char.professionAsked,
     ridingLearned40 = riding.apprentice,
     ridingLearned60 = riding.journeyman,
-    milestoneOverride = saved and saved.milestoneOverride,
+    milestoneOverride = char and char.milestoneOverride,
   })
 end

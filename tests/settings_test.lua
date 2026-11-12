@@ -178,3 +178,25 @@ test("settings: reset all clears every setting except what the player has alread
   eq(p, { professionAsked = { [2575] = true }, milestoneOverride = { [60] = true } })
   ns.Settings.ResetAll(nil)
 end)
+
+test("settings: a profession asked about is remembered for this character only", function()
+  ns.db = { profile = {}, char = {} }
+  ns.Settings.MarkProfessionAsked(2575)
+  eq(ns.db.char.professionAsked, { [2575] = true }); eq(ns.db.profile.professionAsked, nil)
+  ns.db = nil
+end)
+
+test("settings: each character takes the old shared copies once, and later changes stay its own", function()
+  local profile = { professionAsked = { [2575] = true }, milestoneOverride = { [40] = true } }
+  local a, b = { profile = profile, char = {} }, { profile = profile, char = {} }
+  ns.Settings.MigrateCharState(a); ns.Settings.MigrateCharState(b)
+  eq(a.char.professionAsked, { [2575] = true }); eq(b.char.milestoneOverride, { [40] = true })
+  a.char.milestoneOverride[60] = true
+  ns.Settings.MigrateCharState(a)
+  eq(b.char.milestoneOverride, { [40] = true }, "the other character is untouched")
+  eq(profile.milestoneOverride, { [40] = true }, "the shared copy is left for characters not yet migrated")
+  local fresh = { profile = {}, char = {} }
+  ns.Settings.MigrateCharState(fresh)
+  eq(fresh.char.professionAsked, nil)
+  ns.Settings.MigrateCharState(nil)
+end)

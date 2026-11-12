@@ -10,7 +10,7 @@ local MAX_BUTTONS = 20
 
 -- Evaluates every purchasable row. Returns { byIndex, verdicts } or nil when there is nothing
 -- to evaluate (unsupported class, trainer unreadable).
-function Trainer.Compute(env)
+local function compute(env)
   local profile = ns.Context.Profile(env)
   if not profile or ns.Adapter.IsBeastTraining(env) then return nil end
   local trainer = ns.Adapter.ReadTrainer(env)
@@ -34,6 +34,15 @@ function Trainer.Compute(env)
     end
   end
   return { byIndex = trainer.byIndex, verdicts = verdicts, rows = trainer.rows, trainer = trainer }
+end
+
+-- Inside one SafeRefresh pass the filter and the overlay both ask, so the answer is worked out once and shared.
+-- Outside a pass (the Train button asking at click time) it is always fresh.
+local pass
+function Trainer.Compute(env)
+  if not pass then return compute(env) end
+  if not pass.done then pass.value, pass.done = compute(env), true end
+  return pass.value
 end
 
 local function enabled()
@@ -98,7 +107,7 @@ function Trainer.Refresh(env, widgets)
   for i = 1, MAX_BUTTONS do
     local button = env["ClassTrainerSkill" .. i]
     if type(button) ~= "table" then break end
-    local ok, id = pcall(function() return button:GetID() end)
+    local ok, id = pcall(button.GetID, button)
     widgets.set(button, computed and ok and computed.verdicts[id] or nil)
   end
   local frame = env.ClassTrainerFrame
@@ -113,6 +122,8 @@ end
 
 -- Never lets an error from our code reach the default interface.
 function Trainer.SafeRefresh(env, widgets)
+  local outer = pass
+  pass = {} -- a pass started inside this one (Blizzard redraws while the filter renders) gets its own
   -- The filter re-draws the rows first, so the marks below are placed by each row's final service index.
   if ns.TrainerFilter then
     local okFilter, filterErr = pcall(ns.TrainerFilter.Apply, env)
@@ -120,6 +131,7 @@ function Trainer.SafeRefresh(env, widgets)
   end
   local ok, err = pcall(Trainer.Refresh, env, widgets)
   if not ok and ns.Log then ns.Log.Add("trainer overlay failed: %s", tostring(err)) end
+  pass = outer
   return ok
 end
 

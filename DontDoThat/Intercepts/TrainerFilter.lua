@@ -241,7 +241,7 @@ function Filter.Apply(env)
   local visibility = ns.TrainerVisibility.Compute(computed.rows, function(row)
     return computed.verdicts[row.index]
   end, { enabled = true })
-  if ns.Log then
+  if ns.Log and ns.Log.IsEnabled() then
     local tiers = {}
     for _, row in ipairs(computed.rows) do
       local verdict = computed.verdicts[row.index]

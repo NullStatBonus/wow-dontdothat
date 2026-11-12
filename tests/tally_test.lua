@@ -63,3 +63,13 @@ test("a spell outside the bundled tables is tracked by the spell ID the tooltip 
   eq(ns.db.char.catalog["2551#0"].state, "open", "the same spell under another name is still the same row")
   eq(ns.db.char.catalog["2552#0"].state, "learned", "the row that vanished is bought")
 end)
+
+test("spellbook services keep not-learned as false, and unknown as nil", function()
+  local function learnedOf(known)
+    for _, svc in ipairs(ns.SpellData.Services("HUNTER", known)) do return svc.learned end
+  end
+  eq(learnedOf(function() return false end), false)
+  eq(learnedOf(function() return true end), true)
+  eq(learnedOf(function() return nil end), nil)
+  eq(learnedOf(nil), nil)
+end)

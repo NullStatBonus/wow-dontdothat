@@ -12,7 +12,7 @@ Update the supporting docs in the same change as any user-visible addon behavior
 - `README.md`: features, settings page, command list, and "Good to know" limits.
 - `docs/listing.md`: the CurseForge/Wago listing text, including the summary line if the headline behavior changes.
 - `docs/test-plan.md`: manual in-game checks for the new behavior; keep section numbers unique and in order.
-- The debug report header in `Core.lua` (`reportText`) lists any new setting.
+- The debug report (`Debug/Export.lua`) dumps the whole profile and the per-character answers, so a new setting shows there without a change; a new per-character key needs adding to `sourceProvider` in `Core/Addon.lua`.
 - `CHANGELOG.md` is written at archive (see Releases), not before.
 
 ## Git and PRs

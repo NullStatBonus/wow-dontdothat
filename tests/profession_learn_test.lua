@@ -91,12 +91,13 @@ end)
 test("answering either way records the profession; alert-only mode records nothing", function()
   local function run(promptsOn, answer)
     local n = { Log = { Add = function() end } }
-    n.db = { profile = {} }
-    n.Settings = { MarkProfessionAsked = function(prof) n.db.profile.professionAsked = { [prof] = true } end,
+    n.db = { profile = {}, char = {} }
+    n.Settings = { MarkProfessionAsked = function(prof) n.db.char.professionAsked = { [prof] = true } end,
       PromptTiers = function() return { defer = true } end, PromptsFor = function() return true end }
     n.Alert = { Trigger = function() end }
     local ask
     n.ConfirmPopup = { Ask = function(_, yes, no) ask = { yes = yes, no = no }; return true end }
+    H.load("DontDoThat/Intercepts/Prompt.lua", n)
     H.load("DontDoThat/Intercepts/Confirm.lua", n)
     n.TrainerConfirm.Reset()
     n.db.profile.blockingConfirmations = promptsOn
@@ -110,7 +111,7 @@ test("answering either way records the profession; alert-only mode records nothi
     n.TrainerConfirm.Install(env)
     button.script(button)
     if ask and answer then ask[answer]() end
-    return n.db.profile.professionAsked
+    return n.db.char.professionAsked
   end
   eq(run(true, "yes"), { [4036] = true })
   eq(run(true, "no"), { [4036] = true })

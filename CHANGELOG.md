@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.2
+
+- Fixed: your answers are now kept per character. Marking your level 40 mount as bought, or being asked about a profession, no longer carries over to your other characters. Each character copies what you had once on its first login, so nothing is lost.
+- Fixed: the warning sound for vendor and auction purchases now plays on the sound channel you picked, like the trainer warning.
+- Fixed: on Forever, the auction house question could stop appearing when the game replaced its bid function after login. The addon now checks each time the auction window opens and puts its guard back.
+- Fixed: a spell your spellbook says you haven't learned is no longer counted as bought in the Tally.
+- Faster: the trainer window works out its marks once per refresh instead of several times, and the Tally and Milestones pages no longer rebuild everything for each line.
+- `/ddt export` has a new Character section with the mounts marked and professions asked about.
+
 ## 0.11.1
 
 - Fixed: on Forever, the game refused to let you buy pet abilities in Beast Training after you used a class or pet trainer. The error said "AddOn 'DontDoThat' tried to call the protected function 'UNKNOWN()'".

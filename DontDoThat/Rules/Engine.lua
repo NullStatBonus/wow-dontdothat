@@ -166,6 +166,14 @@ local function sortedKeys(t)
   return keys
 end
 
+-- The spec keys in order, worked out once per rules table: every row evaluated asks for them.
+local sortedSpecs = setmetatable({}, { __mode = "k" })
+local function specKeys(data)
+  local keys = sortedSpecs[data.specs]
+  if not keys then keys = sortedKeys(data.specs); sortedSpecs[data.specs] = keys end
+  return keys
+end
+
 local function specName(data, key)
   return data.specs[key].name or key
 end
@@ -175,7 +183,7 @@ local function plausible(profile, data)
   for _, key in ipairs(profile.plausibleSpecs or {}) do
     if data.specs[key] and not seen[key] then seen[key] = true; keys[#keys + 1] = key end
   end
-  if #keys == 0 then keys = sortedKeys(data.specs) end -- ambiguous: every spec is plausible
+  if #keys == 0 then keys = specKeys(data) end -- ambiguous: every spec is plausible
   return keys, seen
 end
 
@@ -273,7 +281,7 @@ local function evaluateSpell(profile, action, data)
     return out(bestTier, "tag", whyWait(data, name, bestTag))
   end
 
-  for _, key in ipairs(offKinds.offSpec and {} or sortedKeys(data.specs)) do
+  for _, key in ipairs(offKinds.offSpec and {} or specKeys(data)) do
     local rot = data.specs[key].rotation
     if not isPlausible[key] and (inRotation(profile, data, rot.core, name) or inRotation(profile, data, rot.situational, name)) then
       return out("deferLow", "rotation", (L["Mostly used by %s players, and your talents lean another way."]):format(specName(data, key)))

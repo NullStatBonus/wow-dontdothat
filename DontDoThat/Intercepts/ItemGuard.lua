@@ -19,10 +19,7 @@ function Guard.Disable(reason)
   disabledReason = reason
   pcall(trace, { surface = "-", outcome = "prompts switched off: " .. tostring(reason) })
   if ns.Log then ns.Log.Add("items: prompts switched off for the session (%s)", tostring(reason)) end
-  if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
-    pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME,
-      L["Don't Do That: this game version won't let it confirm item purchases, so it will only warn you."])
-  end
+  ns.Prompt.Say(L["Don't Do That: this game version won't let it confirm item purchases, so it will only warn you."])
 end
 
 function Guard.Watch(eventTarget)
@@ -130,12 +127,7 @@ function Guard.Flag(surface, link, total)
   return info.flagged and info.category or nil
 end
 
-local function alertSettings()
-  local p = profile()
-  local a = p.alert or {}
-  return { alertsEnabled = p.alerts ~= false, alertBanner = a.banner ~= false,
-    alertSound = a.sound, alertCooldown = a.cooldown }
-end
+local function alertSettings() return ns.Prompt.AlertSettings() end
 
 local function record(info, name, outcome)
   return trace({ surface = info.surface, name = name, total = info.total, classID = info.classID,
@@ -172,10 +164,7 @@ function Guard.Run(surface, name, link, total, proceed)
   end
 
   -- The question says everything the banner would, so it gets the sound alone.
-  local soundOnly = {}
-  for k, v in pairs(settings) do soundOnly[k] = v end
-  soundOnly.alertBanner = false
-  pcall(ns.Alert.Trigger, verdict, key, soundOnly)
+  pcall(ns.Alert.Trigger, verdict, key, ns.Prompt.SoundOnly(settings))
 
   local shown = false
   pcall(function()
@@ -197,9 +186,7 @@ function Guard.Run(surface, name, link, total, proceed)
     return
   end
   entry.outcome = "question could not be shown, bought with banner"
-  if settings.alertBanner and settings.alertsEnabled and ns.AlertBanner then
-    pcall(ns.AlertBanner.Show, verdict, verdict.name)
-  end
+  ns.Prompt.BannerInstead(settings, verdict, verdict.name)
   return proceed()
 end
 

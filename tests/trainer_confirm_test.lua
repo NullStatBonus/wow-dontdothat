@@ -19,6 +19,7 @@ local function setup(opts)
     rec.asks[#rec.asks + 1] = { verdict = verdict, confirm = onConfirm, cancel = onCancel }
     return true
   end }
+  H.load("DontDoThat/Intercepts/Prompt.lua", ns)
   H.load("DontDoThat/Intercepts/Confirm.lua", ns)
   ns.TrainerConfirm.Reset()
   ns.db = opts.profile and { profile = opts.profile } or nil

@@ -21,6 +21,9 @@ function Auction.Status(env)
     GetAuctionItemInfo = type(env.GetAuctionItemInfo),
     GetAuctionItemLink = type(env.GetAuctionItemLink),
     modernPlaceBid = modern.PlaceBid ~= nil and env.C_AuctionHouse.PlaceBid == modern.PlaceBid or false,
+    modernPlaceBidWrittenBy = type(env.issecurevariable) == "function" and type(env.C_AuctionHouse) == "table"
+      and select(2, env.issecurevariable(env.C_AuctionHouse, "PlaceBid")) or nil,
+    modernPlaceBidMade = modern.PlaceBid ~= nil, -- false: never wrapped; true with modernPlaceBid false: the game replaced it
     modernConfirmCommoditiesPurchase = modern.ConfirmCommoditiesPurchase ~= nil
       and env.C_AuctionHouse.ConfirmCommoditiesPurchase == modern.ConfirmCommoditiesPurchase or false,
   }
@@ -34,8 +37,11 @@ local function nameOf(link) return type(link) == "string" and link:match("%[(.-)
 local function installModern(env)
   local api = env.C_AuctionHouse
   if type(api) ~= "table" then return false end
-  if modern.PlaceBid or modern.ConfirmCommoditiesPurchase then return true end
   local bid, confirm = api.PlaceBid, api.ConfirmCommoditiesPurchase
+  -- Called again when the AH opens: if the game put its own function back, wrap that one. Ours is left alone.
+  if bid == modern.PlaceBid then bid = nil end
+  if confirm == modern.ConfirmCommoditiesPurchase then confirm = nil end
+  local wrapped = bid ~= nil or confirm ~= nil
   if type(bid) == "function" and type(api.GetAuctionInfoByID) == "function" then
     modern.PlaceBid = function(auctionID, amount, ...)
       local ok, info = pcall(api.GetAuctionInfoByID, auctionID)
@@ -50,6 +56,16 @@ local function installModern(env)
         function() return bid(auctionID, amount, unpack(args)) end)
     end
     api.PlaceBid = modern.PlaceBid
+    if ns.Log then
+      local secure, by
+      if type(env.issecurevariable) == "function" then secure, by = env.issecurevariable(api, "PlaceBid") end
+      ns.Log.Add("items: C_AuctionHouse.PlaceBid written, reads back %s, secure=%s, last written by %s",
+        api.PlaceBid == modern.PlaceBid and "as ours" or "DIFFERENT", tostring(secure), tostring(by))
+    end
+  end
+  if not modern.PlaceBid and ns.Log then
+    ns.Log.Add("items: C_AuctionHouse.PlaceBid not wrapped (PlaceBid %s, GetAuctionInfoByID %s)",
+      type(bid), type(api.GetAuctionInfoByID))
   end
   if type(confirm) == "function" and type(api.GetNumCommoditySearchResults) == "function"
       and type(api.GetCommoditySearchResultInfo) == "function" then
@@ -78,7 +94,7 @@ local function installModern(env)
     api.ConfirmCommoditiesPurchase = modern.ConfirmCommoditiesPurchase
   end
   if modern.PlaceBid or modern.ConfirmCommoditiesPurchase then
-    if ns.Log then ns.Log.Add("items: C_AuctionHouse purchases wrapped") end
+    if wrapped and ns.Log then ns.Log.Add("items: C_AuctionHouse purchases wrapped") end
     return true
   end
   return false
@@ -117,6 +133,17 @@ function Auction.Install(env)
   return true
 end
 
-function Auction.Enable(env)
-  pcall(Auction.Install, env or _G)
+-- The game can replace C_AuctionHouse functions after login (the AH window loads later), which silently drops ours.
+function Auction.Rewrap(env)
+  env = env or _G
+  if installed and (modern.PlaceBid or modern.ConfirmCommoditiesPurchase) then pcall(installModern, env) end
+end
+
+-- eventTarget (optional): a dedicated AceEvent object, so the AH opening can re-check the wrappers.
+function Auction.Enable(env, eventTarget)
+  env = env or _G
+  pcall(Auction.Install, env)
+  if eventTarget then
+    pcall(eventTarget.RegisterEvent, eventTarget, "AUCTION_HOUSE_SHOW", function() Auction.Rewrap(env) end)
+  end
 end

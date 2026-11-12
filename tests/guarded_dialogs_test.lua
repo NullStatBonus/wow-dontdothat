@@ -5,7 +5,7 @@ local H = require("harness")
 local function setup(profile)
   local ns = { }
   for _, f in ipairs({ "UI/Helpers.lua", "Data/GoldRates.lua", "Model/EarnBack.lua", "Model/Ledger.lua",
-    "Intercepts/Resets.lua" }) do
+    "Intercepts/Prompt.lua", "Intercepts/Resets.lua" }) do
     H.load("DontDoThat/" .. f, ns)
   end
   ns.db = { profile = profile or { enabled = true, warnings = true, blockingConfirmations = true },
