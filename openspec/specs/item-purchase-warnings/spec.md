@@ -101,6 +101,10 @@ The system SHALL apply the overall enable, "Ask before buying", badges and toolt
 - **WHEN** "Ask before buying" is off and the player buys a flagged item
 - **THEN** the warning sound and banner play and the purchase goes ahead
 
+#### Scenario: Sound channel
+- **WHEN** the player has picked a sound channel other than Master and buys a flagged item
+- **THEN** the warning sound plays on the picked channel
+
 ### Requirement: Class item families
 The system SHALL let a class's rule data name item families that are warned about at vendors, recognising each item by its item ID and not by its name, with a list of families that are kept, a plain-language reason, and no change to the item categories. The warning SHALL follow the Shopping switch, the minimum price and the ask-before-buying setting like any other item warning.
 

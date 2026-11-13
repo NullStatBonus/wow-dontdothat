@@ -92,6 +92,7 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [x] Auction house: both a bid and a buyout show the question, and Accept completes them. (Verified by hand 2026-10-24.) If instead the chat says item purchases are only warned, `/ddt export` and send the "items:" lines (task 1.1).
 - [x] Talent-reset questions show the earn-back line. (Verified by hand 2026-10-24.)
 - [ ] Trainer questions show the earn-back line.
+- [ ] Advanced > Sound & messages: set Volume channel to Dialog, turn the Master volume down and Dialog up, and buy a flagged vendor item: the warning sound follows the Dialog volume.
 
 ## 10. Bank, stable and COD
 - [ ] Buy a bank slot from the banker: the game's dialog is replaced by a question with the price and the earn-back line. Cancel: nothing bought, Tally's turned-down count rises. Accept: slot bought.
