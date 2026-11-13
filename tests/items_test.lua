@@ -137,6 +137,16 @@ test("a flagged purchase is traced, asked about, and recorded when declined", fu
   _G.GetItemInfoInstant = nil
 end)
 
+test("a flagged purchase plays the alert on the chosen sound channel", function()
+  local ns = guarded()
+  ns.db.profile.alert = { channel = "Dialog" }
+  local got
+  ns.Alert.Trigger = function(_, _, settings) got = settings; return true end
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() end)
+  eq(got.alertChannel, "Dialog")
+  _G.GetItemInfoInstant = nil
+end)
+
 test("an unflagged purchase goes through and the trace says why", function()
   local ns = guarded()
   local bought = 0

@@ -134,7 +134,7 @@ local function alertSettings()
   local p = profile()
   local a = p.alert or {}
   return { alertsEnabled = p.alerts ~= false, alertBanner = a.banner ~= false,
-    alertSound = a.sound, alertCooldown = a.cooldown }
+    alertSound = a.sound, alertCooldown = a.cooldown, alertChannel = a.channel }
 end
 
 local function record(info, name, outcome)

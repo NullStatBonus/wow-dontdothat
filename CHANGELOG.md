@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.2
+
+- Fixed: the warning sound for vendor and auction house purchases now plays on the volume channel you picked. It always played on Master before.
+
 ## 0.11.1
 
 - Fixed: on Forever, the game refused to let you buy pet abilities in Beast Training after you used a class or pet trainer. The error said "AddOn 'DontDoThat' tried to call the protected function 'UNKNOWN()'".
