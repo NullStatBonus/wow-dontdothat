@@ -5,7 +5,7 @@ local H = require("harness")
 local function setup(profile)
   local ns = { }
   for _, f in ipairs({ "UI/Helpers.lua", "Data/GoldRates.lua", "Model/EarnBack.lua", "Model/Ledger.lua",
-    "Intercepts/Resets.lua" }) do
+    "Intercepts/Prompt.lua", "Intercepts/Resets.lua" }) do
     H.load("DontDoThat/" .. f, ns)
   end
   ns.db = { profile = profile or { enabled = true, warnings = true, blockingConfirmations = true },
@@ -30,9 +30,10 @@ local function setup(profile)
     end,
   }
   ns.ConfirmPopup = { Show = function(text, yes, no) shown.text, shown.yes, shown.no = text, yes, no; return true end }
-  ns.Resets.Enable({ RegisterEvent = function() end }, env)
+  local events = {}
+  ns.Resets.Enable({ RegisterEvent = function(_, event, fn) events[event] = fn end }, env)
   local function popup(which, data) env.StaticPopup_Show(which, nil, nil, data) end
-  return ns, env, shown, calls, popup
+  return ns, env, shown, calls, popup, events
 end
 
 test("bank slot: question shows the price and earn-back, decline counts as avoided", function()
@@ -142,4 +143,66 @@ test("talent reset: warn only, with the pet trainer's dialog told apart by its t
   eq(shown.text, nil)
   truthy(pcurrent():find("Taking skills off your pet costs gold", 1, true), pcurrent())
   eq(#calls, 0)
+end)
+
+-- Records what the guarded dialogs hand the alert module.
+local function alerts(ns)
+  local got = {}
+  ns.Alert = { Trigger = function(verdict, key, settings) got[#got + 1] = { verdict = verdict, key = key, settings = settings } end }
+  return got
+end
+
+test("a warning plays the alert with the profile's settings, without the banner while our question is up", function()
+  local ns, env, shown, calls, popup = setup({ enabled = true, warnings = true, blockingConfirmations = true,
+    alert = { sound = "s", cooldown = 7, channel = "Dialog" } })
+  local got = alerts(ns)
+  popup("CONFIRM_BUY_BANK_SLOT")
+  truthy(shown.text, "our question is up")
+  eq(#got, 1)
+  eq(got[1].key, "reset:bank")
+  eq(got[1].verdict.tier, "defer"); eq(got[1].verdict.cost, 25000)
+  local expected = ns.Prompt.AlertSettings()
+  expected.alertBanner = false
+  eq(got[1].settings, expected)
+  eq(got[1].settings.alertChannel, "Dialog")
+end)
+
+test("a warn-only reset keeps the banner, since the game's dialog is the one on screen", function()
+  local ns, env, shown, calls, popup = setup()
+  local got = alerts(ns)
+  env.StaticPopup1 = dialogText("CONFIRM_TALENT_WIPE", "Are you sure you want to reset your talents?")
+  popup("CONFIRM_TALENT_WIPE")
+  eq(shown.text, nil)
+  eq(#got, 1); eq(got[1].key, "reset:talent")
+  eq(got[1].settings, ns.Prompt.AlertSettings())
+  eq(got[1].settings.alertBanner, true)
+end)
+
+test("with Ask before buying off, a warning keeps the banner and no question is shown", function()
+  local ns, env, shown, calls, popup = setup({ enabled = true, warnings = true, blockingConfirmations = false })
+  local got = alerts(ns)
+  env.StaticPopup1 = dialogText("CONFIRM_BUY_BANK_SLOT", "Buy a bank slot?")
+  popup("CONFIRM_BUY_BANK_SLOT")
+  eq(shown.text, nil)
+  eq(#got, 1); eq(got[1].settings.alertBanner, true)
+end)
+
+test("when the client blocks our call, the question switches off and chat says so", function()
+  local ns, env, shown, calls, popup, events = setup()
+  local said = {}
+  _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) said[#said + 1] = text end }
+  truthy(events.ADDON_ACTION_FORBIDDEN)
+  events.ADDON_ACTION_FORBIDDEN("event", "SomeOtherAddon", "PurchaseSlot")
+  eq(#said, 0, "other addons are ignored")
+  events.ADDON_ACTION_FORBIDDEN("event", "DontDoThat", "PurchaseSlot")
+  eq(ns.Resets.DisabledReason(), "blocked: PurchaseSlot")
+  eq(#said, 1)
+  truthy(said[1]:find("won't let it confirm these for you", 1, true), said[1])
+  -- The next warning uses the game's dialog, so the banner comes back.
+  local got = alerts(ns)
+  env.StaticPopup1 = dialogText("CONFIRM_BUY_BANK_SLOT", "Buy a bank slot?")
+  popup("CONFIRM_BUY_BANK_SLOT")
+  eq(shown.text, nil)
+  eq(got[1].settings.alertBanner, true)
+  _G.DEFAULT_CHAT_FRAME = nil
 end)

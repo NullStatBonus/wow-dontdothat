@@ -110,7 +110,7 @@ local function guarded(over)
   local ns = fresh()
   over = over or {}
   local shown = {}
-  for _, f in ipairs({ "Intercepts/ItemGuard.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
+  for _, f in ipairs({ "Intercepts/Prompt.lua", "Intercepts/ItemGuard.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
   ns.db = { profile = { enabled = true, blockingConfirmations = true, alerts = true, minPrice = 100,
       traceItems = over.trace ~= false,
       itemModes = over.modes or { armor = "both", food = "ah" } },
@@ -208,5 +208,36 @@ test("shopping off: nothing is flagged, and turning it back on restores the warn
   eq(ns.ItemGuard.Flag("vendor", "link", 5000), nil)
   ns.db.profile.watch = { shopping = true }
   eq(ns.ItemGuard.Flag("vendor", "link", 5000), "armor")
+  _G.GetItemInfoInstant = nil
+end)
+
+test("when the question cannot be shown, the purchase goes ahead and the banner stands in", function()
+  local ns = guarded()
+  local banners, alerts = {}, {}
+  ns.AlertBanner = { Show = function(verdict, name) banners[#banners + 1] = { tier = verdict.tier, name = name } end }
+  ns.Alert.Trigger = function(_, _, settings) alerts[#alerts + 1] = settings; return true end
+  ns.ConfirmPopup.Ask = function() return false end
+  local bought = false
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() bought = true end)
+  truthy(bought)
+  eq(banners, { { tier = "defer", name = "Plate Chest" } })
+  eq(#alerts, 1); eq(alerts[1].alertBanner, false, "the sound fires sound-only before the question is tried")
+  eq(ns.db.global.itemTrace[1].outcome, "question could not be shown, bought with banner")
+  ns.db.profile.alert = { banner = false }
+  banners = {}
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() end)
+  eq(#banners, 0, "no banner when the banner is switched off")
+  _G.GetItemInfoInstant = nil
+end)
+
+test("switching item prompts off says so in chat", function()
+  local ns = guarded()
+  local said = {}
+  _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) said[#said + 1] = text end }
+  ns.ItemGuard.Disable("blocked: BuyMerchantItem")
+  ns.ItemGuard.Disable("blocked: again")
+  eq(#said, 1, "said once")
+  truthy(said[1]:find("won't let it confirm item purchases", 1, true), said[1])
+  _G.DEFAULT_CHAT_FRAME = nil
   _G.GetItemInfoInstant = nil
 end)

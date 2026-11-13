@@ -19,6 +19,7 @@ local function setup(opts)
     rec.asks[#rec.asks + 1] = { verdict = verdict, confirm = onConfirm, cancel = onCancel }
     return true
   end }
+  H.load("DontDoThat/Intercepts/Prompt.lua", ns)
   H.load("DontDoThat/Intercepts/Confirm.lua", ns)
   ns.TrainerConfirm.Reset()
   ns.db = opts.profile and { profile = opts.profile } or nil
@@ -356,4 +357,24 @@ test("Forever: without a frame factory the hook alone is installed", function()
   truthy(ns.TrainerConfirm.Install(env))
   eq(rec.overlay, nil)
   truthy(rec.hooks.PreClick)
+end)
+
+test("the TrainerConfirm.AlertSettings alias gives the same settings as Prompt.AlertSettings", function()
+  local ns = setup({ profile = { alerts = false, alert = { banner = false, sound = "s", cooldown = 4, channel = "Dialog" } } })
+  local a, p = ns.TrainerConfirm.AlertSettings(), ns.Prompt.AlertSettings()
+  eq(a, p)
+  eq(a, { alertsEnabled = false, alertBanner = false, alertSound = "s", alertCooldown = 4, alertChannel = "Dialog" })
+  local d = setup()
+  eq(d.TrainerConfirm.AlertSettings(), d.Prompt.AlertSettings())
+end)
+
+test("when no prompt can be shown, the banner stands in only if banners and alerts are on", function()
+  for _, profile in ipairs({ { alert = { banner = false } }, { alerts = false } }) do
+    local ns, env, button, rec = setup({ verdicts = { [5] = DEFER }, noPrompt = true, profile = profile })
+    ns.TrainerConfirm.Install(env)
+    button.script(button)
+    eq(#rec.bought, 1)
+    eq(#rec.banners, 0)
+    eq(rec.alertSettings[1].alertBanner, false, "the sound is still sound-only")
+  end
 end)

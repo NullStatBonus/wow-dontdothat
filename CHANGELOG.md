@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.3
+
+- Changed: the trainer, item and reset guards now share one copy of their alert settings, sound-only alert, banner fallback and chat notice. Nothing you see changes.
+
 ## 0.11.2
 
 - Fixed: the warning sound for vendor and auction house purchases now plays on the volume channel you picked. It always played on Master before.
