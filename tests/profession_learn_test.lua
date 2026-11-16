@@ -97,6 +97,7 @@ test("answering either way records the profession; alert-only mode records nothi
     n.Alert = { Trigger = function() end }
     local ask
     n.ConfirmPopup = { Ask = function(_, yes, no) ask = { yes = yes, no = no }; return true end }
+    H.load("DontDoThat/Intercepts/Prompt.lua", n)
     H.load("DontDoThat/Intercepts/Confirm.lua", n)
     n.TrainerConfirm.Reset()
     n.db.profile.blockingConfirmations = promptsOn

@@ -190,8 +190,8 @@ local function countSkippedWhenClosed(kind, key, frame)
 end
 
 local function warn(key, kind, ownDialogUp)
-  if not (ns.Alert and ns.TrainerConfirm) then return end
-  local settings = ns.TrainerConfirm.AlertSettings()
+  if not (ns.Alert and ns.Prompt) then return end
+  local settings = ns.Prompt.AlertSettings()
   if ownDialogUp then settings.alertBanner = false end -- our question is on screen, no banner needed
   pcall(ns.Alert.Trigger, { tier = "defer", name = kind.label, cost = lastQuote[key], reason = kind.advice },
     "reset:" .. key, settings)
@@ -295,10 +295,7 @@ end
 local function refuse(env, func)
   disabledReason = "blocked: " .. tostring(func)
   if ns.Log then ns.Log.Add("reset: our question switched off (%s)", disabledReason) end
-  if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
-    pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME,
-      "|cffff3333" .. L["Don't Do That:"] .. "|r " .. L["this game version won't let it confirm these for you. Try again; it will add a warning to the game's own question instead."])
-  end
+  ns.Prompt.Say("|cffff3333" .. L["Don't Do That:"] .. "|r " .. L["this game version won't let it confirm these for you. Try again; it will add a warning to the game's own question instead."])
 end
 
 function Resets.Enable(eventTarget, env)
