@@ -14,130 +14,132 @@
 
 ## 0.12.0
 
-- **New: a smaller warning.** When the addon warns you without asking a question, it can now show a small toast at the top of the screen, with the item or spell icon, instead of the large banner in the middle.
-  - Choose Toast or Warning under Appearance > Warnings. New installs use Toast.
-  - If you used an earlier version, you keep the large Warning banner until you change it.
-  - You can move the toast (Move, then Done or Cancel; Escape cancels) and set its opacity and size. You can't move it in combat.
-- **New: every warning is also noted in chat**, even when a question or toast shows. Turn it off with "Also note warnings in chat".
-- **New: `/ddt demo` and `/ddt preview <name>`** show labelled sample warnings, marks, a tooltip, a question and an explanation. Nothing is bought, and a real warning always replaces a sample.
-- **New commands:** `/ddt settings <page>`, `/ddt status`, `/ddt help <topic>`, `/ddt get` and `/ddt set` for the main settings, and `/ddt log` (with `/ddt log clear`). `/ddt export` still opens the same report.
-- The settings are reorganized: Home, What to watch, Progress, Appearance (Warnings, Explanations, Sound), Advanced and About. The game's own options panel now shows the Home controls, and Advanced has a button that opens the class list.
-- The pinned explanation is now a black panel with its own opacity and size, and Escape closes it.
-- The settings, toast and report window now match KeepThat and Closest Vendor in spacing, fonts and sizes.
-- The addon now has an icon in the AddOns list.
-- The debug report window can be closed with Escape and lists the presentation settings.
+- **New: A small warning.** When the addon warns you without a question, it can show a small toast at the top of the screen. The toast shows the icon of the item or spell. Before, the addon always showed a large banner in the middle of the screen.
+  - To select Toast or Warning, go to Appearance > Warnings. New installs use Toast.
+  - If you used an earlier version, you keep the large Warning banner. You can change it.
+  - You can move the toast. Click Move, then Done or Cancel. Escape also cancels. You cannot move the toast in combat.
+  - You can set the opacity and the size of the toast.
+- **New: Each warning also shows a line in chat.** This also occurs when a question or a toast shows. To stop it, turn off "Also note warnings in chat".
+- **New: `/ddt demo` and `/ddt preview <name>`.** These commands show sample warnings, marks, a tooltip, a question and an explanation. Each sample has a label. The addon does not buy anything. A real warning replaces a sample.
+- **New commands:** `/ddt settings <page>`, `/ddt status`, `/ddt help <topic>`, `/ddt get`, `/ddt set` and `/ddt log`. `/ddt log clear` clears the log. `/ddt export` opens the same report as before.
+- Changed: The settings have new pages: Home, What to watch, Progress, Appearance, Advanced and About. Appearance has Warnings, Explanations and Sound.
+- Changed: The options panel of the game shows the Home controls. Advanced has a button that opens the class list.
+- Changed: The pinned explanation is a black panel. You can set its opacity and size. Escape closes it.
+- Changed: The settings, the toast and the report window use the same spacing, fonts and sizes as KeepThat and Closest Vendor.
+- New: The addon has an icon in the AddOns list.
+- Changed: Escape closes the debug report window. The report shows the appearance settings.
 
 ## 0.11.3
 
-- Changed: the trainer, item and reset guards now share one copy of their alert settings, sound-only alert, banner fallback and chat notice. Nothing you see changes.
+- Changed: The trainer, item and reset warnings use one shared set of alert settings. You do not see a difference.
 
 ## 0.11.2
 
-- Fixed: the warning sound for vendor and auction house purchases now plays on the volume channel you picked. It always played on Master before.
+- Fixed: The warning sound for vendor and auction house purchases uses the volume channel that you select. Before, it always used Master.
 
 ## 0.11.1
 
-- Fixed: on Forever, the game refused to let you buy pet abilities in Beast Training after you used a class or pet trainer. The error said "AddOn 'DontDoThat' tried to call the protected function 'UNKNOWN()'".
-  - Cause: the addon changed parts of the trainer window, and the game blocks training-point purchases in a changed window.
-  - Gold purchases are not blocked, so class trainers never showed the error.
-  - The "Buy anyway?" question now comes from a button of the addon, on top of the Train button.
-  - The Recommended filter now fades the rows. It does not remove them.
-  - Beast training never gets a question.
-  - Vendors, the auction house and Classic Era are not changed.
-- On Forever a flagged spell is now recognised by its place in the trainer's own service list, so the question is asked about the spell actually selected; the window numbers its rows by display order and the addon was reading that number as the service index.
-- The addon now asks the client what kind of trainer is open, the way the game's own window does, before treating a window as beast training.
-- Forever's trainer rows are now read in the order that client returns them (name, type, icon, level, rank text, category). The addon was reading Classic Era's order, so on Forever every row looked unranked and never learned: the rank-skip advice and the learned-versus-open tally on the Progress page were silent there.
+- **Fixed: On Forever, the game stopped pet ability purchases in Beast Training.** This occurred after you used a class or pet trainer. The error was "AddOn 'DontDoThat' tried to call the protected function 'UNKNOWN()'".
+  - Cause: The addon changed parts of the trainer window. The game does not let you buy with training points from a changed window.
+  - Gold purchases were not stopped, so class trainers did not show the error.
+  - The "Buy anyway?" question now comes from a button of the addon. This button is on top of the Train button.
+  - The Recommended filter now makes rows dim. It does not remove them.
+  - Beast Training never shows a question.
+  - Vendors, the auction house and Classic Era did not change.
+- Fixed: On Forever, the question is about the spell that you selected. Before, the addon could read the wrong row.
+- Fixed: The addon asks the game which type of trainer is open. Before, it could think that a window was Beast Training when it was not.
+- Fixed: On Forever, the addon reads trainer rows in the correct order. Before, all rows looked unranked and not learned. Because of this, the rank-skip advice and the Progress tally did not work on Forever.
 
 ## 0.11.0
 
-- **The rank-skip advice has changed significantly.** The list of ranks to skip now has numbered revisions. Revision 2 is the new default.
+- **Changed: The rank-skip advice.** The list of ranks to skip now has numbered revisions. Revision 2 is the new default.
   - Revision 2 skips more ranks.
-  - It decides for your spec. A rank is flagged only when every spec you might play skips it.
-  - It follows the Wowhead leveling guides where they give advice.
-  - A later rank that unlocks at level 60 is flagged only for utility spells, and only until you have your level 60 mount.
-- Every skipped rank now says why: the guide says to buy only the first rank, it is only a few percent stronger for a spell you only use now and then, it adds nothing over the rank before it, or it can wait for the mount. The Rules page also shows where each skip came from.
-- The first time the addon loads with the new revision it prints a notice in the chat saying which revision is in use and how to change it.
-- To go back to the earlier list, use `/ddt revision 1` or the new Skip list choice on the Tuning page. `/ddt revision` shows what is in use. Switches you have already set keep working under both revisions.
-- The tools that build the skip data now live in `tools/skip-revision/`; `tools/build-skip-revisions.py` regenerates `Data/SkipRevisions.lua`.
+  - It uses your spec. It marks a rank only when all specs that you can play skip it.
+  - It uses the advice in the Wowhead leveling guides.
+  - It marks a level 60 rank only for utility spells, and only until you have your level 60 mount.
+- New: Each skipped rank tells you why. The reasons are: the guide says to buy only the first rank, it is only a little stronger for a spell that you use rarely, it is not stronger than the rank before it, or it can wait for the mount. The Rules page shows the source of each skip.
+- New: The first time the addon loads the new revision, chat shows which revision is in use and how to change it.
+- New: To use the old list, type `/ddt revision 1` or use Skip list on the Tuning page. `/ddt revision` shows the revision in use. Your switches work with both revisions.
+- Changed: The tools that make the skip data are in `tools/skip-revision/`. `tools/build-skip-revisions.py` makes `Data/SkipRevisions.lua` again.
 
 ## 0.10.9
 
-- Fixed the doubled page headings in the game's AddOns panel: the page name and an identical title line were both shown. The `/ddt` window is unchanged.
-- The store summary and addon notes now read "safeguards your gold so you can save up for your mount".
+- Fixed: The AddOns panel of the game showed each page heading two times. The `/ddt` window did not change.
+- Changed: The store summary and the addon notes say "safeguards your gold so you can save up for your mount".
 
 ## 0.10.8
 
-- Fixed beast training (a hunter's pet abilities, paid in training points) refusing ranks that cost points on Forever. The addon now leaves that window alone: no wrapped purchase, no marks, no prompts. A Pet Trainer NPC still gets the full treatment.
+- Fixed: On Forever, Beast Training did not let you buy ranks that cost training points. The addon now does not change that window. It shows no marks and no questions there. A Pet Trainer still gets all the warnings.
 
 ## 0.10.7
 
-- The Forever trainer asks "Buy anyway?" again before a flagged ability. It now wraps the game's own purchase call instead of replacing the Train button, which the client had refused.
-- Talent resets, pet skill resets and COD mail only warn now: the game's own dialog stays up with a note, a sound and a banner. Bank tabs on Forever work the same way.
-- A blocked action from one guard no longer switches off the trainer's questions, and a block now switches off the guard whose purchase it was.
+- Fixed: The Forever trainer asks "Buy anyway?" again before you buy a marked spell.
+- Changed: Talent resets, pet skill resets and COD mail only warn. The game's dialog stays, with a note, a sound and a banner. Bank tabs on Forever also work this way.
+- Fixed: A blocked action from one warning does not stop the trainer questions. A block now stops only the warning that made the purchase.
 
 ## 0.10.6
 
-- Vendor purchases are checked again in the Forever client. The client removed the call that the addon used to read prices.
-- The addon now reads talents from the new Forever talent trees, professions from the new skill list, and stable slot purchases through the new stable calls.
-- The pet trainer's reset is now a pet reset, not a talent reset.
-- `/ddt export` reports more of the client's calls, to help find other differences.
+- Fixed: On Forever, the addon checks vendor purchases again. The game removed the call that the addon used to read prices.
+- Fixed: On Forever, the addon reads talents from the new talent trees, professions from the new skill list, and stable slot purchases from the new stable calls.
+- Fixed: The reset at the pet trainer is now a pet reset, not a talent reset.
+- Changed: `/ddt export` shows more of the game calls. This helps to find other differences.
 
 ## 0.10.5
 
-- Auction house purchases are now checked in the Forever client. Its retail-style auction house (single items and stackable goods) was never hooked, so flagged items such as bags sailed through without a question. Classic Era is unchanged.
+- Fixed: On Forever, the addon checks auction house purchases. Before, it did not check them, so marked items such as bags did not show a question. Classic Era did not change.
 
 ## 0.10.4
 
-- Fixed the Forever trainer window refusing purchases, such as hunter pet training. The Train button is no longer replaced there, so a flagged spell gets a warning sound and banner but the purchase always goes through. If the game ever refuses the "Buy anyway?" question on Classic Era, the button gets its own handler back.
+- Fixed: On Forever, the trainer window did not let you buy some services, such as hunter pet training. The addon does not replace the Train button there now. A marked spell gets a sound and a banner, but the purchase always occurs. On Classic Era, if the game stops the "Buy anyway?" question, the button gets its own handler again.
 
 ## 0.10.3
 
-- The Recommended trainer filter and its row marks now work in the Forever trainer window, with the filter in the Filters menu.
+- Fixed: The Recommended trainer filter and its row marks work in the Forever trainer window. The filter is in the Filters menu.
 
 ## 0.10.2
 
-- Spell data refreshed for WoW Forever build 1.60.1.70790: new Rogue Death Mark and Shank, Shaman Totemic Projection is now Totemic Call, and Priest Binding Heal and Shaman Lava Burst are gone.
+- Changed: Spell data for WoW Forever build 1.60.1.70790. Rogue has new Death Mark and Shank spells. Shaman Totemic Projection is now Totemic Call. Priest Binding Heal and Shaman Lava Burst are removed.
 
 ## 0.10.1
 
-- Spell data refreshed for WoW Forever build 1.60.1.70755: new Druid Ferocious Bite, Lacerate and Primal Bite ranks, renamed Mage and Paladin talents, and the removed Paladin Salvation and Blessing of Light spells dropped. Trainer prices updated.
+- Changed: Spell data for WoW Forever build 1.60.1.70755. Druid has new Ferocious Bite, Lacerate and Primal Bite ranks. Some Mage and Paladin talents have new names. Paladin Salvation and Blessing of Light are removed. Trainer prices are updated.
 
 ## 0.10.0
 
-- Works on game clients in any language, recognising spells, talents, trainers, riding and grimoires by ID, and the addon's text can now be translated.
+- New: The addon works on game clients in all languages. It finds spells, talents, trainers, riding and grimoires by ID. The text of the addon can be translated.
 
 ## 0.9.0
 
-- Every class page lists all its spells by spec and reason, and Progress shows your projected savings.
+- New: Each class page shows all its spells by spec and reason. Progress shows how much you can save.
 
 ## 0.8.1
 
-- Clearer Home page, one reset control, and debug recording off at login.
+- Changed: The Home page is clearer. There is one reset control. Debug recording is off when you log in.
 
 ## 0.8.0
 
-- Support for Mage, Warlock, Priest, Druid, Shaman, Rogue and Warrior, including Warlock grimoires and a free level 40 mount for Warlocks.
+- New: Support for Mage, Warlock, Priest, Druid, Shaman, Rogue and Warrior. This includes Warlock grimoires and the free level 40 mount for Warlocks.
 
 ## 0.7.0
 
-- Paladin support with a cheap level 40 mount target.
+- New: Support for Paladin, with a low-cost level 40 mount goal.
 
 ## 0.6.0
 
-- Settings simplified into five pages with a nudge level and watch areas.
+- Changed: The settings have five pages. You can set how strongly the addon warns you and what it watches.
 
 ## 0.5.0
 
-- Skips low-value Hunter ranks and asks once before you learn a new profession.
+- New: The addon tells you to skip Hunter ranks that do not give much. It asks one time before you learn a new profession.
 
 ## 0.4.0
 
-- Rule switches, tuning and a consistent settings look.
+- New: Rule switches and tuning. All settings have the same look.
 
 ## 0.3.0
 
-- Asks before bank slots, stable slots and COD mail.
+- New: The addon asks before you buy bank slots and stable slots, and before you pay COD mail.
 
 ## 0.1.0
 
-- First release: Hunter spells and pet skills, Herbalism and Skinning, warnings on vendor and auction house purchases, and a tally of gold kept.
+- First release: Hunter spells and pet skills, Herbalism and Skinning, warnings on vendor and auction house purchases, and a tally of the gold that you kept.
