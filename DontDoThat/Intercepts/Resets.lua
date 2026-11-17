@@ -25,22 +25,22 @@ local MARK = L["Don't Do That:"]
 
 local KINDS = {
   talent = {
-    popups = { "CONFIRM_TALENT_WIPE" }, confirmFn = "ConfirmTalentWipe", event = "CONFIRM_TALENT_WIPE", label = L["Talent reset"],
+    guard = "talent", popups = { "CONFIRM_TALENT_WIPE" }, confirmFn = "ConfirmTalentWipe", event = "CONFIRM_TALENT_WIPE", label = L["Talent reset"],
     title = L["Reset your talents?"], ask = L["Reset anyway?"], rises = true,
     advice = L["Resetting costs gold, and more each time you do it. Only do it if you really need to."],
     warnOnly = true, -- resets only warn: the game's dialog stays up with our note, a sound and a banner
-    avoided = function(state) ns.Ledger.RecordRespecAvoided(state) end,
+    avoided = function(state, cost) ns.Ledger.RecordRespecAvoided(state, nil, cost) end,
     performed = function(state, cost) ns.Ledger.RecordRespecPerformed(state, nil, cost) end,
   },
   pet = {
-    popups = { "CONFIRM_PET_UNLEARN" }, confirmFn = "ConfirmPetUnlearn", event = "CONFIRM_PET_UNLEARN", label = L["Pet skill reset"],
+    guard = "pet", popups = { "CONFIRM_PET_UNLEARN" }, confirmFn = "ConfirmPetUnlearn", event = "CONFIRM_PET_UNLEARN", label = L["Pet skill reset"],
     -- Forever has no pet-unlearn dialog or call: the pet trainer opens CONFIRM_TALENT_WIPE with pet text, and its Accept
     -- runs ConfirmTalentWipe (seen in the export). onPopupShown tells the two apart by the dialog text.
     warnOnly = true,
     done = { "ConfirmPetUnlearn", "ConfirmTalentWipe" },
     title = L["Take every skill off your pet?"], ask = L["Reset anyway?"], rises = true,
     advice = L["Taking skills off your pet costs gold, and more each time. Only do it if you really need to."],
-    avoided = function(state) ns.Ledger.RecordPetResetAvoided(state) end,
+    avoided = function(state, cost) ns.Ledger.RecordPetResetAvoided(state, nil, cost) end,
     performed = function(state, cost) ns.Ledger.RecordPetResetPerformed(state, nil, cost) end,
   },
   bank = {
@@ -118,6 +118,7 @@ end
 local function active(kind)
   if profile().enabled == false or profile().warnings == false then return false end
   if kind and kind.guard and (profile().guard or {})[kind.guard] == false then return false end
+  if ns.Context and not ns.Context.Saving(_G) then return false end
   return true
 end
 

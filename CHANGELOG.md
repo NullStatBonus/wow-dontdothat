@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.1
+
+- **Fixed: warnings now stop everywhere once you buy the mount you chose to stop at.** Before, only trainers stopped. Vendors, the auction house, bank and stable slots, COD mail and resets kept asking. They come back if you clear a "bought" checkbox or move the stop to the level 60 mount.
+- **Fixed: mounts you mark as bought, and professions the addon already asked about, are now kept for each character.** Before, marking a mount on one character could silence every warning on a new alt.
+  - After updating, a mount you marked is kept only on characters that are at least that level. Each character may be asked once about a profession another character was asked about.
+- Fixed: a talent or pet reset you turn down now adds the price the game showed to your savings, not an estimate.
+- **New switches:** "Resetting talents" and "Resetting pet skills" under What to watch > Other. The stable slot and pet skill switches now show only for Hunters.
+- "Start the count over" now says what it clears: spell totals come back from your spellbook.
+- The README no longer mentions marks for profession ranks; that feature was removed earlier. It also now gives the real minimum price, 1 silver.
+
 ## 0.12.0
 
 - **New: a smaller warning.** When the addon warns you without asking a question, it can now show a small toast at the top of the screen, with the item or spell icon, instead of the large banner in the middle.

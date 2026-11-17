@@ -206,3 +206,25 @@ test("when the client blocks our call, the question switches off and chat says s
   eq(got[1].settings.alertBanner, true)
   _G.DEFAULT_CHAT_FRAME = nil
 end)
+
+test("talent and pet reset switches turned off leave the game's dialog alone", function()
+  local ns, env, shown, calls, popup = setup({ enabled = true, warnings = true, blockingConfirmations = true,
+    guard = { talent = false, pet = false } })
+  falsy(ns.Resets.Status().talent.on)
+  falsy(ns.Resets.Status().pet.on)
+  truthy(ns.Resets.Status().bank.on)
+end)
+
+test("once the mount is bought, every kind leaves the game's dialog alone", function()
+  local ns, env, shown, calls, popup = setup()
+  local saving = false
+  ns.Context = { Saving = function() return saving end }
+  for _, which in ipairs({ "CONFIRM_BUY_BANK_SLOT", "CONFIRM_BUY_STABLE_SLOT", "COD_CONFIRMATION", "CONFIRM_TALENT_WIPE" }) do
+    popup(which)
+    eq(shown.text, nil, which)
+  end
+  falsy(ns.Resets.Status().bank.on)
+  saving = true
+  popup("CONFIRM_BUY_BANK_SLOT")
+  truthy(shown.text)
+end)

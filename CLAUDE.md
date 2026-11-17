@@ -15,6 +15,12 @@ Update the supporting docs in the same change as any user-visible addon behavior
 - The debug report header in `Core.lua` (`reportText`) lists any new setting.
 - `CHANGELOG.md` is written at archive (see Releases), not before.
 
+## Backlog
+
+- Track deferred work and future ideas as GitHub issues (`gh issue create`), not in repo files. When a change or review defers something, open the issue in the same session and name it in the change's `design.md` (Non-Goals) when there is one.
+- Issue text describes the gap, the code involved and a possible approach; no personal names.
+- Check open issues (`gh issue list`) before proposing new work.
+
 ## Git and PRs
 
 - **Archive before git.** Before any commit, push or PR for a change, run `/opsx:archive` first (sync specs, bump the version, write the CHANGELOG section), so the archive and the code ship in the same commit/PR. Commit nothing for a change that is still active in `openspec/changes/`.

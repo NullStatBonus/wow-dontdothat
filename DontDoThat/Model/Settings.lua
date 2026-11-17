@@ -135,12 +135,43 @@ function Settings.RulesFor(class, p)
   }
 end
 
--- Remembers that the player was asked about learning a profession, so it is asked about only once.
-function Settings.MarkProfessionAsked(profession, p)
-  p = p or saved()
-  if not p then return end
-  p.professionAsked = p.professionAsked or {}
-  p.professionAsked[profession] = true
+-- Facts about this character (mount marks, professions asked about), kept apart from the shared settings.
+local function charData() return ns.db and ns.db.char end
+
+function Settings.MilestoneOverride(c)
+  c = c or charData()
+  return c and c.milestoneOverride
+end
+
+function Settings.ProfessionAsked(c)
+  c = c or charData()
+  return c and c.professionAsked
+end
+
+-- Remembers that this character was asked about learning a profession, so it is asked about only once.
+function Settings.MarkProfessionAsked(profession, c)
+  c = c or charData()
+  if not c then return end
+  c.professionAsked = c.professionAsked or {}
+  c.professionAsked[profession] = true
+end
+
+-- Once per character: mount marks saved in the shared profile before they became per character are copied
+-- to a character only when it is at least that milestone's level (a level 25 alt cannot have its level 40
+-- mount). Profession answers are not copied: at worst a character is asked once more. The shared values stay
+-- in the saved data, unused, so an older version still reads them.
+function Settings.MigrateCharMarks(c, shared, level)
+  if type(c) ~= "table" or c.migratedMarks then return end
+  local old = type(shared) == "table" and shared.milestoneOverride
+  if type(old) == "table" and type(level) == "number" then
+    for _, milestone in ipairs({ 40, 60 }) do
+      if old[milestone] == true and level >= milestone then
+        c.milestoneOverride = c.milestoneOverride or {}
+        c.milestoneOverride[milestone] = true
+      end
+    end
+  end
+  c.migratedMarks = true
 end
 
 -- Settings that record what the player has already done rather than how they like things.

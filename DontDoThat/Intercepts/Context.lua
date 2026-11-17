@@ -30,9 +30,18 @@ function Context.Profile(env)
     classData = classData,
     professions = ns.Adapter.ReadProfessions(env),
     activeTalents = ns.Adapter.ReadActiveTalents(env),
-    professionAsked = saved and saved.professionAsked,
+    professionAsked = ns.Settings and ns.Settings.ProfessionAsked(),
     ridingLearned40 = riding.apprentice,
     ridingLearned60 = riding.journeyman,
-    milestoneOverride = saved and saved.milestoneOverride,
+    milestoneOverride = ns.Settings and ns.Settings.MilestoneOverride(),
   })
+end
+
+-- Is the player still saving for the mount they chose to stop at? The same answer trainers get from the
+-- engine, for the guards that never build a profile. No profile (unsupported class) means no warnings; a fault
+-- while building it keeps the warnings, so a bug here never switches the safeguards off.
+function Context.Saving(env)
+  local ok, p = pcall(Context.Profile, env or _G)
+  if not ok then return true end
+  return p ~= nil and p.milestone ~= nil and p.milestone.state == "active"
 end

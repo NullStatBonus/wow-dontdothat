@@ -59,9 +59,10 @@ function Ledger.RecordCost(costCache, familyId, rank, cost)
   if costCache and familyId and cost then costCache[Ledger.CostKey(familyId, rank)] = cost end
 end
 
--- The declined respec would have been the next one.
-function Ledger.RecordRespecAvoided(state, tbl)
-  state.respecSavings = state.respecSavings + Ledger.RespecCost(state.respecsPerformed + 1, tbl)
+-- The declined respec would have been the next one. quoted (copper) is the game's price when known.
+function Ledger.RecordRespecAvoided(state, tbl, quoted)
+  local cost = type(quoted) == "number" and quoted or Ledger.RespecCost(state.respecsPerformed + 1, tbl)
+  state.respecSavings = state.respecSavings + cost
   state.respecsAvoided = state.respecsAvoided + 1
 end
 
@@ -71,9 +72,10 @@ function Ledger.RecordRespecPerformed(state, tbl, actualCost)
   state.respecsPerformed = state.respecsPerformed + 1
 end
 
--- The declined pet reset would have been the next one.
-function Ledger.RecordPetResetAvoided(state, tbl)
-  state.petResetSavings = state.petResetSavings + Ledger.PetResetCost(state.petResetsPerformed + 1, tbl)
+-- The declined pet reset would have been the next one. quoted (copper) is the game's price when known.
+function Ledger.RecordPetResetAvoided(state, tbl, quoted)
+  local cost = type(quoted) == "number" and quoted or Ledger.PetResetCost(state.petResetsPerformed + 1, tbl)
+  state.petResetSavings = state.petResetSavings + cost
   state.petResetsAvoided = state.petResetsAvoided + 1
 end
 

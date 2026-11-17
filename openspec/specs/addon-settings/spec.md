@@ -159,7 +159,7 @@ The system SHALL provide a Shopping area on the What to watch page with a minimu
 
 #### Scenario: Default minimum
 - **WHEN** the addon runs for the first time
-- **THEN** the boxes show 0 gold, 10 silver, 0 copper
+- **THEN** the boxes show 0 gold, 1 silver, 0 copper
 
 #### Scenario: Reset to defaults
 - **WHEN** the player confirms Reset all settings on Home
@@ -200,11 +200,11 @@ The system SHALL give every settings page the same structure and look: a title a
 - **THEN** each amount is a bulleted colored label followed by the amount, with a blank line between lines
 
 ### Requirement: Tuning section
-The system SHALL provide a Tuning section on Advanced with the marks and questions switches, the rule kind switches (skipped ranks and off-spec leaning) and a choice of which tiers ask for confirmation and play the warning sound, where any combination of tiers may be chosen. The stop-after-mount choice (level 40 mount or level 60 mount) SHALL be on Home, and the profession near-cap margin and its on/off switch SHALL be in the Professions area of What to watch. Defaults are the current behavior: 25 points, level 60 mount, and only "Save your gold".
+The system SHALL provide a Tuning section on Advanced with the marks and questions switches, the rule kind switches (skipped ranks and off-spec leaning) and a choice of which tiers ask for confirmation and play the warning sound, where any combination of tiers may be chosen. The stop-after-mount choice (level 40 mount or level 60 mount) SHALL be on Home. Defaults are the current behavior: level 60 mount, and only "Save your gold".
 
 #### Scenario: Defaults
 - **WHEN** the addon runs for the first time
-- **THEN** Tuning shows only "Save your gold" ticked, What to watch shows 25 points, and Home shows the level 60 mount
+- **THEN** Tuning shows only "Save your gold" ticked, and Home shows the level 60 mount
 
 #### Scenario: Picking several tiers
 - **WHEN** the player ticks both "Save your gold" and "Not worth buying yet"
@@ -216,7 +216,7 @@ The system SHALL provide a Tuning section on Advanced with the marks and questio
 
 #### Scenario: Reset
 - **WHEN** the player confirms Reset all settings on Home
-- **THEN** the profession margin and prompt tiers return to their defaults
+- **THEN** the prompt tiers return to their defaults
 
 ### Requirement: Alert channel control
 The system SHALL let the player pick the sound channel used for the warning sound from Master, Sound effects, Music, Ambience and Dialog, defaulting to Master.
@@ -249,7 +249,7 @@ The system SHALL provide a Home page with the overall on/off control, a choice o
 - **THEN** the levels sit under "When you're about to buy something that can wait", and the stop choice sits under "When to stop warning me" and reads "After my level 60 mount" or "After my level 40 mount"
 
 ### Requirement: What to watch areas
-The system SHALL provide a What to watch page with four areas, Spells, Professions, Shopping and Other, all on by default. Spells, Professions and Shopping SHALL each have an on/off control; turning one off SHALL stop its marks, questions and sounds without changing the settings inside it. Spells covers class and pet trainers and the Recommended filter, Professions covers profession ranks, the first-time warning when learning a profession, the switch for marking ranks you can't use yet and the skill margin, and Shopping covers vendor and auction house purchases. Other has no control of its own: it holds the bank slot, stable slot and COD mail switches.
+The system SHALL provide a What to watch page with four areas, Spells, Professions, Shopping and Other, all on by default. Spells, Professions and Shopping SHALL each have an on/off control; turning one off SHALL stop its marks, questions and sounds without changing the settings inside it. Spells covers class and pet trainers and the Recommended filter, Professions covers the first-time warning when learning a profession, and Shopping covers vendor and auction house purchases. Other has no control of its own: it holds the bank slot, COD mail and talent reset switches, and for Hunters also the stable slot and pet skill reset switches.
 
 #### Scenario: Defaults
 - **WHEN** the addon runs for the first time
@@ -265,7 +265,7 @@ The system SHALL provide a What to watch page with four areas, Spells, Professio
 
 #### Scenario: Profession settings together
 - **WHEN** the player opens the Professions area
-- **THEN** the warning switch, the switch for ranks they can't use yet and the skill margin are all there
+- **THEN** it holds the warning switch and a note that it asks once, the first time the player learns a profession other than Fishing, Herbalism, Mining or Skinning
 
 ### Requirement: Advanced section
 The system SHALL keep the deeper controls on an Advanced page and out of the way of the other pages: Tuning, Classes (the per-class rule review), Debug and scope information. Appearance SHALL own Warnings, Explanations and Sound (sound, channel and cooldown); only its on-screen message enable toggle remains on Home. Nothing on Advanced SHALL be needed to use the addon with its defaults.

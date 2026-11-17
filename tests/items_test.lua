@@ -197,6 +197,20 @@ test("what to watch: Other has the slot and COD switches", function()
   page.args.guard_bank.set(nil, false)
   eq(ns.db.profile.guard.bank, false)
   falsy(page.args.reset, "no reset control on this page")
+  eq(page.args.guard_talent.get(), true)
+  eq(page.args.guard_pet.get(), true)
+end)
+
+test("what to watch: stable and pet reset switches show only for Hunters", function()
+  local ns = fresh()
+  ns.db = { profile = {} }
+  local class = "MAGE"
+  ns.Adapter = { ReadPlayer = function() return { class = class } end }
+  local page = ns.Options.Watch()
+  truthy(page.args.guard_stable.hidden()); truthy(page.args.guard_pet.hidden())
+  falsy(page.args.guard_talent.hidden); falsy(page.args.guard_bank.hidden)
+  class = "HUNTER"
+  falsy(page.args.guard_stable.hidden()); falsy(page.args.guard_pet.hidden())
 end)
 
 test("shopping off: nothing is flagged, and turning it back on restores the warning", function()
@@ -239,5 +253,20 @@ test("switching item prompts off says so in chat", function()
   eq(#said, 1, "said once")
   truthy(said[1]:find("won't let it confirm item purchases", 1, true), said[1])
   _G.DEFAULT_CHAT_FRAME = nil
+  _G.GetItemInfoInstant = nil
+end)
+
+test("once the mount is bought, a flagged purchase goes through untouched", function()
+  local ns, shown = guarded()
+  local saving = false
+  ns.Context = { Saving = function() return saving end }
+  local bought = false
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() bought = true end)
+  truthy(bought); eq(shown.yes, nil)
+  eq(ns.ItemGuard.Inspect("vendor", "link", 5000).why, "mount bought")
+  eq(ns.db.char.ledger.spentAgainst, 0)
+  saving, bought = true, false -- milestone active again (checkbox cleared)
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() bought = true end)
+  falsy(bought); truthy(shown.no)
   _G.GetItemInfoInstant = nil
 end)

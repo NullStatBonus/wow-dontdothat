@@ -116,7 +116,7 @@ function Export.Build(sources)
     local a, t, e = p.alert or {}, p.toast or {}, p.explanation or {}
     local lines = {
       "  active profile: " .. tostring(sources.profileName or "unknown"),
-      "  scope: settings shared by the profile; savings per character; debug account-wide",
+      "  scope: settings shared by the profile; savings, mount marks and profession answers per character; debug account-wide",
       "  warning style: " .. val("appearance.warning-style", a.style or "toast"),
       "  message shown: " .. val("appearance.message", a.banner ~= false),
       "  chat record: " .. val("appearance.chat", a.chat ~= false),

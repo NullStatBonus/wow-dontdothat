@@ -1030,15 +1030,16 @@ function Options.Milestones()
   page:note("note", L["Prices are what the addon expects and may change."])
 
   -- The addon reads your riding skill to know when a mount is bought. If it gets that wrong, set it here.
+  -- Per character: marking a mount here never changes another character.
   local function overridden(level)
-    local p = profile()
-    return p ~= nil and p.milestoneOverride ~= nil and p.milestoneOverride[level] == true
+    local c = ns.db and ns.db.char
+    return c ~= nil and c.milestoneOverride ~= nil and c.milestoneOverride[level] == true
   end
   local function override(level, value)
-    local p = profile()
-    if not p then return end
-    p.milestoneOverride = p.milestoneOverride or {}
-    p.milestoneOverride[level] = value or nil
+    local c = ns.db and ns.db.char
+    if not c then return end
+    c.milestoneOverride = c.milestoneOverride or {}
+    c.milestoneOverride[level] = value or nil
     applyNow()
   end
   page:section("fixHeading", L["Not right?"])
@@ -1105,10 +1106,10 @@ function Options.Tally()
   page:note("footer", L["Prices are the ones trainers showed you, or an estimate for spells you haven't seen priced. Turning a rule off only changes what is counted from then on."])
 
   page:section("resetHeader", L["Start over"])
-  page:text("resetNote", L["Forget what the addon has seen at trainers and set everything back to zero."])
+  page:text("resetNote", L["Forgets trainer prices, purchases you turned down or made, and reset counts. Spell totals come from your spellbook, so they are worked out again."])
   page:add("reset", {
     type = "execute", name = L["Start the count over"],
-    confirm = true, confirmText = L["Reset the tally to zero?"],
+    confirm = true, confirmText = L["Forget what the tally has recorded? Spell totals are worked out again from your spellbook."],
     func = function()
       local db = ns.db and ns.db.char
       if db then
@@ -1221,7 +1222,7 @@ function Options.Watch()
     hidden = function() return not categoriesOpen end })
 
   page:section("otherHeader", L["Other"])
-  local function guardToggle(key, name, desc)
+  local function guardToggle(key, name, desc, hunterOnly)
     page:toggle("guard_" .. key, name, desc,
       function()
         local p = profile()
@@ -1231,10 +1232,16 @@ function Options.Watch()
         local p = profile()
         if p then p.guard = p.guard or {}; p.guard[key] = value end
       end)
+    -- Hunter-only rows are hidden for other classes (display only; the saved value is kept).
+    if hunterOnly then
+      page.args["guard_" .. key].hidden = function() local c = playerClass(); return c ~= nil and c ~= "HUNTER" end
+    end
   end
   guardToggle("bank", L["Buying a bank slot"], L["Each slot costs more than the last."])
-  guardToggle("stable", L["Buying a stable slot"], L["For Hunters; each slot costs more than the last."])
+  guardToggle("stable", L["Buying a stable slot"], L["Each slot costs more than the last."], true)
   guardToggle("cod", L["Paying for COD mail"], L["Asks before you pay to take a mailed item."])
+  guardToggle("talent", L["Resetting talents"], L["Each reset costs more than the last."])
+  guardToggle("pet", L["Resetting pet skills"], L["Each reset costs more than the last."], true)
 
   return page:group({ disabled = function() return not isOn("enabled") end })
 end
