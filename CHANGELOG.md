@@ -2,14 +2,15 @@
 
 ## 0.12.1
 
-- **Fixed: warnings now stop everywhere once you buy the mount you chose to stop at.** Before, only trainers stopped. Vendors, the auction house, bank and stable slots, COD mail and resets kept asking. They come back if you clear a "bought" checkbox or move the stop to the level 60 mount.
-- **Fixed: mounts you mark as bought, and professions the addon already asked about, are now kept for each character.** Before, marking a mount on one character could silence every warning on a new alt.
-  - After updating, a mount you marked is kept only on characters that are at least that level. Each character may be asked once about a profession another character was asked about.
-- Fixed: a talent or pet reset you turn down now adds the price the game showed to your savings, not an estimate.
-- Fixed: when the addon adds its note to the game's own dialog (talent and pet resets, COD mail, or any slot once "Ask before buying" is off), it no longer also shows the toast or banner, which sat half hidden behind the dialog. You still hear the sound.
-- **New switches:** "Resetting talents" and "Resetting pet skills" under What to watch > Other. The stable slot and pet skill switches now show only for Hunters.
-- "Start the count over" now says what it clears: spell totals come back from your spellbook.
-- The README no longer mentions marks for profession ranks; that feature was removed earlier. It also now gives the real minimum price, 1 silver.
+- **Fixed: All warnings stop when you buy the mount that you set as the stop point.** Before, only trainers stopped. Vendors, the auction house, slots, COD mail and resets continued to warn. To start the warnings again, clear the "bought" checkbox or set the stop point to the level 60 mount.
+- **Fixed: Each character keeps its own mount marks and profession answers.** Before, a mark on one character could stop all warnings on a new character.
+  - After the update, a character keeps a mount mark only if its level is the same as or more than the mount level.
+  - The addon can ask each character one time about a profession, also if it asked a different character before.
+- Fixed: When you cancel a talent or pet reset, the addon adds the price from the game to your savings. Before, it added an estimate.
+- Fixed: When the addon adds its note to the game's dialog, it does not show the toast or banner. Before, the toast was behind the dialog. You still hear the sound. This applies to talent resets, pet resets, COD mail, and slots when "Ask before buying" is off.
+- **New: Two switches, "Resetting talents" and "Resetting pet skills".** They are in What to watch > Other. Only Hunters see the stable slot and pet skill switches.
+- Changed: "Start the count over" tells you what it clears. The spell totals come back from your spellbook.
+- Changed: The README does not mention marks for profession ranks. The addon does not have this feature. The README gives the correct minimum price, 1 silver.
 
 ## 0.12.0
 
