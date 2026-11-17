@@ -27,9 +27,15 @@ ns.defaults = {
         alert = {
             sound = "raidwarning",
             channel = "Master",
-            banner = true,
+            banner = true,          -- show the on-screen message (Toast or Warning) when nothing asks
+            style = "toast",        -- toast | warning; profiles from before the choice are set to warning once
+            chat = true,            -- also note every warning in chat
             cooldown = 3,
         },
+        -- Look of the small warning (Appearance > Warnings). Percentages; point is nil until moved.
+        toast = { bgAlpha = 100, textAlpha = 100, scale = 100 },
+        -- Look of the pinned explanation (Appearance > Explanations).
+        explanation = { bgAlpha = 100, textAlpha = 100, scale = 100 },
         -- Rules the player switched off (Advanced > Classes). A present key means off, so rules added later are on.
         ruleOff = { abilities = {}, tags = {}, kinds = {} }, -- abilities/tags: class -> name -> true; kinds: kind -> true
         specOverride = {},          -- class -> spec key; absent means inferred from talents
@@ -51,8 +57,14 @@ ns.defaults = {
 }
 
 function addon:OnInitialize()
+    -- Read before AceDB fills in defaults: a saved database means this player used an older version.
+    local before = ns.Settings and ns.Settings.StyleBefore(_G.DontDoThatDB)
     self.db = AceDB:New("DontDoThatDB", ns.defaults, true)
     ns.db = self.db
+    if ns.Settings then
+        local ok, name = pcall(self.db.GetCurrentProfile, self.db)
+        ns.Settings.ClassifyStyle(self.db.profile, before, ok and name or nil)
+    end
     if ns.Settings then ns.Settings.ClearDebug(self.db.profile) end
     if ns.Tally then ns.Tally.Init(self.db) end
 
@@ -67,10 +79,20 @@ function addon:OnInitialize()
         ns.Export.sourceProvider = function()
             return {
                 settings = self.db.profile,
+                profileName = (function()
+                    local ok, name = pcall(self.db.GetCurrentProfile, self.db)
+                    return ok and name or nil
+                end)(),
                 ledger = self.db.char.ledger,
                 log = ns.Log and ns.Log.Entries() or {},
                 items = function() return ns.ItemGuard and ns.ItemGuard.Report(_G) or nil end,
                 probe = function() return ns.Probe.Run(nil, self.db.global.probe) end,
+                presentation = function()
+                    return {
+                        "moving toast: " .. tostring(ns.Toast and ns.Toast.IsMoving and ns.Toast.IsMoving() or false),
+                        "samples showing: " .. tostring(ns.Demo and ns.Demo.Active and ns.Demo.Active() or false),
+                    }
+                end,
             }
         end
     end

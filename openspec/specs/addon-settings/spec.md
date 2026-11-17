@@ -6,11 +6,15 @@ Gives players a standard place in the game's options to control the addon and to
 ## Requirements
 
 ### Requirement: Options category with subpages
-The system SHALL register a "Don't Do That" category under the game's Options > AddOns list with subpages for Home, What to watch, Progress, Advanced, and About.
+The system SHALL register Don’t Do That in Options > AddOns with real Home controls on the root and What to watch, Progress, Appearance, Advanced and About listed beneath it in order. Standalone AceConfig SHALL expose the same six landmarks. Root entry SHALL NOT be an empty placeholder. Registration failure SHALL leave standalone settings available.
 
 #### Scenario: Opening settings
-- **WHEN** the player opens Options > AddOns
-- **THEN** the addon appears with all five subpages
+- **WHEN** the root Don’t Do That entry is selected
+- **THEN** top-level Home controls are immediately usable
+
+#### Scenario: Child entry
+- **WHEN** Appearance is selected under the addon
+- **THEN** the same effective controls and saved values as standalone Appearance are shown
 
 ### Requirement: Master and per-feature toggles
 The system SHALL provide an overall enable control and independent controls for blocking confirmations, badges and tooltips, alerts, and the Recommended trainer filter, all on by default. The Recommended switch SHALL control whether the filter is offered in the trainer's Filter menu at all, and the menu's own checkbox SHALL remember separately whether the filter is applied.
@@ -120,7 +124,7 @@ The system SHALL persist settings across sessions and apply changes immediately 
 - **THEN** the next flagged attempt produces no sound
 
 ### Requirement: Slash commands
-The system SHALL provide `/ddt` and `/dontdothat` to open settings and run debug commands.
+The system SHALL provide `/ddt` and `/dontdothat` to open Home and run the common and legacy commands in slash-interface. `/ddt log` SHALL be the primary diagnostic report command and export SHALL remain its alias.
 
 #### Scenario: Open settings
 - **WHEN** the player enters `/ddt`
@@ -180,12 +184,12 @@ The system SHALL provide three switches in the Other area of the What to watch p
 The system SHALL give every settings page the same structure and look: a title and one-line introduction, then sections each with a heading and a blank line above it, using one type scale and one muted note color throughout, with the same blank line between lines that would otherwise run together (read-only lists, the mounts, and the kept and projected amounts). Amounts SHALL be shown as bulleted lines of a colored label followed by the amount, never in columns, and a page SHALL NOT have two blank lines in a row.
 
 #### Scenario: Same look on every page
-- **WHEN** the player opens each of the five pages in turn
+- **WHEN** the player opens each of the six pages in turn
 - **THEN** titles, section headings, body text and notes appear in the same sizes and colors on all of them
 
 #### Scenario: Cooldown default
 - **WHEN** the addon runs for the first time
-- **THEN** the Advanced cooldown slider shows the default of 3 seconds
+- **THEN** the Appearance > Sound cooldown slider shows the default of 3 seconds
 
 #### Scenario: Headings appear once
 - **WHEN** the player opens Progress
@@ -222,7 +226,7 @@ The system SHALL let the player pick the sound channel used for the warning soun
 - **THEN** the next warning sound plays on that channel
 
 ### Requirement: Home page and nudge level
-The system SHALL provide a Home page with the overall on/off control, a choice of how firmly the addon nudges the player, and the "stop warning me after" mount choice. The nudge choice SHALL offer Just mark things (marks only, never asks), Ask me first (marks, asks before buying what the player should wait on) and Ask about everything (also asks about low-value and informational items). Ask me first SHALL be the default. Each option SHALL carry its own one-line explanation. The choice SHALL be read from the saved marks, "Ask before buying" and prompt-tier settings rather than stored on its own, and SHALL show Custom as selected when those settings match none of the three, with a line that says what is set (whether marks are on, whether it asks, and which kinds of spell it asks about) and that choosing a level resets them or that they can be fine-tuned under Advanced > Tuning. Choosing a nudge level SHALL set those settings, and choosing Custom SHALL change nothing.
+The system SHALL provide a Home page with the overall on/off control, a choice of how firmly the addon nudges the player, and the "stop warning me after" mount choice, plus the on-screen message enable toggle backed by the existing alert.banner value. The root game-options entry SHALL expose these same controls. The nudge choice SHALL offer Just mark things (marks only, never asks), Ask me first (marks, asks before buying what the player should wait on) and Ask about everything (also asks about low-value and informational items). Ask me first SHALL be the default. Each option SHALL carry its own one-line explanation. The choice SHALL be read from the saved marks, "Ask before buying" and prompt-tier settings rather than stored on its own, and SHALL show Custom as selected when those settings match none of the three, with a line that says what is set (whether marks are on, whether it asks, and which kinds of spell it asks about) and that choosing a level resets them or that they can be fine-tuned under Advanced > Tuning. Choosing a nudge level SHALL set those settings, and choosing Custom SHALL change nothing.
 
 #### Scenario: Default
 - **WHEN** the addon runs for the first time
@@ -237,7 +241,7 @@ The system SHALL provide a Home page with the overall on/off control, a choice o
 - **THEN** Home shows Custom selected, and says that marks are on and which kinds of spell it asks about
 
 #### Scenario: Sound does not affect the level
-- **WHEN** the player turns the warning sound off in Advanced
+- **WHEN** the player turns the warning sound off in Appearance > Sound
 - **THEN** Home still shows the same nudge level
 
 #### Scenario: Heading and stop choice
@@ -264,18 +268,18 @@ The system SHALL provide a What to watch page with four areas, Spells, Professio
 - **THEN** the warning switch, the switch for ranks they can't use yet and the skill margin are all there
 
 ### Requirement: Advanced section
-The system SHALL keep the deeper controls on an Advanced page and out of the way of the other pages: Sound & messages (sound, volume channel, cooldown and the on-screen message), Tuning, Classes (the per-class rule review), and Debug. Nothing on Advanced SHALL be needed to use the addon with its defaults.
+The system SHALL keep the deeper controls on an Advanced page and out of the way of the other pages: Tuning, Classes (the per-class rule review), Debug and scope information. Appearance SHALL own Warnings, Explanations and Sound (sound, channel and cooldown); only its on-screen message enable toggle remains on Home. Nothing on Advanced SHALL be needed to use the addon with its defaults.
 
 #### Scenario: Reaching the deep controls
 - **WHEN** the player opens Advanced
-- **THEN** the sound controls, Tuning, Classes and Debug are each one step away
+- **THEN** Tuning, Classes, Debug and scope guidance are reachable; sound is on Appearance > Sound
 
 #### Scenario: Plain defaults
 - **WHEN** the player never opens Advanced
 - **THEN** the addon behaves with its default tuning, sound and rule switches
 
 ### Requirement: Reset all settings
-The system SHALL provide one control, on Home, that puts every setting back to its default after the player confirms, and SHALL NOT provide any other settings reset. It SHALL keep the tally and what the addon already knows the player has done (professions asked about and milestones marked complete), and SHALL turn debug recording off.
+The system SHALL provide one control, on Home, that puts every setting back to its default after the player confirms, and SHALL NOT provide any other full or per-feature settings reset. Appearance’s position-only Reset position is the sole exception and SHALL NOT reset any non-position value. It SHALL keep the tally and what the addon already knows the player has done (professions asked about and milestones marked complete), and SHALL turn debug recording off.
 
 #### Scenario: Resetting
 - **WHEN** the player has changed settings on several pages and confirms Reset all settings
@@ -291,7 +295,7 @@ The system SHALL provide one control, on Home, that puts every setting back to i
 
 #### Scenario: No other reset controls
 - **WHEN** the player looks through Tuning, What to watch and Classes
-- **THEN** none of them has a reset control
+- **THEN** none has a settings-reset control; Appearance may reset position only
 
 ### Requirement: Projected savings
 The system SHALL show on the Progress page the projected savings for the player's character: the trainer gold kept by following the addon's advice up to the level of the mount the player is saving for (the stop-after setting), using the character's spec (detected or chosen) and every current setting, split into Save your gold, Not worth buying yet and Ranks to skip. It SHALL count every purchasable class and pet rank up to that level that the rules would warn about, SHALL NOT count Worth buying or Optional spells or the first rank of a talent, and SHALL price each rank with the price seen at the player's trainer, else the trainer price listed by Wowhead, else an estimate for the rank's level, saying which kinds of price it used.

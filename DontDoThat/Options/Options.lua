@@ -280,10 +280,13 @@ end
 
 local function isCustom() return ns.Settings and ns.Settings.Nudge() == "custom" end
 
-function Options.Home()
+-- Home, in the /ddt window and as the root Don't Do That entry in the game's AddOns list. asRoot leaves out the
+-- title there: the game's panel already prints "Don't Do That" above the page.
+function Options.Home(asRoot)
   local off = function() return not isOn("enabled") end
   local page = newPage(L["Home"], 1, L["Don't Do That"],
     L["Keeps you from spending gold on things you don't need yet, so you can afford your level 40 and level 60 mounts."])
+  if asRoot then page.args.title = nil end
 
   profileToggle(page, "enabled", L["Turn on Don't Do That"], L["Turn this off to pause all warnings."], "enabled")
 
@@ -311,11 +314,23 @@ function Options.Home()
 
   page:section("stopHeader", L["When to stop warning me"])
   page:add("stopAfter", {
-    type = "select", width = "double", name = "",
+    type = "select", width = 1.5, name = "",
     values = { [60] = L["After my level 60 mount"], [40] = L["After my level 40 mount"] }, sorting = { 60, 40 },
     get = function() return ns.Settings and ns.Settings.StopAfter() or 60 end,
     set = function(_, value) tuning(true).stopAfter = value; applyNow() end,
   })
+
+  page:section("bannerHeader", L["On-screen message"])
+  page:toggle("banner", L["Show a message on screen"],
+    L["When you try to buy something you should wait on and no question is asked, a message says why. Choose its look under Appearance > Warnings."],
+    function() local p = profile(); return not (p and p.alert and p.alert.banner == false) end,
+    function(_, value)
+      local p = profile()
+      if p then p.alert = p.alert or {}; p.alert.banner = value end
+    end)
+  page:add("bannerNote", { type = "description", fontSize = "medium", width = "full",
+    hidden = function() return not isOn("enabled") or isOn("alerts") end,
+    name = MUTED .. L["The warning sound is off under Appearance > Sound, and that switch also turns this message off. Your choice here is kept."] .. "|r" })
 
   page:section("resetHeader", L["Start over"])
   page:add("resetAll", {
@@ -325,13 +340,13 @@ function Options.Home()
     func = function()
       if ns.Settings then ns.Settings.ResetAll() end
       applyNow()
-      local ok, registry = pcall(LibStub, "AceConfigRegistry-3.0")
-      if ok and registry then pcall(registry.NotifyChange, registry, APP) end
+      Options.Refresh()
     end,
   })
 
   page.args.nudge.disabled = off
   page.args.stopAfter.disabled = off
+  page.args.banner.disabled = function() return not isOn("enabled") or not isOn("alerts") end
   return page:group()
 end
 
@@ -360,13 +375,13 @@ function Options.Tuning()
       order[#order + 1] = rev
     end
     page:add("skipRevision", {
-      type = "select", width = "full", name = L["Which skip list should be used?"],
+      type = "select", width = "double", name = L["Which skip list should be used?"],
       desc = L["Which ranks to skip is decided by a numbered revision of the skip list. Pick an earlier one to go back to what an older version advised."],
       values = values, sorting = order,
       get = function() return ns.SkipRevision.InUse() end,
       set = function(_, value) ns.Settings.SetSkipRevision(value); applyNow(); Options.Rebuild() end,
     })
-    page:note("revisionNote", L["The Rules page lists the ranks to skip for the revision you pick, with the reason for each."])
+    page:note("revisionNote", L["Each class under Advanced > Classes lists the ranks to skip for the revision you pick, with the reason for each."])
   end
 
   page:section("tiersHeader", L["Ask and warn about"])
@@ -389,7 +404,7 @@ function Options.Tuning()
 end
 
 ---------------------------------------------------------------------------
--- Alerts
+-- Appearance: Warnings, Explanations and Sound
 
 -- The picker's entries in display order: common sounds first, then sound packs.
 local function soundEntries()
@@ -419,29 +434,141 @@ end
 local CHANNEL_CHOICES = { Master = "Master", SFX = L["Sound effects"], Music = "Music", Ambience = "Ambience", Dialog = "Dialog" }
 local CHANNEL_ORDER = { "Master", "SFX", "Music", "Ambience", "Dialog" }
 
-function Options.Alerts()
-  local function alert() local p = profile(); return p and p.alert or {} end
+local function alert() local p = profile(); return p and p.alert or {} end
+local function setAlert(field, value)
+  local p = profile()
+  if p then p.alert = p.alert or {}; p.alert[field] = value end
+end
+
+-- Calls ns[module][fn] only when that module and function exist: these screens are built alongside this page.
+local function call(module, fn, ...)
+  local m = ns[module]
+  if m and type(m[fn]) == "function" then pcall(m[fn], ...) end
+end
+
+-- A tab of Appearance: its purpose first, then its sections. The tab label already names it, so no title.
+local function newTab(name, order, intro)
+  local page = setmetatable({ args = {}, n = 0, name = name, order = order }, Page)
+  page:text("intro", intro)
+  page.lead = page.n
+  return page
+end
+
+-- A percent slider bound to profile[surface][field].
+local function percentSlider(page, key, surface, field, name, desc, min, max, onChange)
+  return page:add(key, {
+    type = "range", width = 1.5, name = name, desc = desc, min = min, max = max, step = 1, bigStep = 5,
+    get = function()
+      local p = profile()
+      local v = p and p[surface] and p[surface][field]
+      return type(v) == "number" and v or 100
+    end,
+    set = function(_, value)
+      local p = profile()
+      if not p then return end
+      p[surface] = p[surface] or {}
+      p[surface][field] = math.floor(value + 0.5)
+      if onChange then onChange() end
+    end,
+  })
+end
+
+local function isWarningStyle() return ns.Settings and ns.Settings.WarningStyle and ns.Settings.WarningStyle() == "warning" end
+-- Messages show during play only with the addon on, the warning sound switch on and the message switch on.
+local function messagesShown() return isOn("enabled") and isOn("alerts") and alert().banner ~= false end
+
+function Options.Warnings()
+  local page = newTab(L["Warnings"], 1,
+    L["How a warning looks when you try to buy something you should wait on and no question is asked. Nothing here changes what is warned about."])
+  page:add("messagesOff", { type = "description", fontSize = "medium", width = "full",
+    hidden = messagesShown,
+    name = MUTED .. L["On-screen messages are off right now (the message switch is on Home, the warning sound switch under Sound). Your choices here are kept, and Preview still works."] .. "|r" })
+
+  page:section("styleHeader", L["Style"])
+  page:add("style", {
+    type = "select", width = 1.5, name = L["Message style"],
+    desc = L["Toast is a small box near the top of the screen. Warning is the large message in the middle."],
+    values = { toast = L["Toast"], warning = L["Warning"] }, sorting = { "toast", "warning" },
+    get = function() return ns.Settings and ns.Settings.WarningStyle() or "toast" end,
+    set = function(_, value) setAlert("style", value) end,
+  })
+  page:add("preview", {
+    type = "execute", name = L["Preview"], desc = L["Shows a sample in the chosen style. Nothing is bought and no warning is counted."],
+    func = function() call("Demo", "Preview", isWarningStyle() and "warning" or "toast") end,
+  })
+
+  page:section("toastHeader", L["Toast"])
+  page:add("warningLook", { type = "description", fontSize = "medium", width = "full",
+    hidden = function() return not isWarningStyle() end,
+    name = MUTED .. L["Warning uses the game's large message in the middle of the screen, so it has no look or position settings. Your toast settings are kept for when you switch back."] .. "|r" })
+  local toastOnly = {}
+  local function toastControl(widget) toastOnly[#toastOnly + 1] = widget; return widget end
+  toastControl(page:note("toastContext", L["Background opacity sets the box behind the text; at 0 only the text and icon show. Text and icon opacity sets the words and the icon. Scale 100 is the normal size."]))
+  local refresh = function() call("Toast", "Refresh") end
+  toastControl(percentSlider(page, "toastBg", "toast", "bgAlpha", L["Background opacity"], L["How solid the box behind the toast is, in percent."], 0, 100, refresh))
+  toastControl(percentSlider(page, "toastText", "toast", "textAlpha", L["Text and icon opacity"], L["How solid the toast's words and icon are, in percent."], 0, 100, refresh))
+  toastControl(percentSlider(page, "toastScale", "toast", "scale", L["Scale"], L["The toast's size, in percent of normal."], 50, 200, refresh))
+  toastControl(page:add("move", {
+    type = "execute", name = L["Move"], desc = L["Drag the sample toast where you want it. Done saves the place; Cancel or Escape puts it back."],
+    func = function() call("Toast", "StartMove") end,
+  }))
+  toastControl(page:add("resetPosition", {
+    type = "execute", name = L["Reset position"], desc = L["Puts the toast back in its starting place. No other setting changes."],
+    func = function() call("Toast", "ResetPosition") end,
+  }))
+  for _, widget in ipairs(toastOnly) do widget.hidden = isWarningStyle end
+
+  page:section("chatHeader", L["Chat"])
+  page:toggle("chat", L["Also note warnings in chat"],
+    L["Adds one line to chat for every warning, even when a question is asked or the sound is off."],
+    function() return alert().chat ~= false end,
+    function(_, value) setAlert("chat", value) end)
+
+  local off = function() return not isOn("enabled") end
+  for _, key in ipairs({ "style", "toastBg", "toastText", "toastScale", "chat" }) do page.args[key].disabled = off end
+  return page:group()
+end
+
+function Options.Explanations()
+  local page = newTab(L["Explanations"], 2,
+    L["How the message looks when you click an (i) to keep it open. It stays by its mark until you close it."])
+  page:add("marksOff", { type = "description", fontSize = "medium", width = "full",
+    hidden = function() return isOn("enabled") and isOn("warnings") end,
+    name = MUTED .. L["Marks are off (Advanced > Tuning), so no (i) shows during play. Your choices here are kept, and Preview still works."] .. "|r" })
+  page:section("lookHeader", L["Look"])
+  page:note("lookContext", L["Background opacity sets the box behind the text; at 0 only the text shows. Text and icon opacity sets the words. Scale 100 is the normal size."])
+  local refresh = function() call("InfoBubble", "RefreshAppearance") end
+  percentSlider(page, "explanationBg", "explanation", "bgAlpha", L["Background opacity"], L["How solid the box behind the explanation is, in percent."], 0, 100, refresh)
+  percentSlider(page, "explanationText", "explanation", "textAlpha", L["Text and icon opacity"], L["How solid the explanation's words are, in percent."], 0, 100, refresh)
+  percentSlider(page, "explanationScale", "explanation", "scale", L["Scale"], L["The explanation's size, in percent of normal."], 50, 200, refresh)
+  page:add("preview", {
+    type = "execute", name = L["Preview"], desc = L["Shows a sample explanation. Nothing is bought."],
+    func = function() call("Demo", "Preview", "explanation") end,
+  })
+  local off = function() return not isOn("enabled") end
+  for _, key in ipairs({ "explanationBg", "explanationText", "explanationScale" }) do page.args[key].disabled = off end
+  return page:group()
+end
+
+function Options.Sound()
   local function soundKey()
     local key = alert().sound
     if key == nil or key == "default" then return ns.Sounds and ns.Sounds.default end
     return key
   end
-  local function setAlert(field, value)
-    local p = profile()
-    if p then p.alert = p.alert or {}; p.alert[field] = value end
-  end
-  local page = newPage(L["Sound & messages"], 1, L["Sound & messages"], L["Choose how you're warned when you try to buy something you should wait on."])
+  local page = newTab(L["Sound"], 3,
+    L["The sound you hear when you try to buy something you should wait on. Turning the sound off also turns off the on-screen message; the chat line and questions are not affected."])
 
   profileToggle(page, "alerts", L["Play a warning sound"], L["Plays a sound when you try to buy something you should wait on."], "alerts")
 
   page:section("soundHeader", L["Warning sound"])
   page:add("sound", {
-    type = "select", width = "double", name = L["Sound"],
+    type = "select", width = 1.5, name = L["Sound"],
     values = Options.SoundChoices, sorting = Options.SoundOrder,
     get = soundKey, set = function(_, value) setAlert("sound", value) end,
   })
   page:add("channel", {
-    type = "select", width = "double", name = L["Volume channel"],
+    type = "select", width = 1.5, name = L["Volume channel"],
     desc = L["Which of the game's volume sliders controls this sound."],
     values = CHANNEL_CHOICES, sorting = CHANNEL_ORDER,
     get = function() local c = alert().channel; return CHANNEL_CHOICES[c] and c or "Master" end,
@@ -453,24 +580,31 @@ function Options.Alerts()
   })
   page:note("soundNote", L["The Master channel plays even when sound effects are muted."])
 
-  page:section("bannerHeader", L["On-screen message"])
-  page:toggle("banner", L["Show a message on screen"], L["Shown when there's no question to answer, so you still see why."],
-    function() return alert().banner ~= false end,
-    function(_, value) setAlert("banner", value) end)
-
   page:section("cooldownHeader", L["How often"])
   page:add("cooldown", {
-    type = "range", width = "full", name = L["Seconds between warnings for the same thing"],
+    type = "range", width = 1.5, name = L["Seconds between warnings for the same thing"],
     min = 1, max = 30, step = 1,
     get = function() return alert().cooldown or 3 end,
     set = function(_, value) setAlert("cooldown", value) end,
   })
-  page:note("cooldownNote", L["After one warning, the same thing stays quiet for this long."])
+  page:note("cooldownNote", L["After one warning, the same thing stays quiet for this long, the chat line too."])
 
   local function quiet() return not isOn("enabled") or not isOn("alerts") end
   page.args.alerts.disabled = function() return not isOn("enabled") end
-  for _, key in ipairs({ "sound", "channel", "test", "banner", "cooldown" }) do page.args[key].disabled = quiet end
+  -- Play sound stays available: it is an explicit preview, not a warning.
+  for _, key in ipairs({ "sound", "channel" }) do page.args[key].disabled = quiet end
+  page.args.cooldown.disabled = function() return not isOn("enabled") end
   return page:group()
+end
+
+-- Warnings, Explanations and Sound as tabs under one intro.
+function Options.Appearance()
+  local page = newPage(L["Appearance"], 4, L["Appearance"],
+    L["How warnings, explanations and the warning sound look and sound. What is warned about is set on Home and What to watch."])
+  local warnings, explanations, sound = Options.Warnings(), Options.Explanations(), Options.Sound()
+  warnings.order, explanations.order, sound.order = 10, 11, 12 -- after the introduction
+  page.args.warnings, page.args.explanations, page.args.sound = warnings, explanations, sound
+  return page:group({ childGroups = "tab" })
 end
 
 ---------------------------------------------------------------------------
@@ -723,7 +857,7 @@ local function classChoices(key, data)
   end
   page:section("specHeader", L["My spec"])
   page:add("spec", {
-    type = "select", width = "double", name = L["Which spec do you play?"],
+    type = "select", width = 1.5, name = L["Which spec do you play?"],
     desc = L["Automatic works it out from your talents."],
     values = specNames, sorting = order,
     get = function()
@@ -1030,8 +1164,7 @@ local function priceBox(coin)
     set = function(_, value)
       local p = profile()
       if p then p.minPrice = Options.SetPriceBox(p.minPrice or 0, coin, value) end
-      local ok, registry = pcall(LibStub, "AceConfigRegistry-3.0")
-      if ok and registry then pcall(registry.NotifyChange, registry, APP) end
+      Options.Refresh()
     end,
   }
 end
@@ -1072,7 +1205,7 @@ function Options.Watch()
   local categories = {}
   for i, info in ipairs(ns.ItemCategory.List) do
     categories[info.key] = {
-      type = "select", width = "double", name = info.label, order = i,
+      type = "select", width = 1.5, name = info.label, order = i,
       values = MODE_CHOICES, sorting = MODE_ORDER,
       get = function()
         local p = profile()
@@ -1170,13 +1303,46 @@ function Options.Progress()
   return page:group()
 end
 
--- The deeper controls, each one step away. A tree, so Rules keeps its own tree inside it.
-function Options.Advanced()
-  local page = newPage(L["Advanced"], 4, L["Advanced"], L["Fine controls. You never need these to use the addon."])
-  local sound, tuningGroup, classes, debug = Options.Alerts(), Options.Tuning(), Options.Rules(), Options.Debug()
-  sound.order, tuningGroup.order, classes.order, debug.order = 10, 20, 30, 40
-  sound.name = L["Sound & messages"]
-  page.args.sound, page.args.tuning, page.args.classes, page.args.debug = sound, tuningGroup, classes, debug
+-- The game's Settings window (SettingsPanel, or the older InterfaceOptionsFrame), asked to close. True when one was found.
+function Options.CloseGameSettings(env)
+  env = env or _G
+  for _, name in ipairs({ "SettingsPanel", "InterfaceOptionsFrame" }) do
+    local frame = env[name]
+    if type(frame) == "table" then
+      if type(env.HideUIPanel) == "function" then pcall(env.HideUIPanel, frame)
+      elseif type(frame.Hide) == "function" then pcall(frame.Hide, frame) end
+      return true
+    end
+  end
+  return false
+end
+
+-- Classes in the game's Settings window: a button into the /ddt window, not the tree. The class lists are large,
+-- and a large tree in the game's Settings window can freeze the game when its page is opened.
+function Options.ClassesLauncher()
+  local page = newPage(L["Classes"], 3, L["Classes"],
+    L["See what the addon marks for each class and why, and tick or untick anything. The class lists open in the Don't Do That window, which has room for them."])
+  page:add("openClasses", {
+    type = "execute", width = 1.5, name = L["Open classes"],
+    desc = L["Closes the game's Settings window and opens Advanced > Classes in the Don't Do That window."],
+    func = function()
+      Options.CloseGameSettings()
+      Options.Open("classes")
+    end,
+  })
+  return page:group()
+end
+
+-- The deeper controls, each one step away. A tree, so Classes keeps its own tree inside it. forPanel builds the game
+-- Settings window's copy, where Classes is a launcher.
+function Options.Advanced(forPanel)
+  local page = newPage(L["Advanced"], 5, L["Advanced"], L["Fine controls. You never need these to use the addon."])
+  page:section("scopeHeader", L["Where settings are kept"])
+  page:text("scope", L["Settings are kept in one profile shared by all your characters. The tally, projected savings and the trainer prices seen are kept for each character. The debug recording is shared by your whole account."])
+  local tuningGroup, debug = Options.Tuning(), Options.Debug()
+  local classes = forPanel and Options.ClassesLauncher() or Options.Rules()
+  tuningGroup.order, classes.order, debug.order = 20, 30, 40
+  page.args.tuning, page.args.classes, page.args.debug = tuningGroup, classes, debug
   return page:group({ childGroups = "tree" })
 end
 
@@ -1187,7 +1353,7 @@ function Options.Debug()
   local page = newPage(L["Debug"], 7, L["Debug"],
     L["For reporting a problem. Turn the recording on, do the thing that went wrong, then show the report and copy it."])
   page:section("recordingHeader", L["Recording"])
-  page:toggle("logging", L["Record what the addon sees"],
+  page:toggle("logging", L["Record debug information"],
     L["Keeps a log of trainer windows, purchases and dialogs. Turn it on before the thing you want to report."],
     function() local p = profile(); return p ~= nil and p.debug == true end,
     function(_, value)
@@ -1200,9 +1366,9 @@ function Options.Debug()
     function(_, value) local p = profile(); if p then p.traceItems = value end end)
 
   page:section("reportHeader", L["Report"])
-  page:note("reportNote", L["Opens a window with everything the addon knows. Press Ctrl+A, then Ctrl+C to copy it, and paste it where you're reporting the problem."])
+  page:note("reportNote", L["Opens a window with everything the addon knows (also /ddt log). Press Ctrl+A, then Ctrl+C to copy it, and paste it where you're reporting the problem."])
   page:add("export", {
-    type = "execute", name = L["Show the report"],
+    type = "execute", name = L["Show debug report"],
     func = function() if ns.Export then ns.Export.Show() end end,
   })
 
@@ -1221,8 +1387,27 @@ end
 ---------------------------------------------------------------------------
 -- About
 
+-- What the addon is for, said once at the top of About.
+local PURPOSE = L["Keeps you from spending gold on things you don't need yet, so you can afford your level 40 and level 60 mounts."]
+
+-- The commands, one row each: what to type, then what it does.
+function Options.AboutCommands()
+  return {
+    { "/ddt", L["Open these settings at Home."] },
+    { "/ddt settings <page>", L["Open a page: watch, progress, appearance, warnings, explanations, sound, advanced, classes, debug or about."] },
+    { "/ddt status", L["Check the nudge, warnings, explanations and sound settings."] },
+    { "/ddt demo", L["Show sample warnings. Nothing is bought."] },
+    { "/ddt preview <name>", L["Show one sample, such as toast, warning or explanation."] },
+    { "/ddt log", L["Show the debug report to copy and share."] },
+    { "/ddt debug on", L["Record debug information while you repeat a problem."] },
+    { "/ddt help", L["List every command. Try /ddt help appearance, rules or diagnostics."] },
+  }
+end
+
 -- Sections of { heading, lines }. A line starting with "!" is a small gray note; one starting with "*" is a bullet.
 function Options.AboutSections()
+  local commands = {}
+  for _, c in ipairs(Options.AboutCommands()) do commands[#commands + 1] = "*" .. c[1] .. "  " .. MUTED .. c[2] .. "|r" end
   return {
     { heading = L["What the marks mean"], lines = {
       "*|cffff3333(i)  " .. L["Save your gold"] .. "|r",
@@ -1237,6 +1422,10 @@ function Options.AboutSections()
       "*" .. L["Use Recommended in the trainer's Filter menu to hide what you can wait on."],
       "*" .. L["Type /ddt any time to open these settings."],
     } },
+    { heading = L["Commands"], lines = (function()
+      commands[#commands + 1] = "!" .. L["/ddt export still works and opens the same report as /ddt log."]
+      return commands
+    end)() },
     { heading = L["Good to know"], lines = {
       L["The addon only ever asks. You can always buy anything, and you can turn any part of it off."],
     } },
@@ -1245,7 +1434,7 @@ end
 
 -- The same content as plain lines.
 function Options.AboutLines()
-  local lines = { L["Version %s"]:format(tostring(ns.version or "unknown")), "" }
+  local lines = { L["Don't Do That"], L["Version %s"]:format(tostring(ns.version or "unknown")), PURPOSE, "" }
   for _, section in ipairs(Options.AboutSections()) do
     lines[#lines + 1] = section.heading
     for _, line in ipairs(section.lines) do
@@ -1256,9 +1445,11 @@ function Options.AboutLines()
   return lines
 end
 
+-- The name large, the version small and gray, what the addon is for, then sections; the commands one per row.
 function Options.About()
-  local page = newPage(L["About"], 5, L["Don't Do That"])
+  local page = newPage(L["About"], 6, L["Don't Do That"])
   page:note("version", L["Version %s"]:format(tostring(ns.version or "unknown")))
+  page:text("purpose", PURPOSE)
   for i, section in ipairs(Options.AboutSections()) do
     page:section("heading" .. i, section.heading)
     for j, line in ipairs(section.lines) do
@@ -1275,12 +1466,14 @@ end
 ---------------------------------------------------------------------------
 -- Pages and registration
 
-function Options.Pages()
+-- forPanel builds the copies shown in the game's Settings window, where Classes is only a launcher.
+function Options.Pages(forPanel)
   return {
     { key = "home", group = Options.Home() },
     { key = "watch", group = Options.Watch() },
     { key = "progress", group = Options.Progress() },
-    { key = "advanced", group = Options.Advanced() },
+    { key = "appearance", group = Options.Appearance() },
+    { key = "advanced", group = Options.Advanced(forPanel) },
     { key = "about", group = Options.About() },
   }
 end
@@ -1292,55 +1485,123 @@ function Options.Root()
   return { type = "group", name = TITLE, childGroups = "tree", args = args }
 end
 
-function Options.Register(addon)
-  local libs = _G.LibStub
-  if not libs then return false end
-  local okC, config = pcall(libs, "AceConfig-3.0")
-  local okD, dialog = pcall(libs, "AceConfigDialog-3.0")
-  if not (okC and okD and config and dialog) then return false end
+-- The game's AddOns list: the root entry is Home itself, and every other page is listed beneath it.
+local ROOT_APP = APP .. "_parent" -- kept from earlier versions so the registration name stays stable
+local function panelApp(key) return APP .. "_" .. key end
+-- The pages listed beneath the root, in order, with the names the game's list shows.
+local PANEL_PAGES = {
+  { "watch", L["What to watch"] }, { "progress", L["Progress"] }, { "appearance", L["Appearance"] },
+  { "advanced", L["Advanced"] }, { "about", L["About"] },
+}
 
-  pcall(config.RegisterOptionsTable, config, APP, Options.Root())
-
-  -- The game's own AddOns list: a parent entry with one sub-page per group.
+-- { appName = table } for the game's Settings window, built with the panel's titles. Home is the root.
+function Options.PanelTables()
   panelBuild = true
-  local parentPage = newPage(TITLE, 0, TITLE, L["Pick a page from the list on the left, or type /ddt."])
-  local parent = parentPage:group()
-  pcall(config.RegisterOptionsTable, config, APP .. "_parent", parent)
-  pcall(dialog.AddToBlizOptions, dialog, APP .. "_parent", TITLE)
-  for _, page in ipairs(Options.Pages()) do
-    local name = APP .. "_" .. page.key
-    pcall(config.RegisterOptionsTable, config, name, page.group)
-    pcall(dialog.AddToBlizOptions, dialog, name, page.group.name, TITLE)
-  end
+  local ok, tables = pcall(function()
+    local out = { [ROOT_APP] = Options.Home(true) }
+    for _, page in ipairs(Options.Pages(true)) do
+      if page.key ~= "home" then out[panelApp(page.key)] = page.group end
+    end
+    return out
+  end)
   panelBuild = false
+  if not ok then error(tables, 0) end
+  return tables
+end
+
+local function libs()
+  local stub = _G.LibStub
+  if not stub then return nil end
+  local okC, config = pcall(stub, "AceConfig-3.0")
+  local okD, dialog = pcall(stub, "AceConfigDialog-3.0")
+  local okR, registry = pcall(stub, "AceConfigRegistry-3.0")
+  return okC and config or nil, okD and dialog or nil, okR and registry or nil
+end
+
+-- Every registered table name: the /ddt window, then the root and each page of the game's Settings window.
+local function appNames()
+  local names = { APP, ROOT_APP }
+  for _, page in ipairs(PANEL_PAGES) do names[#names + 1] = panelApp(page[1]) end
+  return names
+end
+
+local function registerTables(config)
+  pcall(config.RegisterOptionsTable, config, APP, Options.Root())
+  local ok, tables = pcall(Options.PanelTables)
+  if ok then
+    for name, group in pairs(tables) do pcall(config.RegisterOptionsTable, config, name, group) end
+  end
+end
+
+local registered = false
+
+function Options.Register(addon)
+  local config, dialog = libs()
+  if not (config and dialog) then return false end
 
   if addon then
     function addon:OpenOptions() Options.Open() end
   end
+  registerTables(config)
+  if registered then return true end -- the game's categories are added once; a second add would fail
+  registered = true
+
+  if dialog.SetDefaultSize then pcall(dialog.SetDefaultSize, dialog, APP, 600, 460) end
+  -- Optional: without the game's Settings API the /ddt window still works.
+  if pcall(dialog.AddToBlizOptions, dialog, ROOT_APP, TITLE) then
+    for _, page in ipairs(PANEL_PAGES) do pcall(dialog.AddToBlizOptions, dialog, panelApp(page[1]), page[2], TITLE) end
+  end
+  return true
+end
+
+-- What a changed setting needs besides a redraw (trainer window and overlay); /ddt set runs it too.
+Options.Apply = applyNow
+
+-- Redraws every open settings page, in the /ddt window and in the game's Settings window.
+function Options.Refresh()
+  local _, _, registry = libs()
+  if not registry then return false end
+  for _, name in ipairs(appNames()) do pcall(registry.NotifyChange, registry, name) end
   return true
 end
 
 -- Builds every page again and hands the tables to the registry, so a list that depends on a setting (the ranks to
 -- skip follow the skip revision) shows the new choice. Safe to call when the options window was never opened.
 function Options.Rebuild()
-  local libs = _G.LibStub
-  if not libs then return false end
-  local okC, config = pcall(libs, "AceConfig-3.0")
-  if not (okC and config) then return false end
-  pcall(config.RegisterOptionsTable, config, APP, Options.Root())
-  panelBuild = true
-  for _, page in ipairs(Options.Pages()) do pcall(config.RegisterOptionsTable, config, APP .. "_" .. page.key, page.group) end
-  panelBuild = false
-  local okR, registry = pcall(libs, "AceConfigRegistry-3.0")
-  if okR and registry then pcall(registry.NotifyChange, registry, APP) end
+  local config = libs()
+  if not config then return false end
+  registerTables(config)
+  Options.Refresh()
   return true
 end
 
-function Options.Open()
-  local libs = _G.LibStub
-  if not libs then return false end
-  local ok, dialog = pcall(libs, "AceConfigDialog-3.0")
-  if not ok or not dialog then return false end
-  pcall(dialog.Open, dialog, APP)
-  return true
+-- Where each page sits in the /ddt window's tree.
+Options.PATHS = {
+  home = { "home" }, watch = { "watch" }, progress = { "progress" }, appearance = { "appearance" },
+  warnings = { "appearance", "warnings" }, explanations = { "appearance", "explanations" }, sound = { "appearance", "sound" },
+  advanced = { "advanced" }, tuning = { "advanced", "tuning" }, classes = { "advanced", "classes" }, debug = { "advanced", "debug" },
+  about = { "about" },
+}
+
+-- The tree remembers which nodes were open for the whole session. Close every class under Classes, so the long lists
+-- start collapsed; opening classes directly then expands only that path.
+function Options.CollapseClasses(dialog)
+  local app = dialog and dialog.Status and dialog.Status[APP]
+  local tree = type(app) == "table" and type(app.status) == "table" and app.status.groups
+  local open = type(tree) == "table" and tree.groups
+  if type(open) ~= "table" then return end
+  for key in pairs(open) do
+    if type(key) == "string" and key:find("^advanced\001classes\001") then open[key] = nil end
+  end
+end
+
+-- Opens the /ddt window at a page (Home when none or an unknown one is given).
+function Options.Open(pageName)
+  local _, dialog = libs()
+  if not dialog then return false end
+  local path = Options.PATHS[pageName or "home"] or Options.PATHS.home
+  Options.CollapseClasses(dialog)
+  local ok = pcall(dialog.Open, dialog, APP)
+  if ok and dialog.SelectGroup then pcall(dialog.SelectGroup, dialog, APP, unpack(path)) end
+  return ok
 end

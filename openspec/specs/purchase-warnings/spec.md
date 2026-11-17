@@ -13,15 +13,19 @@ The system SHALL use the same three signals for every surface: a badge on the af
 - **THEN** that row shows a badge and its tooltip includes the reason and cost
 
 ### Requirement: Information bubble
-The system SHALL provide an information indicator that shows the reason on mouseover and pins it on click.
+The information indicator SHALL show the tier recommendation, accurate reason and cost on hover and pin the same explanation on click. Pinned content SHALL use the shared readable hierarchy and dimmable black surface with native close action, grow for long text and clamp to screen. Hover SHALL remain silent; pinning SHALL NOT be mistaken for a purchase attempt.
 
 #### Scenario: Mouseover
-- **WHEN** the player hovers the information indicator
-- **THEN** the reason is displayed
+- **WHEN** the information indicator is hovered
+- **THEN** the reason and cost appear with native tooltip chrome and no alert sound
 
 #### Scenario: Click to pin
-- **WHEN** the player clicks the indicator
-- **THEN** the details remain visible until dismissed
+- **WHEN** the indicator is clicked
+- **THEN** details remain visible until close, Escape or the same indicator toggles them off, without triggering a purchase
+
+#### Scenario: Long pinned text
+- **WHEN** a localized reason or earn-back line is long
+- **THEN** height grows and all content stays readable and on screen; closing does not affect a real confirmation
 
 ### Requirement: Confirmation before proceeding
 The system SHALL show a confirmation prompt before a purchase proceeds when its verdict tier is one the player chose to be asked about (only defer by default), and SHALL complete the action only if the player confirms.

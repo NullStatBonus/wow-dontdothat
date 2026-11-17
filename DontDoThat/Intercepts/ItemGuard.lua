@@ -106,9 +106,9 @@ function Guard.Inspect(surface, link, total)
   end
   local instant = instantInfo(_G)
   if not instant or not link then info.why = "no item info"; return info end
-  local _, _, _, equipLoc, _, classID, subClassID = instant(link)
+  local _, _, _, equipLoc, icon, classID, subClassID = instant(link)
   if not classID then info.why = "item not cached"; return info end
-  info.classID, info.subClassID, info.equipLoc = classID, subClassID, equipLoc
+  info.classID, info.subClassID, info.equipLoc, info.icon = classID, subClassID, equipLoc, icon
   info.category = ns.ItemCategory.Classify({ classID = classID, subClassID = subClassID, equipLoc = equipLoc })
   info.mode = p.itemModes and p.itemModes[info.category] or "off"
   if ns.ItemWarning.Flagged(p.itemModes, info.category, surface, total, p.minPrice) then
@@ -147,7 +147,7 @@ function Guard.Run(surface, name, link, total, proceed)
 
   local category = info.category
   local verdict = { tier = "defer", name = name or L["This item"], cost = total,
-    reason = info.reason or ns.ItemWarning.Reason(category) }
+    reason = info.reason or ns.ItemWarning.Reason(category), icon = info.icon }
   local key = surface .. ":" .. tostring(name)
   local settings = ns.Prompt.AlertSettings()
   local asking = not disabledReason and profile().blockingConfirmations ~= false

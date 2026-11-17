@@ -5,7 +5,7 @@ Thanks for helping. Don't Do That is a WoW Classic addon (Lua) that warns player
 ## Ways to help
 
 - **Report a bug.** Turn on Debug > Record what the addon sees, do the thing that went wrong, then Show the report, copy it (Ctrl+A, Ctrl+C) and attach it with a short description and your client (Classic Era or Forever).
-- **Correct the data.** A spell tier, a skipped rank or a price that looks wrong is a real bug. Open an issue or a pull request with a source: an expert leveling guide (Wowhead, Icy Veins) for tiers and ranks, a trainer capture (`/ddt export`) for prices.
+- **Correct the data.** A spell tier, a skipped rank or a price that looks wrong is a real bug. Open an issue or a pull request with a source: an expert leveling guide (Wowhead, Icy Veins) for tiers and ranks, a trainer capture (`/ddt log`) for prices.
 - **Fix or build something.** For anything bigger than a small fix, open an issue first so we agree on the approach before you write it.
 
 ## Setup

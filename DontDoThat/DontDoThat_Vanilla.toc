@@ -1,12 +1,13 @@
 ## Interface: 11509
 ## Title: Don't Do That
 ## Notes: Safeguards your gold so you can save up for your mount: warns you away from unnecessary spending until you have bought your level 40 and level 60 mounts.
-## Version: 0.11.3
+## Version: 0.12.0
 ## Author: NullStatBonus
 ## X-Curse-Project-ID: 1766476
 ## X-Wago-ID: mKOa0DNx
 ## SavedVariables: DontDoThatDB
 ## Category: Interface Enhancements
+## IconTexture: Interface\AddOns\DontDoThat\Media\icon.tga
 
 # Load order: libraries, Core, spell tables (rule data resolves its names against them), Rules (pure Lua), Model, Data, UI, Debug, then slash commands.
 # Later task groups append their files below, keeping that order.
@@ -58,8 +59,11 @@ Data\GoldRates.lua
 Data\TrainerPrices.lua
 
 UI\Helpers.lua
+UI\Style.lua
 UI\Alert.lua
 UI\AlertBanner.lua
+UI\Toast.lua
+UI\Demo.lua
 UI\Badge.lua
 UI\InfoBubble.lua
 UI\TooltipAugment.lua
@@ -83,4 +87,5 @@ Debug\Capture.lua
 
 Options\Options.lua
 
+Core\Registry.lua
 Core\Slash.lua

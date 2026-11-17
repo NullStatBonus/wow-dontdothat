@@ -37,16 +37,16 @@ Don't Do That is the leveling addon that keeps your gold for your **level 40** a
   - Blue: optional.
 - **Get a "Buy anyway?" before you waste gold.** The addon asks before you buy a spell you can skip. It tells you how long it takes to farm that gold again. You can always choose Yes.
 - **Shop smart.** The addon also asks before you buy gear, bags, potions and more, at vendors and the auction house. It guards bank slots, stable slots, COD mail, talent resets and your first profession lesson too.
-- **Hear it coming.** A loud sound and an on-screen banner tell you before you spend gold you do not need to spend yet.
+- **Hear it coming.** A loud sound, a movable toast (or the large Warning message) and one line in chat tell you before you spend gold you do not need to spend yet.
 - **Advice for your class and spec.** It follows the Wowhead leveling guides and the game's spell data.
 - **See your savings grow.** The Progress page shows the gold you kept and how close you are to your mount.
 - **A trainer filter.** Hide every spell that the addon marks as skippable.
 
 It only asks. It never stops a purchase. It turns off when you buy your mount, and you can turn off each part before that.
 
-**Start:** type `/ddt` to open the settings. Type `/ddt test` to see a sample warning.
+**Start:** type `/ddt` to open the settings. Type `/ddt demo` to see sample warnings, or `/ddt help` for every command.
 
-**Problems?** Type `/ddt debug on`, repeat what went wrong, then type `/ddt export`. Copy the report and send it with your client (Classic Era or Forever).
+**Problems?** Type `/ddt debug on`, repeat what went wrong, then type `/ddt log`. Copy the report and send it with your client (Classic Era or Forever).
 
 Free and open source (MIT). The Ace3 libraries in the addon keep their own license.
 
@@ -56,9 +56,9 @@ Free and open source (MIT). The Ace3 libraries in the addon keep their own licen
 
 1. A trainer window with red, gold and blue **(i)** marks and a tooltip open on one.
 2. The "Buy anyway?" question with the earn-back time (`/ddt test`).
-3. The warning banner after trying to buy a flagged item.
+3. The toast after trying to buy a flagged item (and, if wanted, the large Warning message).
 4. The Progress page with savings tallied.
-5. The settings page under Options, AddOns.
+5. The Home page under Options, AddOns, and the Appearance > Warnings tab.
 6. The Recommended filter in the trainer's Filters menu.
 
 Use 1920x1080 or larger, UI scale unchanged, with the chat frame showing nothing private.
@@ -67,3 +67,4 @@ Use 1920x1080 or larger, UI scale unchanged, with the chat frame showing nothing
 
 1. Check the Game versions row still matches the `## Interface` values in both TOCs.
 2. Skim the description against `README.md`; update both if the features changed.
+3. Check the AddOns list shows the addon icon (`DontDoThat/Media/icon.tga`).

@@ -94,7 +94,7 @@ test("answering either way records the profession; alert-only mode records nothi
     n.db = { profile = {} }
     n.Settings = { MarkProfessionAsked = function(prof) n.db.profile.professionAsked = { [prof] = true } end,
       PromptTiers = function() return { defer = true } end, PromptsFor = function() return true end }
-    n.Alert = { Trigger = function() end }
+    n.Alert = { ShowVisual = function(v, nm) n.AlertBanner.Show(v, nm) end, Trigger = function() end }
     local ask
     n.ConfirmPopup = { Ask = function(_, yes, no) ask = { yes = yes, no = no }; return true end }
     H.load("DontDoThat/Intercepts/Prompt.lua", n)

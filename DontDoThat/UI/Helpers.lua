@@ -89,3 +89,42 @@ function H.BannerText(verdict, name)
   if earn then detail = detail .. (detail ~= "" and "\n" or "") .. earn end
   return head, detail
 end
+
+-- Local visual tokens for the addon's own surfaces (toast, pinned explanation): a 4-unit base,
+-- 8-unit compact padding, 12-unit content padding, 16-unit section gaps; native font objects by role.
+H.SPACE, H.PAD, H.CONTENT_PAD, H.SECTION = 4, 8, 12, 16
+H.FONTS = { supporting = "GameFontHighlightSmall", body = "GameFontHighlight", heading = "GameFontNormal" }
+H.INK = { primary = { 0.867, 0.867, 0.867 }, secondary = { 0.667, 0.667, 0.667 }, cost = { 1, 0.82, 0 } }
+
+-- A whole-number percentage within lo..hi; anything else gives the default.
+function H.Percent(value, lo, hi, default)
+  local n = tonumber(value)
+  if not n or n ~= n or n < lo or n > hi then return default end
+  return math.floor(n + 0.5)
+end
+
+-- The look of one owned surface from a profile table ({ bgAlpha, textAlpha, scale }), as 0..1 alphas and a scale factor.
+function H.Appearance(cfg)
+  cfg = type(cfg) == "table" and cfg or {}
+  return {
+    bg = H.Percent(cfg.bgAlpha, 0, 100, 100) / 100,
+    text = H.Percent(cfg.textAlpha, 0, 100, 100) / 100,
+    scale = H.Percent(cfg.scale, 50, 200, 100) / 100,
+  }
+end
+
+-- What a warning surface shows, piece by piece: the recommendation in words (so the tier reads without its color),
+-- a neutral title (item or action and cost, estimates marked), and the reason with any earn-back line.
+-- A missing tier gives no recommendation and a missing cost gives no price; nothing is made up.
+function H.Content(verdict, name)
+  verdict = type(verdict) == "table" and verdict or {}
+  local style = TIERS[verdict.tier]
+  local title, detail = H.BannerText(verdict, name)
+  return {
+    recommendation = style and style.label or nil,
+    color = style and { style.color[1], style.color[2], style.color[3] } or nil,
+    title = title,
+    detail = detail ~= "" and detail or nil,
+    icon = verdict.icon,
+  }
+end

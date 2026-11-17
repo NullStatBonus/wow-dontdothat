@@ -73,7 +73,14 @@ function Confirm.Decide(env, index)
   if not index then return nil end
   local computed = ns.TrainerOverlay.Compute(env)
   local verdict = computed and computed.verdicts[index]
-  if verdict and chosenTier(verdict.tier) then return verdict, index end
+  if verdict and chosenTier(verdict.tier) then
+    -- The trainer knows the spell's icon; the toast shows it.
+    if verdict.icon == nil and type(env.GetTrainerServiceIcon) == "function" then
+      local ok, icon = pcall(env.GetTrainerServiceIcon, index)
+      if ok then verdict.icon = icon end
+    end
+    return verdict, index
+  end
   return nil
 end
 
@@ -313,7 +320,9 @@ function Confirm.Test(say)
     -- No question: the warning, then the purchase goes ahead.
     local fired = ns.Alert.Trigger(verdict, key, settings)
     say(fired and L["test: \"Ask before buying\" is off, so you'd get the warning and the purchase would go ahead."]
-      or L["test: \"Ask before buying\" and the warning sound are both off, so nothing would happen."])
+      or (settings.alertChat ~= false
+        and L["test: \"Ask before buying\" and the warning sound are both off, so only the chat line would show."]
+        or L["test: \"Ask before buying\" and the warning sound are both off, so nothing would happen."]))
     return
   end
   pcall(ns.Alert.Trigger, verdict, key, ns.Prompt.SoundOnly(settings))

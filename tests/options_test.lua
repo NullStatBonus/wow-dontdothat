@@ -20,7 +20,7 @@ end
 
 test("settings switches read and write the saved profile, defaulting to on", function()
   local ns = fresh({})
-  local home, tuning, alerts, watch = ns.Options.Home().args, ns.Options.Tuning().args, ns.Options.Alerts().args, ns.Options.Watch().args
+  local home, tuning, alerts, watch = ns.Options.Home().args, ns.Options.Tuning().args, ns.Options.Sound().args, ns.Options.Watch().args
   truthy(home.enabled.get(), "enabled defaults to on")
   truthy(tuning.warnings.get()); truthy(tuning.blocking.get()); truthy(alerts.alerts.get()); truthy(watch.filter.get())
   tuning.blocking.set(nil, false)
@@ -60,9 +60,9 @@ test("home and tuning: sub-options are greyed out while the addon is off", funct
   falsy(tuning.warnings.disabled())
 end)
 
-test("alerts page: sound choices come from the registry and old saved values still work", function()
+test("sound tab: sound choices come from the registry and old saved values still work", function()
   local ns = fresh({ alert = { sound = "default" } })
-  local a = ns.Options.Alerts().args
+  local a = ns.Options.Sound().args
   local choices = a.sound.values()
   eq(choices.raidwarning, "Raid warning")
   truthy(choices.alarm1)
@@ -72,23 +72,30 @@ test("alerts page: sound choices come from the registry and old saved values sti
   eq(a.sound.get(), "alarm1")
 end)
 
-test("alerts page: play button, banner toggle and cooldown", function()
+test("sound tab: play button and cooldown; the on-screen message toggle is on Home", function()
   local ns = fresh({})
   local played
   ns.Alert = { PlaySound = function(key) played = key end }
-  local a = ns.Options.Alerts().args
+  local a = ns.Options.Sound().args
   a.test.func()
   eq(played, ns.Sounds.default)
-  truthy(a.banner.get())
-  a.banner.set(nil, false)
-  eq(ns.db.profile.alert.banner, false)
+  eq(a.banner, nil, "the message toggle is not repeated on Sound")
+  local home = ns.Options.Home().args
+  truthy(home.banner.get())
+  home.banner.set(nil, false)
+  eq(ns.db.profile.alert.banner, false, "kept in the existing alert.banner value")
+  falsy(home.banner.get())
   eq(a.cooldown.get(), 3, "the shown default matches the saved default")
   a.cooldown.set(nil, 12)
   eq(ns.db.profile.alert.cooldown, 12)
   ns.db.profile.alerts = false
-  local after = ns.Options.Alerts().args
+  local after = ns.Options.Sound().args
   truthy(after.sound.disabled(), "greyed out when warning sounds are off")
   falsy(after.alerts.disabled(), "the sound switch itself stays usable")
+  falsy(after.cooldown.disabled(), "the cooldown still limits the chat line")
+  truthy(home.banner.disabled(), "the message needs the warning sound switch")
+  falsy(home.bannerNote.hidden(), "and says so")
+  eq(ns.db.profile.alert.banner, false, "the saved choice is kept")
 end)
 
 local function names(entries) local out = {}; for _, e in ipairs(entries) do out[#out + 1] = e.name end; return out end
@@ -247,11 +254,11 @@ test("about page explains the marks in plain words and shows the version", funct
   truthy(joined:find("/ddt", 1, true))
 end)
 
-test("there are five pages in order, and the root window holds all of them", function()
+test("there are six pages in order, and the root window holds all of them", function()
   local ns = fresh()
   local keys = {}
-  for _, page in ipairs(ns.Options.Pages()) do keys[#keys + 1] = page.key end
-  eq(keys, { "home", "watch", "progress", "advanced", "about" })
+  for i, page in ipairs(ns.Options.Pages()) do keys[#keys + 1] = page.key; eq(page.group.order, i, page.key) end
+  eq(keys, { "home", "watch", "progress", "appearance", "advanced", "about" })
   local root = ns.Options.Root()
   eq(root.childGroups, "tree")
   for _, key in ipairs(keys) do truthy(root.args[key], key) end
@@ -268,10 +275,11 @@ test("registration adds the pages to the game's options and defines OpenOptions"
   _G.LibStub = function(lib) return ({ ["AceConfig-3.0"] = config, ["AceConfigDialog-3.0"] = dialog })[lib] end
   local addon = {}
   truthy(ns.Options.Register(addon))
-  eq(#added, 6, "a parent entry plus five pages")
-  eq(added[1].title, "Don't Do That")
-  eq(added[2].parent, "Don't Do That")
-  eq(added[3].title, "What to watch")
+  eq(#added, 6, "the root entry plus five pages")
+  eq(added[1].title, "Don't Do That"); eq(added[1].parent, nil)
+  local titles = {}
+  for i = 2, #added do eq(added[i].parent, "Don't Do That"); titles[#titles + 1] = added[i].title end
+  eq(titles, { "What to watch", "Progress", "Appearance", "Advanced", "About" })
   addon:OpenOptions()
   eq(opened, "DontDoThat")
   _G.LibStub = nil
@@ -317,9 +325,9 @@ test("tuning is greyed out while the addon is off", function()
   truthy(g.kind_skipRank.disabled()); truthy(g.tier_defer.disabled())
 end)
 
-test("alerts page: the volume channel defaults to Master and ignores unknown saved values", function()
+test("sound tab: the volume channel defaults to Master and ignores unknown saved values", function()
   local ns = loadSettings({})
-  local a = ns.Options.Alerts().args
+  local a = ns.Options.Sound().args
   eq(a.channel.get(), "Master")
   a.channel.set(nil, "Dialog")
   eq(ns.db.profile.alert.channel, "Dialog"); eq(a.channel.get(), "Dialog")

@@ -105,6 +105,37 @@ function Export.Build(sources)
 
   section("Settings", function() return dumpTable(sources.settings) end)
   section("Ledger", function() return dumpTable(sources.ledger) end)
+  section("Presentation", function()
+    local p = sources.settings
+    if type(p) ~= "table" then return { "  (not available)" } end
+    local R = ns.Registry
+    local function val(key, raw)
+      local v = R and R.Get(key, p)
+      return v ~= nil and v or tostring(raw)
+    end
+    local a, t, e = p.alert or {}, p.toast or {}, p.explanation or {}
+    local lines = {
+      "  active profile: " .. tostring(sources.profileName or "unknown"),
+      "  scope: settings shared by the profile; savings per character; debug account-wide",
+      "  warning style: " .. val("appearance.warning-style", a.style or "toast"),
+      "  message shown: " .. val("appearance.message", a.banner ~= false),
+      "  chat record: " .. val("appearance.chat", a.chat ~= false),
+      ("  toast: background %s, text %s, scale %s"):format(val("appearance.toast.background-opacity", t.bgAlpha),
+        val("appearance.toast.text-opacity", t.textAlpha), val("appearance.toast.scale", t.scale)),
+      ("  explanation: background %s, text %s, scale %s"):format(val("appearance.explanation.background-opacity", e.bgAlpha),
+        val("appearance.explanation.text-opacity", e.textAlpha), val("appearance.explanation.scale", e.scale)),
+      ("  sound: %s, channel %s, cooldown %s"):format(tostring(a.sound), val("alert.channel", a.channel), val("alert.cooldown", a.cooldown)),
+      "  toast position: " .. (type(t.point) == "table"
+        and ("%s %s %s %s"):format(tostring(t.point.point), tostring(t.point.relPoint), tostring(t.point.x), tostring(t.point.y))
+        or "default"),
+    }
+    local extra = sources.presentation
+    if type(extra) == "function" then extra = extra() end
+    if type(extra) == "table" then
+      for _, l in ipairs(extra) do lines[#lines + 1] = "  " .. tostring(l) end
+    end
+    return lines
+  end)
   section("Items", function()
     local r = sources.items
     if type(r) == "function" then r = r() end
@@ -124,67 +155,94 @@ function Export.Build(sources)
 end
 
 ---------------------------------------------------------------------------
--- WoW-only: the copy window. Template names are unverified on Forever, so each
--- creation is pcall-guarded with a plain fallback.
+-- The copy window (AceGUI Frame + MultiLineEditBox, as the sibling addons do), with a chat fallback.
 
-local frame
+local window
 
-local function createFrame()
-  if not CreateFrame or not UIParent then return nil end
-  local f
-  for _, template in ipairs({ "BasicFrameTemplateWithInset", "BackdropTemplate" }) do
-    local ok, res = pcall(CreateFrame, "Frame", "DontDoThatExportFrame", UIParent, template)
-    if ok and res then f = res break end
+-- Prints the whole report to chat, one line at a time (long lines are split), when no window can be made.
+local CHUNK = 240
+function Export.PrintToChat(text, printer)
+  printer = printer or function(m) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(m) end end
+  for line in (text .. "\n"):gmatch("(.-)\n") do
+    if line == "" then line = " " end
+    while #line > CHUNK do
+      printer(line:sub(1, CHUNK))
+      line = line:sub(CHUNK + 1)
+    end
+    printer(line)
   end
-  if not f then return nil end
-  f:SetSize(640, 440)
-  f:SetPoint("CENTER")
-  f:SetFrameStrata("DIALOG")
-  f:SetMovable(true)
-  f:EnableMouse(true)
-  f:RegisterForDrag("LeftButton")
-  f:SetScript("OnDragStart", f.StartMoving)
-  f:SetScript("OnDragStop", f.StopMovingOrSizing)
-
-  local scroll = CreateFrame("ScrollFrame", "DontDoThatExportScroll", f, "UIPanelScrollFrameTemplate")
-  scroll:SetPoint("TOPLEFT", 12, -32)
-  scroll:SetPoint("BOTTOMRIGHT", -32, 42)
-
-  local edit = CreateFrame("EditBox", nil, scroll)
-  edit:SetMultiLine(true)
-  edit:SetAutoFocus(false)
-  edit:SetFontObject(ChatFontNormal or GameFontHighlight)
-  edit:SetWidth(580)
-  edit:SetScript("OnEscapePressed", function() f:Hide() end)
-  scroll:SetScrollChild(edit)
-
-  local close = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  close:SetSize(90, 24)
-  close:SetPoint("BOTTOM", 0, 12)
-  close:SetText("Close")
-  close:SetScript("OnClick", function() f:Hide() end)
-
-  f.edit = edit
-  -- Escape closes the window.
-  if type(UISpecialFrames) == "table" then
-    table.insert(UISpecialFrames, "DontDoThatExportFrame")
-  end
-  return f
 end
 
+local FRAME_NAME = "DontDoThatLogFrame"
+
+-- Escape closes the window, as for the old frame: register its global name with the game, and undo it on close.
+local function setEscapeClose(env, frame, on)
+  pcall(function()
+    local special = env.UISpecialFrames
+    if type(special) ~= "table" then return end
+    if on then
+      env[FRAME_NAME] = frame
+      for _, v in ipairs(special) do if v == FRAME_NAME then return end end
+      special[#special + 1] = FRAME_NAME
+    else
+      for i = #special, 1, -1 do if special[i] == FRAME_NAME then table.remove(special, i) end end
+      if env[FRAME_NAME] == frame then env[FRAME_NAME] = nil end
+    end
+  end)
+end
+
+local function openWindow(text, env)
+  local stub = env.LibStub
+  if not stub then return false end
+  local AceGUI = stub("AceGUI-3.0", true)
+  if not AceGUI then return false end
+  if window then
+    local old = window
+    pcall(function() setEscapeClose(env, old.frame, false); old:Release() end)
+    window = nil
+  end
+  local w = AceGUI:Create("Frame")
+  if not w then return false end
+  window = w
+  setEscapeClose(env, w.frame, true)
+  w:SetTitle("Don't Do That: log")
+  w:SetStatusText("Ctrl+A selects everything, then Ctrl+C copies it.")
+  w:SetLayout("Fill")
+  w:SetCallback("OnClose", function(f)
+    setEscapeClose(env, f.frame, false)
+    AceGUI:Release(f)
+    if window == f then window = nil end
+  end)
+  local box = AceGUI:Create("MultiLineEditBox")
+  box:SetLabel("")
+  box:DisableButton(true)
+  box:SetText(text)
+  -- Read-only: any edit puts the report text back.
+  box:SetCallback("OnTextChanged", function(b) b:SetText(text) end)
+  w:AddChild(box)
+  box:SetFocus()
+  box:HighlightText()
+  return true
+end
+
+Export.env = nil -- tests may supply a fake globals table
+
 function Export.Show(sources)
+  local env = Export.env or _G
+  local text
   local ok, err = pcall(function()
     if not sources and Export.sourceProvider then sources = Export.sourceProvider() end
-    local text = Export.Build(sources)
-    frame = frame or createFrame()
-    if not frame then error("could not create the export window") end
-    frame.edit:SetText(text)
-    frame:Show()
-    frame.edit:SetFocus()
-    frame.edit:HighlightText()
+    text = Export.Build(sources)
   end)
-  if not ok and DEFAULT_CHAT_FRAME then
-    DEFAULT_CHAT_FRAME:AddMessage("Don't Do That: export failed: " .. tostring(err))
+  if not ok then
+    Export.PrintToChat("Don't Do That: the report failed: " .. tostring(err))
+    return false
   end
-  return ok
+  local shown = pcall(function()
+    if not openWindow(text, env) then error("no window") end
+  end)
+  if shown and window then return true end
+  window = nil
+  Export.PrintToChat(text)
+  return true
 end

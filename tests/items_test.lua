@@ -115,7 +115,7 @@ local function guarded(over)
       traceItems = over.trace ~= false,
       itemModes = over.modes or { armor = "both", food = "ah" } },
     char = { ledger = ns.Ledger.NewState() }, global = {} }
-  ns.Alert = { Trigger = function() return true end }
+  ns.Alert = { ShowVisual = function(v, n) ns.AlertBanner.Show(v, n) end, Trigger = function() return true end }
   ns.ConfirmPopup = { Ask = function(_, yes, no) shown.yes, shown.no = yes, no; return true end }
   _G.GetItemInfoInstant = function() return 1, "Armor", "Plate", "INVTYPE_CHEST", 0, 4, 4 end
   return ns, shown
