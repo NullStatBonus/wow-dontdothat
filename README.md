@@ -51,7 +51,7 @@ The addon also asks before you pay for:
 - a pet skill reset (Hunters)
 - your first lesson in a new profession (not gathering professions)
 
-You can turn off each of these, except the profession lesson, on the What to watch page under Other. The stable slot and pet skill switches show only for Hunters.
+For COD mail and talent and pet resets, the game's own question stays on screen with a note from the addon added to it, and you hear the warning sound; no toast or banner covers it. You can turn off each of these, except the profession lesson, on the What to watch page under Other. The stable slot and pet skill switches show only for Hunters.
 
 ### Warnings you can see and hear
 

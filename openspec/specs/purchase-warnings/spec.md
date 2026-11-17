@@ -65,11 +65,11 @@ The system SHALL annotate class trainer services, talent selection, talent respe
 
 #### Scenario: Respec dialog
 - **WHEN** the game opens its talent reset dialog while warnings are active
-- **THEN** the warning sound plays and an Accept / Cancel question states the price and that it rises each time; accepting resets the talents, and cancelling leaves them alone
+- **THEN** the warning sound plays and the game's own dialog stays up with the addon's note added; accepting resets the talents and cancelling leaves them alone
 
 #### Scenario: Pet training reset
 - **WHEN** the game opens its pet skill reset dialog while warnings are active
-- **THEN** the warning sound plays and an Accept / Cancel question states the price; if the game refuses the addon's confirmation, the game's own dialog is left in place with a note added
+- **THEN** the warning sound plays and the game's own dialog stays up with the addon's note added
 
 #### Scenario: Flagged vendor item
 - **WHEN** the player buys an item from a vendor in a category whose mode includes Vendor, at or above the minimum price

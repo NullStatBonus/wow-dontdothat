@@ -223,7 +223,14 @@ local function show(verdict, name, sample)
   return ok
 end
 
-function Toast.Show(verdict, name) return show(verdict, name, false) end
+-- With debug on, the log names who asked for each real toast (to find a stray caller).
+local function traceCaller(verdict, name)
+  if ns.Log and ns.db and ns.db.profile and ns.db.profile.debug and type(_G.debugstack) == "function" then
+    pcall(ns.Log.Add, "visual: toast for %s from %s", tostring(name), ((_G.debugstack(3, 3, 0) or ""):gsub("\n", " | ")))
+  end
+end
+
+function Toast.Show(verdict, name) traceCaller(verdict, name); return show(verdict, name, false) end
 
 -- Same drawing as a real warning; touches no cooldown, chat or ledger. A real warning replaces it.
 function Toast.ShowSample(verdict, name) return show(verdict, name, true) end

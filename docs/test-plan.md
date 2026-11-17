@@ -67,10 +67,10 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 
 ## 6. Resets
 - [ ] Talents (level 10): open the talent window, spend your point, click **Learn**. Nothing is blocked (talent choices aren't judged).
-- [ ] Ask your class trainer to **reset your talents**: you hear the warning sound and see **Don't Do That's own question** ("Reset your talents? This costs …, and the price goes up each time… Reset anyway?"). The game's own dialog is put away.
-- [ ] Press **Cancel**: nothing is reset, the talent window closes (as the game's Cancel does), and the Tally later shows "Talent resets: skipped 1".
-- [ ] Ask again and press **Accept** (it costs gold, so only if you're happy to): your talents reset and the Tally shows "done 1". If it doesn't reset, or chat says the game won't let the addon confirm, tell me; the addon then falls back to the game's own question with a note.
-- [ ] Turn off **Ask before buying** and ask again: you hear the sound, and the game's own dialog stays, with a note added to it.
+- [ ] Ask your class trainer to **reset your talents**: you hear the warning sound and the **game's own dialog** stays, with a red "Don't Do That:" note added to it. **No toast or banner** shows, with either Toast or Warning chosen. One line is added to chat.
+- [ ] Press **Cancel**: nothing is reset, and the Tally later shows "Talent resets: skipped 1".
+- [ ] Ask again and press **Accept** (it costs gold, so only if you're happy to): your talents reset and the Tally shows "done 1".
+- [ ] Buy a bank slot: Don't Do That's own question shows instead of the game's, with no toast or banner. Turn off **Ask before buying** and try again: the game's own dialog stays with the note and the sound, and no toast or banner.
 - [ ] Pet Trainer (needs a pet that has learned something): choose its **untrain** option and do the same.
 
 ## 7. Safety checks
