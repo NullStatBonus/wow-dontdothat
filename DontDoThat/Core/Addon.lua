@@ -22,8 +22,8 @@ ns.defaults = {
             mounts = "off", misc = "off",
         },
         watch = { spells = true, professions = true, shopping = true }, -- the areas of What to watch
-        guard = { bank = true, stable = true, cod = true }, -- one-click sinks asked about (What to watch page, Other)
-        minPrice = 100,             -- copper; cheaper purchases are never warned about (10 silver)
+        guard = { bank = true, stable = true, cod = true, talent = true, pet = true }, -- one-click sinks asked about (What to watch page, Other)
+        minPrice = 100,             -- copper; cheaper purchases are never warned about (1 silver)
         alert = {
             sound = "raidwarning",
             channel = "Master",
@@ -47,6 +47,8 @@ ns.defaults = {
         ledger = {},
         costCache = {},
         catalog = {},
+        milestoneOverride = {}, -- [40] / [60] = true: mounts this character marked as bought
+        professionAsked = {},   -- profession ID -> true: asked once already on this character
     },
     global = {
         log = {},
@@ -91,6 +93,13 @@ function addon:OnInitialize()
                     return {
                         "moving toast: " .. tostring(ns.Toast and ns.Toast.IsMoving and ns.Toast.IsMoving() or false),
                         "samples showing: " .. tostring(ns.Demo and ns.Demo.Active and ns.Demo.Active() or false),
+                        "mounts marked bought (this character): " .. (function()
+                            local o = self.db.char.milestoneOverride or {}
+                            local t = {}
+                            if o[40] then t[#t + 1] = "40" end
+                            if o[60] then t[#t + 1] = "60" end
+                            return #t > 0 and table.concat(t, ", ") or "none"
+                        end)(),
                     }
                 end,
             }
@@ -99,6 +108,10 @@ function addon:OnInitialize()
 end
 
 function addon:OnEnable()
+    if ns.Settings then
+        local ok, level = pcall(UnitLevel, "player")
+        ns.Settings.MigrateCharMarks(self.db.char, self.db.profile, ok and level or nil)
+    end
     if ns.Options then ns.Options.Register(self) end
     if ns.TrainerFilter then ns.TrainerFilter.Enable(_G) end
     if ns.Resets then ns.Resets.Enable(LibStub("AceEvent-3.0"):Embed({}), _G) end

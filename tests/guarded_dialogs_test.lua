@@ -167,24 +167,31 @@ test("a warning plays the alert with the profile's settings, without the banner 
   eq(got[1].settings.alertChannel, "Dialog")
 end)
 
-test("a warn-only reset keeps the banner, since the game's dialog is the one on screen", function()
+test("a warn-only reset plays the sound only: the note on the game's dialog is the warning", function()
   local ns, env, shown, calls, popup = setup()
   local got = alerts(ns)
   env.StaticPopup1 = dialogText("CONFIRM_TALENT_WIPE", "Are you sure you want to reset your talents?")
   popup("CONFIRM_TALENT_WIPE")
   eq(shown.text, nil)
   eq(#got, 1); eq(got[1].key, "reset:talent")
-  eq(got[1].settings, ns.Prompt.AlertSettings())
-  eq(got[1].settings.alertBanner, true)
+  eq(got[1].settings.alertBanner, false)
+  truthy(env.StaticPopup1.text:GetText():find("Don't Do That:", 1, true), "the note is on the game's dialog")
 end)
 
-test("with Ask before buying off, a warning keeps the banner and no question is shown", function()
+test("a warn-only reset whose dialog cannot take the note keeps the toast or banner", function()
+  local ns, env, shown, calls, popup = setup()
+  local got = alerts(ns)
+  popup("CONFIRM_TALENT_WIPE")
+  eq(#got, 1); eq(got[1].settings.alertBanner, true)
+end)
+
+test("with Ask before buying off, the note goes on the game's dialog with the sound only", function()
   local ns, env, shown, calls, popup = setup({ enabled = true, warnings = true, blockingConfirmations = false })
   local got = alerts(ns)
   env.StaticPopup1 = dialogText("CONFIRM_BUY_BANK_SLOT", "Buy a bank slot?")
   popup("CONFIRM_BUY_BANK_SLOT")
   eq(shown.text, nil)
-  eq(#got, 1); eq(got[1].settings.alertBanner, true)
+  eq(#got, 1); eq(got[1].settings.alertBanner, false)
 end)
 
 test("when the client blocks our call, the question switches off and chat says so", function()
@@ -198,11 +205,33 @@ test("when the client blocks our call, the question switches off and chat says s
   eq(ns.Resets.DisabledReason(), "blocked: PurchaseSlot")
   eq(#said, 1)
   truthy(said[1]:find("won't let it confirm these for you", 1, true), said[1])
-  -- The next warning uses the game's dialog, so the banner comes back.
+  -- The next warning uses the game's dialog with our note on it, so the sound alone.
   local got = alerts(ns)
   env.StaticPopup1 = dialogText("CONFIRM_BUY_BANK_SLOT", "Buy a bank slot?")
   popup("CONFIRM_BUY_BANK_SLOT")
   eq(shown.text, nil)
-  eq(got[1].settings.alertBanner, true)
+  eq(got[1].settings.alertBanner, false)
   _G.DEFAULT_CHAT_FRAME = nil
+end)
+
+test("talent and pet reset switches turned off leave the game's dialog alone", function()
+  local ns, env, shown, calls, popup = setup({ enabled = true, warnings = true, blockingConfirmations = true,
+    guard = { talent = false, pet = false } })
+  falsy(ns.Resets.Status().talent.on)
+  falsy(ns.Resets.Status().pet.on)
+  truthy(ns.Resets.Status().bank.on)
+end)
+
+test("once the mount is bought, every kind leaves the game's dialog alone", function()
+  local ns, env, shown, calls, popup = setup()
+  local saving = false
+  ns.Context = { Saving = function() return saving end }
+  for _, which in ipairs({ "CONFIRM_BUY_BANK_SLOT", "CONFIRM_BUY_STABLE_SLOT", "COD_CONFIRMATION", "CONFIRM_TALENT_WIPE" }) do
+    popup(which)
+    eq(shown.text, nil, which)
+  end
+  falsy(ns.Resets.Status().bank.on)
+  saving = true
+  popup("CONFIRM_BUY_BANK_SLOT")
+  truthy(shown.text)
 end)

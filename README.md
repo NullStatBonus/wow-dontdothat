@@ -14,7 +14,7 @@ This helps you to buy your **level 40** and **level 60** mounts on time.
 
 ## What it does
 
-The addon is on from level 1 until you buy the mount that you chose to stop at.
+The addon is on from level 1 until you buy the mount that you chose to stop at. Then every warning stops: trainers, shopping, slots, COD mail and resets.
 You can stop at your level **40** mount or your level **60** mount (default: level **60**).
 It only asks. It never stops a purchase.
 You can turn off each part.
@@ -31,7 +31,6 @@ You can turn off each part.
 - **Knows your class and spec.** The advice depends on your spec. The addon reads your talents, or you can choose a spec.
 - **Has a Recommended filter.** Use the trainer's Filters menu to hide the spells that the addon marks as skippable.
   On Forever, the filter fades the rows. It does not remove them.
-- **Marks profession ranks that you cannot use yet.**
 
 ### At vendors and the auction house
 
@@ -39,7 +38,7 @@ The addon asks before you buy items that you do not need while you level.
 These are the item kinds: armor, weapons, vanity items, bags, recipes, potions, gems and enchants, food, trade goods, ammo, class reagents, mounts, and other items.
 For each kind, you choose where the addon asks: at vendors, at the auction house, at both, or nowhere.
 By default, armor, weapons and vanity items are watched at both. The other kinds are watched at the auction house only. Mounts are not watched.
-The addon does not ask about purchases that cost less than **10 silver**. You can change this price.
+The addon does not ask about purchases that cost less than **1 silver**. You can change this price.
 
 ### Other ways to lose gold
 
@@ -49,7 +48,10 @@ The addon also asks before you pay for:
 - a stable slot
 - COD mail
 - a talent reset
+- a pet skill reset (Hunters)
 - your first lesson in a new profession (not gathering professions)
+
+For COD mail and talent and pet resets, the game's own question stays on screen with a note from the addon added to it, and you hear the warning sound; no toast or banner covers it. You can turn off each of these, except the profession lesson, on the What to watch page under Other. The stable slot and pet skill switches show only for Hunters.
 
 ### Warnings you can see and hear
 
@@ -98,7 +100,7 @@ The settings have these pages:
 
 - **Home:** turn the addon on or off, choose how strongly it warns you, choose when to stop warning you, turn the on-screen message on or off, and reset all settings.
 - **What to watch:** choose Spells, Professions and Shopping, and which purchases the addon watches.
-- **Progress:** the gold you saved, and how close you are to your mounts.
+- **Progress:** the gold you saved, and how close you are to your mounts. **Start the count over** forgets what the addon recorded (trainer prices, purchases you turned down or made, and reset counts). Spell totals come from your spellbook, so they come back. The "I've already bought my mount" checkboxes are kept for each character, so marking a mount on one character does not change your other characters.
 - **Appearance:** three tabs.
   - **Warnings:** choose Toast or Warning, preview it, set the toast's background opacity, text and icon opacity and scale, move it (Done saves, Cancel or Escape puts it back, and Escape does not close the settings window; it keeps its place when you change its scale), reset its position, and turn the chat line on or off.
   - **Explanations:** opacity and scale for the explanations you keep open, and a preview.
@@ -143,6 +145,11 @@ Switches take `on` or `off`. Opacity is 0 to 100, scale is 50 to 200 and `alert.
 - Wowhead has leveling guides for Priest, Mage, Druid, Shaman and Warrior. The other classes have no guide check.
 - The addon does not mark or question beast training. Beast training is the pet abilities that cost training points. The addon does check the Pet Trainer NPC.
 - The addon does not judge talent choices. It only warns you about the cost of a talent reset.
+
+### Your characters
+
+- Settings are shared by all your characters. Your savings, the mounts you marked as bought, and the professions the addon already asked about are kept for each character.
+- After updating from an older version, a mount you marked as bought is kept only on characters that are at least that level. Each character may be asked once about a profession that another character was asked about.
 
 ### Warnings
 

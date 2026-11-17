@@ -15,6 +15,12 @@ Update the supporting docs in the same change as any user-visible addon behavior
 - The debug report header in `Core.lua` (`reportText`) lists any new setting.
 - `CHANGELOG.md` is written at archive (see Releases), not before.
 
+## Backlog
+
+- Track deferred work and future ideas as GitHub issues (`gh issue create`), not in repo files. When a change or review defers something, open the issue in the same session and name it in the change's `design.md` (Non-Goals) when there is one.
+- Issue text describes the gap, the code involved and a possible approach; no personal names.
+- Check open issues (`gh issue list`) before proposing new work.
+
 ## Git and PRs
 
 - **Archive before git.** Before any commit, push or PR for a change, run `/opsx:archive` first (sync specs, bump the version, write the CHANGELOG section), so the archive and the code ship in the same commit/PR. Commit nothing for a change that is still active in `openspec/changes/`.
@@ -25,5 +31,6 @@ Bump the addon's semantic version every time a change's specs are applied to `op
 
 - Set `## Version:` in **both** `DontDoThat/DontDoThat_Vanilla.toc` and `DontDoThat/DontDoThat_Camelot.toc` to the same value. Do not hard-code the version anywhere else.
 - Below 1.0.0: a change that adds a capability or user-visible feature raises the minor number (0.2.0 -> 0.3.0); a change that only modifies or fixes existing behavior raises the patch number (0.2.0 -> 0.2.1). From 1.0.0, use the usual major.minor.patch meaning, and a change that breaks saved settings or data is a major bump.
+- Write `CHANGELOG.md` entries in ASD-STE100 Simplified Technical English: short sentences (at most 20 words), active voice, simple tenses, one fact per sentence, common words, and what the player sees, not how the code works.
 - Make the bump part of the same commit as the archive, and name the new version in the commit message.
 - To publish, tag the archive commit `vX.Y.Z` (the version without the `v` must equal the TOC version) and push the tag; see `docs/publishing.md`. Add the version to `CHANGELOG.md` in the same commit as the archive.

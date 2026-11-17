@@ -96,6 +96,7 @@ function Guard.Inspect(surface, link, total)
   local info = { surface = surface, total = total, minPrice = p.minPrice }
   if p.enabled == false then info.why = "addon off"; return info end
   if p.watch and p.watch.shopping == false then info.why = "Shopping is off"; return info end
+  if ns.Context and not ns.Context.Saving(_G) then info.why = "mount bought"; return info end
   if surface == "vendor" then
     local family, reason = flaggedGrimoire(link)
     if family then

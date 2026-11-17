@@ -65,11 +65,11 @@ The system SHALL annotate class trainer services, talent selection, talent respe
 
 #### Scenario: Respec dialog
 - **WHEN** the game opens its talent reset dialog while warnings are active
-- **THEN** the warning sound plays and an Accept / Cancel question states the price and that it rises each time; accepting resets the talents, and cancelling leaves them alone
+- **THEN** the warning sound plays and the game's own dialog stays up with the addon's note added; accepting resets the talents and cancelling leaves them alone
 
 #### Scenario: Pet training reset
 - **WHEN** the game opens its pet skill reset dialog while warnings are active
-- **THEN** the warning sound plays and an Accept / Cancel question states the price; if the game refuses the addon's confirmation, the game's own dialog is left in place with a note added
+- **THEN** the warning sound plays and the game's own dialog stays up with the addon's note added
 
 #### Scenario: Flagged vendor item
 - **WHEN** the player buys an item from a vendor in a category whose mode includes Vendor, at or above the minimum price
@@ -91,11 +91,20 @@ The system SHALL let the player independently turn off blocking confirmations, b
 - **THEN** trainers show all rows and badges and tooltips continue
 
 ### Requirement: Inactive when not applicable
-The system SHALL show no warnings for unsupported classes or professions, or after the level 60 mount has been acquired.
+The system SHALL show no warnings for unsupported classes or professions, or once the mount the player chose to stop at is bought (detected or marked in settings). This SHALL cover every surface: trainers, vendors, the auction house, bank and stable slots, COD mail, and talent and pet resets. Warnings SHALL resume everywhere if the milestone becomes active again.
 
 #### Scenario: Unsupported class
 - **WHEN** the player is a class with no rule data
 - **THEN** no warnings are shown
+
+#### Scenario: Stopped after the level 40 mount
+- **WHEN** the player chose to stop after the level 40 mount and has bought it
+- **THEN** a flagged vendor or auction house purchase completes with no question, sound or message
+- **AND** buying a bank or stable slot, paying a COD, or resetting talents or pet skills shows only the game's own dialog
+
+#### Scenario: Milestone active again
+- **WHEN** the milestone was finished and the player clears its "mark done" checkbox or moves the stop point to the level 60 mount before buying it
+- **THEN** shopping and gold-sink warnings ask again
 
 ### Requirement: Recommended trainer filter
 The system SHALL add a "Recommended" entry to the class and profession trainer's existing filter list that hides services whose verdict is defer or defer-low-value, and SHALL leave keep and informational services visible. It is in addition to badges, tooltips, and prompts.
@@ -141,11 +150,11 @@ The system SHALL fall back to badge and tooltip when the Recommended filter cann
 - **THEN** all rows remain visible and flagged rows show badges and tooltips
 
 ### Requirement: One-time warning when learning a non-gathering profession
-The system SHALL, when the player trains a profession other than Skinning, Herbalism, or Mining at a profession trainer before the level 60 mount has been acquired, play the warning sound and show an Accept / Cancel question that names the profession, its cost when known, and a reason specific to that profession, and SHALL complete the training only if the player accepts. It SHALL ask at most once per profession: after the player has been asked about a profession, in either answer, later trainings of that profession SHALL NOT trigger the question again.
+The system SHALL, when the player first trains a profession other than Fishing, Skinning, Herbalism or Mining while warnings are active, play the warning sound and ask Accept / Cancel with the profession's name and why leveling it costs gold, and SHALL train only on Accept. The question SHALL NOT show the lesson's price or an earn-back time. After either answer, later trainings of that profession SHALL NOT ask again.
 
 #### Scenario: First time learning a crafting profession
 - **WHEN** a player who has not been asked about Leatherworking trains it
-- **THEN** the warning sound plays and a question names Leatherworking, its cost, and why it is not advised yet
+- **THEN** the warning sound plays and a question names Leatherworking and why it is not advised yet, with no price or earn-back line
 - **THEN** accepting trains the profession and cancelling leaves it untrained
 
 #### Scenario: Asked once only
@@ -153,7 +162,7 @@ The system SHALL, when the player trains a profession other than Skinning, Herba
 - **THEN** no question is shown and the training proceeds
 
 #### Scenario: Gathering professions
-- **WHEN** the player trains Skinning, Herbalism, or Mining
+- **WHEN** the player trains Fishing, Skinning, Herbalism, or Mining
 - **THEN** no question is shown
 
 #### Scenario: Question not safe
@@ -194,3 +203,14 @@ The system SHALL show for a skipped rank, in the trainer window's tooltip and in
 #### Scenario: Earlier revision
 - **WHEN** the player is on revision 1
 - **THEN** each skipped rank's reason states the cause revision 1 records for it, not a reason it does not have
+
+### Requirement: Profession question is once per character
+The system SHALL remember which professions it has asked about separately for each character. Answers saved before the update SHALL NOT be copied to characters, so each character may be asked once about a profession.
+
+#### Scenario: Alt learns a profession the main was asked about
+- **WHEN** the player was asked about Tailoring on one character and later trains Tailoring on another character
+- **THEN** the other character is asked once
+
+#### Scenario: Same character
+- **WHEN** a character was asked about Tailoring and trains it again later
+- **THEN** no question is shown

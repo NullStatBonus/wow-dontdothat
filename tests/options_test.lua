@@ -593,3 +593,15 @@ test("rules page: each class page names the revision its ranks to skip follow", 
   truthy(again.args.WARRIOR.args.revisionLine.name:find("skip list revision 1", 1, true))
   falsy(rules.args.WARRIOR.args.skipped.name == again.args.WARRIOR.args.skipped.name, "the count of ranks to skip follows the revision")
 end)
+
+test("the mount checkboxes belong to this character", function()
+  local ns = fresh({ milestoneOverride = { [40] = true } })
+  ns.db.char = {}
+  local page = ns.Options.Milestones()
+  eq(page.args.have40.get(), false, "a mark in the shared profile does not count")
+  page.args.have40.set(nil, true)
+  eq(ns.db.char.milestoneOverride, { [40] = true })
+  eq(ns.db.profile.milestoneOverride, { [40] = true }, "shared value untouched")
+  page.args.have40.set(nil, false)
+  eq(ns.db.char.milestoneOverride[40], nil)
+end)

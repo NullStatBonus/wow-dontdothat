@@ -65,7 +65,14 @@ local function show(verdict, name, sample)
   return ok
 end
 
-function Banner.Show(verdict, name) return show(verdict, name, false) end
+-- With debug on, the log names who asked for each real banner (to find a stray caller).
+local function traceCaller(verdict, name)
+  if ns.Log and ns.db and ns.db.profile and ns.db.profile.debug and type(_G.debugstack) == "function" then
+    pcall(ns.Log.Add, "visual: banner for %s from %s", tostring(name), ((_G.debugstack(3, 3, 0) or ""):gsub("\n", " | ")))
+  end
+end
+
+function Banner.Show(verdict, name) traceCaller(verdict, name); return show(verdict, name, false) end
 
 -- Same drawing as a real warning, for previews; a real warning replaces it.
 function Banner.ShowSample(verdict, name) return show(verdict, name, true) end

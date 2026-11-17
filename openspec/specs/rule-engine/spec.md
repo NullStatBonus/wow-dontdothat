@@ -86,7 +86,7 @@ The system SHALL let the chosen skip revision name individual spell ranks to ski
 - **THEN** the rank is deferred on revision 1 and kept on revision 2
 
 ### Requirement: Player rule switches
-The system SHALL let player settings switch off a single ability, a tag for a class, or a rule kind (skipped ranks, off-spec leaning, profession skill caps). Everything is on by default, so with no switch changed every verdict is that of the chosen skip revision.
+The system SHALL let player settings switch off a single ability, a tag for a class, or a rule kind (skipped ranks, off-spec leaning). Everything is on by default, so with no switch changed every verdict is that of the chosen skip revision.
 
 #### Scenario: Switch stored
 - **WHEN** the player switches off an ability and reloads the game
@@ -265,17 +265,6 @@ A switched-off ability SHALL get a keep verdict before any other rule is conside
 #### Scenario: Rule kind off
 - **WHEN** skipped ranks are switched off
 - **THEN** a rank in the skip list is not flagged
-
-### Requirement: Profession margin setting
-The system SHALL take the profession near-cap margin from player settings when set, and from rule data otherwise. Values SHALL be whole numbers of zero or more; anything else is ignored and the rule data value is used.
-
-#### Scenario: Tighter margin
-- **WHEN** the player sets the near-cap margin to 10 and the skill is 15 below the cap
-- **THEN** the profession tier is flagged
-
-#### Scenario: Invalid value
-- **WHEN** a setting holds a negative or non-numeric value
-- **THEN** the rule data value is used
 
 ### Requirement: Spells are identified by spell ID
 The system SHALL identify a spell by the spell ID of its family, not by its displayed name, so a verdict is the same whatever language the client runs in. A trainer row SHALL be matched to its spell by the spell ID the game gives for the row, and only when the game gives none by the displayed name and the numbers in its rank text.

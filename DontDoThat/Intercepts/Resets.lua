@@ -25,22 +25,22 @@ local MARK = L["Don't Do That:"]
 
 local KINDS = {
   talent = {
-    popups = { "CONFIRM_TALENT_WIPE" }, confirmFn = "ConfirmTalentWipe", event = "CONFIRM_TALENT_WIPE", label = L["Talent reset"],
+    guard = "talent", popups = { "CONFIRM_TALENT_WIPE" }, confirmFn = "ConfirmTalentWipe", event = "CONFIRM_TALENT_WIPE", label = L["Talent reset"],
     title = L["Reset your talents?"], ask = L["Reset anyway?"], rises = true,
     advice = L["Resetting costs gold, and more each time you do it. Only do it if you really need to."],
     warnOnly = true, -- resets only warn: the game's dialog stays up with our note, a sound and a banner
-    avoided = function(state) ns.Ledger.RecordRespecAvoided(state) end,
+    avoided = function(state, cost) ns.Ledger.RecordRespecAvoided(state, nil, cost) end,
     performed = function(state, cost) ns.Ledger.RecordRespecPerformed(state, nil, cost) end,
   },
   pet = {
-    popups = { "CONFIRM_PET_UNLEARN" }, confirmFn = "ConfirmPetUnlearn", event = "CONFIRM_PET_UNLEARN", label = L["Pet skill reset"],
+    guard = "pet", popups = { "CONFIRM_PET_UNLEARN" }, confirmFn = "ConfirmPetUnlearn", event = "CONFIRM_PET_UNLEARN", label = L["Pet skill reset"],
     -- Forever has no pet-unlearn dialog or call: the pet trainer opens CONFIRM_TALENT_WIPE with pet text, and its Accept
     -- runs ConfirmTalentWipe (seen in the export). onPopupShown tells the two apart by the dialog text.
     warnOnly = true,
     done = { "ConfirmPetUnlearn", "ConfirmTalentWipe" },
     title = L["Take every skill off your pet?"], ask = L["Reset anyway?"], rises = true,
     advice = L["Taking skills off your pet costs gold, and more each time. Only do it if you really need to."],
-    avoided = function(state) ns.Ledger.RecordPetResetAvoided(state) end,
+    avoided = function(state, cost) ns.Ledger.RecordPetResetAvoided(state, nil, cost) end,
     performed = function(state, cost) ns.Ledger.RecordPetResetPerformed(state, nil, cost) end,
   },
   bank = {
@@ -118,6 +118,7 @@ end
 local function active(kind)
   if profile().enabled == false or profile().warnings == false then return false end
   if kind and kind.guard and (profile().guard or {})[kind.guard] == false then return false end
+  if ns.Context and not ns.Context.Saving(_G) then return false end
   return true
 end
 
@@ -171,9 +172,11 @@ local function annotate(env, frame, kind, which)
   local text = textObject(frame)
   if not text then return end
   local current = text:GetText()
-  if not current or current:find(MARK, 1, true) then return end
+  if not current then return end
+  if current:find(MARK, 1, true) then return true end
   text:SetText(current .. "\n\n|cffff3333" .. MARK .. "|r " .. kind.advice)
   if type(env.StaticPopup_Resize) == "function" then pcall(env.StaticPopup_Resize, frame, which) end
+  return true
 end
 
 local function countSkippedWhenClosed(kind, key, frame)
@@ -189,10 +192,12 @@ local function countSkippedWhenClosed(kind, key, frame)
   end)
 end
 
-local function warn(key, kind, ownDialogUp)
+-- quiet: a dialog on screen already carries the warning (our question, or our note on the game's), so the toast or
+-- banner would only repeat it, half hidden behind the dialog. The sound and chat line still fire.
+local function warn(key, kind, quiet)
   if not (ns.Alert and ns.Prompt) then return end
   local settings = ns.Prompt.AlertSettings()
-  if ownDialogUp then settings.alertBanner = false end -- our question is on screen, no banner needed
+  if quiet then settings.alertBanner = false end
   pcall(ns.Alert.Trigger, { tier = "defer", name = kind.label, cost = lastQuote[key], reason = kind.advice },
     "reset:" .. key, settings)
 end
@@ -208,9 +213,9 @@ local function present(env, key, kind, which, data)
   if key == "pet" and not lastQuote.pet then lastQuote.pet = lastQuote.talent end -- Forever sends the talent-wipe event
   seen[key] = { dialog = which, price = lastQuote[key] or "unknown" }
   local useOwn = ownDialog() and not kind.warnOnly and (not kind.usable or kind.usable(env, data))
-  warn(key, kind, useOwn)
 
   if useOwn then
+    warn(key, kind, true)
     local shown = ns.ConfirmPopup.Show(question(kind, lastQuote[key]),
       function()
         if ns.Log then ns.Log.Add("reset: %s accepted", kind.label) end
@@ -243,13 +248,17 @@ local function present(env, key, kind, which, data)
 
   -- Our question could not be used: keep the game's dialog, note the warning on it, and count how it ends.
   local frame = findFrame(env, which)
+  local noted = false
   if frame then
     shownFrame[key] = frame
-    pcall(annotate, env, frame, kind, which)
+    local ok, done = pcall(annotate, env, frame, kind, which)
+    noted = ok and done == true
     pcall(countSkippedWhenClosed, kind, key, frame)
   else
     pending[key] = nil
   end
+  -- After our question was tried, the warning already fired (and its cooldown holds); otherwise warn now.
+  if not useOwn then warn(key, kind, noted) end
 end
 
 -- Is this CONFIRM_TALENT_WIPE really the pet trainer's? Its text talks about the pet (the client's word for it, or English).

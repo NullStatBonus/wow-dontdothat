@@ -67,10 +67,10 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 
 ## 6. Resets
 - [ ] Talents (level 10): open the talent window, spend your point, click **Learn**. Nothing is blocked (talent choices aren't judged).
-- [ ] Ask your class trainer to **reset your talents**: you hear the warning sound and see **Don't Do That's own question** ("Reset your talents? This costs …, and the price goes up each time… Reset anyway?"). The game's own dialog is put away.
-- [ ] Press **Cancel**: nothing is reset, the talent window closes (as the game's Cancel does), and the Tally later shows "Talent resets: skipped 1".
-- [ ] Ask again and press **Accept** (it costs gold, so only if you're happy to): your talents reset and the Tally shows "done 1". If it doesn't reset, or chat says the game won't let the addon confirm, tell me; the addon then falls back to the game's own question with a note.
-- [ ] Turn off **Ask before buying** and ask again: you hear the sound, and the game's own dialog stays, with a note added to it.
+- [ ] Ask your class trainer to **reset your talents**: you hear the warning sound and the **game's own dialog** stays, with a red "Don't Do That:" note added to it. **No toast or banner** shows, with either Toast or Warning chosen. One line is added to chat.
+- [ ] Press **Cancel**: nothing is reset, and the Tally later shows "Talent resets: skipped 1".
+- [ ] Ask again and press **Accept** (it costs gold, so only if you're happy to): your talents reset and the Tally shows "done 1".
+- [ ] Buy a bank slot: Don't Do That's own question shows instead of the game's, with no toast or banner. Turn off **Ask before buying** and try again: the game's own dialog stays with the note and the sound, and no toast or banner.
 - [ ] Pet Trainer (needs a pet that has learned something): choose its **untrain** option and do the same.
 
 ## 7. Safety checks
@@ -164,6 +164,21 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] Change **Ask me first** to **Mark it, but let me buy** on the root game-options page, then open `/ddt`: Home shows the same choice.
 - [ ] The Don't Do That window opens at about 600 by 460 and can be resized. Dropdowns, sliders and buttons are not stretched across the window.
 - [ ] At the character screen, the AddOns list shows the Don't Do That icon (a badge) next to the name, on both Classic Era and Forever.
+
+## 17. Stop point and reset savings
+- [ ] Home: stop after the **level 40** mount, then on Progress mark the level 40 mount done. Buy a flagged AH item (for example armor over 10 silver): it is bought with no question, sound or message. Buy a bank slot and reset talents: only the game's own dialogs show, with no note from the addon.
+- [ ] Clear the level 40 "done" checkbox: the same AH purchase asks "Buy anyway?" again.
+- [ ] With the mount not done, start a talent reset, note the price the game quotes, and cancel. Progress grows by that quoted price, not by a different estimate.
+- [ ] What to watch > Professions has only the warning switch and its note: no rank switch and no skill margin slider.
+- [ ] What to watch > Other on a non-Hunter shows Buying a bank slot, Paying for COD mail and Resetting talents only. On a Hunter it also shows Buying a stable slot and Resetting pet skills.
+- [ ] Turn off **Resetting talents**, then reset talents: only the game's dialog shows, with no sound or note, and Progress does not change. Turn it back on: the warning returns.
+- [ ] Progress > **Start the count over**: the confirm text says spell totals are worked out again. After it, "Purchases you turned down" is 0; spell totals for learned ranks come back.
+- [ ] Buy a flagged item that costs 2 silver: the question shows. One that costs 80 copper: no question.
+
+## 18. Per-character marks
+- [ ] On a level 60 character, mark the level 40 mount bought (Progress > Not right?). Log in a level 10 character: its checkbox is clear and warnings are active.
+- [ ] On the level 10 character, learn Tailoring after another character was asked about it: the question shows once.
+- [ ] Update from 0.12.0 with a mark saved: a character at that level or higher keeps the mark; a lower character does not. `/ddt export` shows "mounts marked bought (this character)".
 
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.
