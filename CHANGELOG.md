@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.0
+
+- **New: a smaller warning.** When the addon warns you without asking a question, it can now show a small toast at the top of the screen, with the item or spell icon, instead of the large banner in the middle.
+  - Choose Toast or Warning under Appearance > Warnings. New installs use Toast.
+  - If you used an earlier version, you keep the large Warning banner until you change it.
+  - You can move the toast (Move, then Done or Cancel; Escape cancels) and set its opacity and size. You can't move it in combat.
+- **New: every warning is also noted in chat**, even when a question or toast shows. Turn it off with "Also note warnings in chat".
+- **New: `/ddt demo` and `/ddt preview <name>`** show labelled sample warnings, marks, a tooltip, a question and an explanation. Nothing is bought, and a real warning always replaces a sample.
+- **New commands:** `/ddt settings <page>`, `/ddt status`, `/ddt help <topic>`, `/ddt get` and `/ddt set` for the main settings, and `/ddt log` (with `/ddt log clear`). `/ddt export` still opens the same report.
+- The settings are reorganized: Home, What to watch, Progress, Appearance (Warnings, Explanations, Sound), Advanced and About. The game's own options panel now shows the Home controls, and Advanced has a button that opens the class list.
+- The pinned explanation is now a black panel with its own opacity and size, and Escape closes it.
+- The settings, toast and report window now match KeepThat and Closest Vendor in spacing, fonts and sizes.
+- The addon now has an icon in the AddOns list.
+- The debug report window can be closed with Escape and lists the presentation settings.
+
 ## 0.11.3
 
 - Changed: the trainer, item and reset guards now share one copy of their alert settings, sound-only alert, banner fallback and chat notice. Nothing you see changes.

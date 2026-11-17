@@ -13,6 +13,13 @@ local function build()
   if f.SetFrameStrata then f:SetFrameStrata("FULLSCREEN_DIALOG") end
   f:Hide()
 
+  -- The recommendation in words above the title, so the tier reads without its color.
+  f.recommendation = f:CreateFontString(nil, "OVERLAY")
+  if not pcall(f.recommendation.SetFontObject, f.recommendation, "GameFontNormalLarge") then
+    pcall(f.recommendation.SetFont, f.recommendation, "Fonts\\FRIZQT__.TTF", 18, "OUTLINE")
+  end
+  f.recommendation:SetPoint("BOTTOM", f, "TOP", 0, 4)
+
   f.title = f:CreateFontString(nil, "OVERLAY")
   if not pcall(f.title.SetFontObject, f.title, "GameFontNormalHuge") then
     pcall(f.title.SetFont, f.title, "Fonts\\FRIZQT__.TTF", 28, "OUTLINE")
@@ -36,19 +43,37 @@ local function build()
   return f
 end
 
-function Banner.Show(verdict, name)
-  local ok, err = pcall(function()
+local function show(verdict, name, sample)
+  local ok = pcall(function()
     frame = frame or build()
     local title, detail = ns.UIHelpers.BannerText(verdict, name)
     local style = ns.UIHelpers.TierStyle(verdict and verdict.tier)
     local c = style and style.color or { 1, 0.2, 0.2 }
+    frame.recommendation:SetText(style and style.label or "")
+    frame.recommendation:SetTextColor(c[1], c[2], c[3])
     frame.title:SetText(title)
     frame.title:SetTextColor(c[1], c[2], c[3])
     frame.detail:SetText(detail)
+    frame.isSample = sample
+    -- A sample sits above the settings window that previewed it; a real warning keeps its usual layer.
+    if frame.SetFrameStrata then frame:SetFrameStrata(sample and "TOOLTIP" or "FULLSCREEN_DIALOG") end
     frame.group:Stop()
     frame:SetAlpha(1)
     frame:Show()
     frame.group:Play()
   end)
   return ok
+end
+
+function Banner.Show(verdict, name) return show(verdict, name, false) end
+
+-- Same drawing as a real warning, for previews; a real warning replaces it.
+function Banner.ShowSample(verdict, name) return show(verdict, name, true) end
+
+-- Hides the banner only when it is showing a sample.
+function Banner.HideSample()
+  if not (frame and frame.isSample) then return false end
+  pcall(function() frame.group:Stop(); frame:Hide() end)
+  frame.isSample = false
+  return true
 end

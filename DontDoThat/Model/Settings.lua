@@ -144,7 +144,7 @@ function Settings.MarkProfessionAsked(profession, p)
 end
 
 -- Settings that record what the player has already done rather than how they like things.
-local KEEP_ON_RESET = { professionAsked = true, milestoneOverride = true, revisionNotice = true }
+local KEEP_ON_RESET = { professionAsked = true, milestoneOverride = true, revisionNotice = true, styleMarked = true }
 
 -- Puts every setting back to its default. With AceDB, removing a saved key lets the default show through again.
 function Settings.ResetAll(p)
@@ -154,6 +154,47 @@ function Settings.ResetAll(p)
     if not KEEP_ON_RESET[key] then p[key] = nil end
   end
   if ns.Log and ns.Log.SetEnabled then ns.Log.SetEnabled(false) end
+end
+
+local STYLES = { toast = true, warning = true }
+
+-- The on-screen message style: "toast" or "warning" (the large centered banner).
+function Settings.WarningStyle(p)
+  p = p or saved()
+  local style = p and p.alert and p.alert.style
+  return STYLES[style] and style or "toast"
+end
+
+-- What the saved data said before AceDB loaded it: each saved profile by name, with its style. AceDB copies
+-- defaults into the saved tables at load, so afterwards a missing style looks like the default. raw is the
+-- DontDoThatDB global. A saved alert entry that is not a table is dropped here so AceDB fills in the defaults.
+function Settings.StyleBefore(raw)
+  local before = { existed = type(raw) == "table", profiles = {} }
+  local profiles = before.existed and type(raw.profiles) == "table" and raw.profiles or {}
+  for name, p in pairs(profiles) do
+    if type(p) == "table" and p.alert ~= nil and type(p.alert) ~= "table" then p.alert = nil end
+    local alert = type(p) == "table" and p.alert or nil
+    before.profiles[name] = { style = alert and alert.style or nil }
+  end
+  return before
+end
+
+-- Once per profile, before anything shows a warning: a profile saved by a version from before the
+-- Toast/Warning choice keeps the large banner it always had. name is the profile in use (AceDB's current
+-- profile); a profile first created now is new, not old. styleMarked has no default, so AceDB never strips it
+-- at logout, and Reset all settings keeps it, so a fresh or reset profile is not mistaken for an old one at the
+-- next login.
+function Settings.ClassifyStyle(p, before, name)
+  if type(p) ~= "table" or p.styleMarked then return end
+  local saved = before and before.profiles or {}
+  local old = saved[name or "Default"]
+  -- An older database with no profile saved at all was using Default with nothing changed.
+  if not old and before and before.existed and next(saved) == nil then old = {} end
+  if old and not STYLES[old.style] then
+    if type(p.alert) ~= "table" then p.alert = {} end
+    p.alert.style = "warning"
+  end
+  p.styleMarked = true
 end
 
 -- Debug recording is for one session: it is switched off whenever the addon loads.

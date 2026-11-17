@@ -1,6 +1,6 @@
 # In-game test plan
 
-Test on a **Hunter**. Everything below is checked in the game window; nothing needs a console except the first step. Tick each line; if one fails, note what you saw and the `/ddt export` report.
+Test on a **Hunter**. Everything below is checked in the game window; nothing needs a console except the first step. Tick each line; if one fails, note what you saw and the `/ddt log` report.
 
 Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12, (L18) level 18.
 
@@ -11,16 +11,17 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] `/ddt debug on` (so the report has details).
 
 ## 1. Settings window
-- [ ] Type `/ddt`. The settings window opens with five pages: Home, What to watch, Progress, Advanced, About.
-- [ ] Options > AddOns shows "Don't Do That" with the same pages under it.
-- [ ] Home: an introduction, the switch **Turn on Don't Do That**, the three warning levels (**Mark it, but let me buy**, **Ask me first**, **Ask me about everything**), **When to stop warning me** (after the level 60 or level 40 mount), and **Start over**. Turn the first switch off. The other controls grey out. Turn it back on.
+- [ ] Type `/ddt`. The settings window opens at **Home**, with six pages: Home, What to watch, Progress, Appearance, Advanced, About.
+- [ ] Options > AddOns shows "Don't Do That" with the other pages under it. Selecting the root entry shows the Home controls at once (not a blank page).
+- [ ] Home: an introduction, the switch **Turn on Don't Do That**, the three warning levels (**Mark it, but let me buy**, **Ask me first**, **Ask me about everything**), **When to stop warning me** (after the level 60 or level 40 mount), and **On-screen message** (**Show a message on screen**) and **Start over** (**Reset all settings**). Turn the first switch off. The other controls grey out. Turn it back on.
 - [ ] What to watch: the areas Spells, Professions and Shopping, each with an on/off switch, the **Recommended filter** switch, the item kinds with their vendor and auction house choices, and the minimum price.
 - [ ] Progress: three boxes. **Milestones** shows a gold status line, a progress line ("You have 12g of the 100g you need (12%)."), the two mounts (icon, price, gray note) and the two "I've already bought" switches. **Projected savings** shows what you could still save. **Tally** shows **Kept**, **Spent anyway** and **Start over**. The Tally shows numbers before you visit any trainer, because it reads your spellbook and the bundled spell list. "Kept so far" is about the cost of everything marked that you could buy at your level but have not.
-- [ ] Advanced: a tree with **Sound & messages**, **Tuning**, **Classes** and **Debug**.
-- [ ] Advanced > Sound & messages: **Warning sound** (a picker that starts with common sounds such as Raid warning, Ready check, Alarm clock 1-3 and Murloc aggro, then any sound-pack sounds, and a **Play sound** button), the on-screen message switch, and the slider for how often the same warning repeats.
+- [ ] Appearance: three tabs, **Warnings**, **Explanations** and **Sound**. There is no separate "Sound & messages" page anywhere.
+- [ ] Advanced: a tree with **Tuning**, **Classes** and **Debug**, and a note on where settings are kept.
+- [ ] Appearance > Sound: **Warning sound** (a picker that starts with common sounds such as Raid warning, Ready check, Alarm clock 1-3 and Murloc aggro, then any sound-pack sounds, and a **Play sound** button), and the slider for how often the same warning repeats. (The on-screen message switch is on Home.)
 - [ ] Advanced > Classes: the tree has **How this works** and the classes. Open **Hunter**. The categories show counts. Open **Save your gold**. Each spell has its **real icon at once**, even before you open a trainer (the icons come from the game by spell ID), the name and a gray reason. A question mark means the game returned no icon for that spell. Tell me which spell.
 - [ ] About: a gold title and the version, then three sections (What the marks mean, How to use it, Good to know). Each mark is a colored bullet with a gray explanation under it.
-- [ ] Advanced > Debug: **Recording** (a switch with its explanation), **Report** (a note and **Show the report**) and **Clear** (a note and **Clear the recording**).
+- [ ] Advanced > Debug: **Recording** (**Record debug information** with its explanation), **Report** (a note and **Show debug report**) and **Clear** (a note and **Clear the recording**).
 
 ## 2. Marks in the trainer
 - [ ] Open your **Hunter trainer**. Flagged rows show a colored **(i)** at the right edge; kept rows show nothing (for example Aspect of the Hawk, Serpent Sting, Wing Clip, Mend Pet, Dual Wield).
@@ -32,19 +33,19 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] Back in settings, **Rules** now shows real spell icons for what you just saw.
 
 ## 3. Warning and question
-- [ ] `/ddt test`: you hear the sound and get **a dialog only, no banner**. **Cancel** prints "test: you declined". Run it again and press **Accept**: it prints "test: you chose to buy it anyway (nothing was bought)". If Accept does nothing, or you see "Don't Do That: that didn't work (…)" in chat, copy that text and `/ddt export` (the `popup:` lines say what happened).
+- [ ] `/ddt test`: you hear the sound and get **a dialog only, no toast or banner**. **Cancel** prints "test: you declined". Run it again and press **Accept**: it prints "test: you chose to buy it anyway (nothing was bought)". If Accept does nothing, or you see "Don't Do That: that didn't work (…)" in chat, copy that text and `/ddt log` (the `popup:` lines say what happened).
 - [ ] (L12) Select **Distracting Shot, Rank 1** (6 silver) and click **Train** (on Forever, the click lands on the addon's own button on top of Train): sound plus the "Buy anyway?" dialog. **Cancel**: nothing is bought, the spell is still listed.
 - [ ] Click Train again and choose **Buy anyway**: the spell **is learned** and the list updates. (This is the key check. If a "blocked from an action" popup appears, or it isn't bought, tell me; the addon will also say in chat that it is turning the question off.)
 - [ ] Buy a gold row such as **Track Humanoids**: **no** dialog and **no** sound; it just buys.
-- [ ] Home > choose **Mark it, but let me buy**, then try a red row: you hear the sound and see the **on-screen message**, and the purchase goes ahead.
-- [ ] Turn off **Play a warning sound**: no sound at all. Turn everything back on afterwards.
+- [ ] Home > choose **Mark it, but let me buy**, then try a red row: you hear the sound and see the **on-screen message** (a toast on a fresh profile), and the purchase goes ahead.
+- [ ] Turn off **Play a warning sound** (Appearance > Sound): no sound and no on-screen message, but the chat line still prints. Questions still show. Turn everything back on afterwards.
 - [ ] Turn the whole addon off: no marks, no sound, no dialog.
 
 ## 4. Recommended filter
 - [ ] Click the trainer's **Filter** menu: a **Recommended (Don't Do That)** checkbox appears below Available / Unavailable / Already known, and it is **checked**.
 - [ ] The list is shorter (no extra text is added to the window): Distracting Shot, tracking spells, Eagle Eye and similar are gone; category headers remain. On Forever those rows are faded instead of removed (removing them taints Blizzard's list and the game then refuses beast training).
 - [ ] Forever: at a class trainer select a flagged spell (Distracting Shot) and click Train. The question appears; decline and nothing is bought; click Train again and confirm, and the spell is learned. The button lights up under the mouse and presses as usual. An unflagged spell is bought with no question.
-- [ ] Forever: in `/ddt export` with a class trainer open, the trainer snapshot shows `rank=2 ... status=available` style rows, not an icon number as the status; a rank the skip list passes over is faded and marked.
+- [ ] Forever: in `/ddt log` with a class trainer open, the trainer snapshot shows `rank=2 ... status=available` style rows, not an icon number as the status; a rank the skip list passes over is faded and marked.
 - [ ] Forever: with the filter on, visit a class trainer and a pet trainer, then open Beast Training and buy a pet ability that costs training points. No error, no question, and the ability is learned. `/run print(issecurevariable("BuyTrainerService"))` prints `true` throughout.
 - [ ] Select a visible spell, click Train (use a cheap one): **the spell you selected is the one bought**.
 - [ ] Scroll the list; click a category header to collapse and expand it; use the collapse-all button. Nothing looks broken and rows stay in order.
@@ -53,7 +54,7 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] With the trainer open, turn off **Turn on Don't Do That** on Home: all rows return, the (i) marks disappear and the Recommended entry is gone from the Filter menu. Turn it back on.
 - [ ] Untick the **Recommended checkbox inside the Filter menu**: all rows return but the entry stays, so you can tick it again.
 - [ ] Switch the Available/Unavailable/Already known boxes: the list still behaves normally.
-- [ ] If anything looks wrong, the filter turns itself off and the normal window returns. `/ddt export` then contains a line "filter: turned off (reason)". Send it to me.
+- [ ] If anything looks wrong, the filter turns itself off and the normal window returns. `/ddt log` then contains a line "filter: turned off (reason)". Send it to me.
 
 ## 5. Tally and milestones
 - [ ] Buy one marked spell and reopen the Progress page: the number moves from "Kept so far" to **Spent** straight after the purchase, without needing another trainer visit.
@@ -75,10 +76,10 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 ## 7. Safety checks
 - [ ] With every switch on, open and close the trainer a dozen times, scroll, and click around: no error popups.
 - [ ] Open the **talent window**, **spellbook** and **bags** while the addon is on: nothing changes or breaks.
-- [ ] `/ddt export`, copy it, and look for lines like "overlay: ClassTrainerFrame_Update hooked", "confirm: Train button click wrapped" (Classic Era) or "confirm: Forever window: Train button hooked, question asked from the addon's own button" and "filter: menu entry registered". Send me the report if any step above failed.
+- [ ] `/ddt log`, copy it, and look for lines like "overlay: ClassTrainerFrame_Update hooked", "confirm: Train button click wrapped" (Classic Era) or "confirm: Forever window: Train button hooked, question asked from the addon's own button" and "filter: menu entry registered". Send me the report if any step above failed.
 
 ## 8. Spell data check
-- [ ] `/ddt export`, then find the **Spell data check** section. It should say "bundled spell tables: build 1.60.1.70532, 157 spells for HUNTER" and "spellbook says N known" with N a believable number for your character (not 0 unless you know nothing).
+- [ ] `/ddt log`, then find the **Spell data check** section. It should say "bundled spell tables: build 1.60.1.70532, 157 spells for HUNTER" and "spellbook says N known" with N a believable number for your character (not 0 unless you know nothing).
 - [ ] The five sample lines each show an **icon** number (not nil) and a believable known flag: for example Arcane Shot rank 2 known=true once you've bought it, false before.
 - [ ] If a sample shows `known [..=false]` for something you do know, or `icon nil`, send me the section: it means an ID doesn't match this client.
 
@@ -89,22 +90,22 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [x] Buy something under the minimum price (or a Food and drink item at a vendor): no question. (Verified by hand 2026-10-24; the minimum was lowered to 5c for the auction house tests.)
 - [x] Purchases page (was Items): every category has a dropdown; changing one takes effect without a reload; gold/silver/copper boxes show 0 / 10 / 0 and reject letters.
 - [x] Auction house: a flagged item shows the question and Cancel buys nothing. (Checked 2026-10-24 with Malachite, 18c, three times; `PlaceAuctionBid` wrapped and the game still calls ours.)
-- [x] Auction house: both a bid and a buyout show the question, and Accept completes them. (Verified by hand 2026-10-24.) If instead the chat says item purchases are only warned, `/ddt export` and send the "items:" lines (task 1.1).
+- [x] Auction house: both a bid and a buyout show the question, and Accept completes them. (Verified by hand 2026-10-24.) If instead the chat says item purchases are only warned, `/ddt log` and send the "items:" lines (task 1.1).
 - [x] Talent-reset questions show the earn-back line. (Verified by hand 2026-10-24.)
 - [ ] Trainer questions show the earn-back line.
-- [ ] Advanced > Sound & messages: set Volume channel to Dialog, turn the Master volume down and Dialog up, and buy a flagged vendor item: the warning sound follows the Dialog volume.
+- [ ] Appearance > Sound: set Volume channel to Dialog, turn the Master volume down and Dialog up, and buy a flagged vendor item: the warning sound follows the Dialog volume.
 
 ## 10. Bank, stable and COD
 - [ ] Buy a bank slot from the banker: the game's dialog is replaced by a question with the price and the earn-back line. Cancel: nothing bought, Tally's turned-down count rises. Accept: slot bought.
 - [ ] Hunter: same for a stable slot at the stable master.
 - [ ] Open a COD mail and take the item: the question shows the COD amount. Accept pays it; cancel leaves the mail alone. Taking an item from ordinary mail shows nothing.
 - [ ] Items page: turn each of the three switches off and confirm the game's own dialog returns untouched.
-- [ ] `/ddt export`: the Items section lists each guarded dialog as on and "lastSeen" with the dialog name and price read. Send it if a dialog never triggered.
+- [ ] `/ddt log`: the Items section lists each guarded dialog as on and "lastSeen" with the dialog name and price read. Send it if a dialog never triggered.
 
 ## 11. Language and spell identity
-- [ ] On an English client, `/ddt export`: the **Spell identity** section lists what the trainer row and the talent call return. Paste it into the change notes: it settles whether Forever gives the trainer a spell ID directly.
+- [ ] On an English client, `/ddt log`: the **Spell identity** section lists what the trainer row and the talent call return. Paste it into the change notes: it settles whether Forever gives the trainer a spell ID directly.
 - [ ] Open any trainer and type `/ddt trainerids`: a window lists, per row, what every known call returns, and ends with a `RESULT:` line. Then `/ddt trainerids hover`, hover a trainer row within 5 seconds, and read the **hovered row** section. Paste both into the change notes. The report also ends with **identity checks**: talent links (do they carry a talent ID the table knows), the riding spell IDs, the profession apprentice spells and which trainer window is open. Run it once at a class trainer, once at a profession trainer, once at the Pet Trainer and once with no trainer open. So far this has only been done on a Hunter with no talent points; repeat it on another class that has spent talent points (the report should say "with points" and resolve them), ideally a Paladin or Warlock to see the class mount spells as known.
-- [ ] A talent you have points in (for example Aimed Shot for a Hunter) counts as active: the spell is judged as part of your rotation, and `/ddt export` shows what `GetTalentLink` returns.
+- [ ] A talent you have points in (for example Aimed Shot for a Hunter) counts as active: the spell is judged as part of your rotation, and `/ddt log` shows what `GetTalentLink` returns.
 - [ ] Switch a spell off in Advanced > Classes (for example Distracting Shot), `/reload`, and open the trainer: the row has no (i). Switch it back on and the (i) returns.
 - [ ] If you can run the client in another language (the locale is set in the Battle.net launcher): the trainer marks, the Classes page and the toggles from the two lines above behave exactly the same, with spell names in that language and the addon's own text in English. A switch set in English is still set.
 - [ ] Learn a profession's first tier from its trainer (Alchemy, Cooking, Tailoring…): you are asked once. Learning a gathering profession asks nothing. A second tier (Journeyman) asks nothing.
@@ -121,6 +122,49 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] Switch an ability off in Advanced > Classes, then change revision: it stays off under both. Switch off Skip ranks on Tuning: no rank is marked under either revision.
 - [ ] The Ranks to skip list in Advanced > Classes lists each rank with its reason and, beneath it, where it came from ("From the Wowhead leveling guide.", "Computed from the game data.", "From the earlier skip list.").
 
+## 13. Warning style and chat line
+- [ ] Upgrade: install this version over a profile saved by an older version (no `alert.style`, `styleMarked` unset). On the first `/reload` the style is **Warning**; Appearance > Warnings shows Warning selected and the toast controls are hidden with a note. `/reload` again: still Warning.
+- [ ] Fresh install (new `WTF` profile): the style is **Toast**. Try to buy a flagged item with Mark it, but let me buy: a small toast shows near the top of the screen with the tier color, item, price and reason, and it does not take clicks.
+- [ ] Reset all settings (Home, confirm), then `/reload`: the style is Toast, even on a profile that had Warning. The tally and progress are kept.
+- [ ] Choose Warning, buy a flagged item that gets no question: the large centered message shows, not a toast. Choose Toast again: toast.
+- [ ] Question case: a flagged trainer spell with Ask me first shows "Buy anyway?" and **no** toast or banner. Cancel and Accept still work.
+- [ ] Chat line: each warning prints one line in chat (item, reason). It prints with a question, with Mark it, but let me buy, and with the warning sound off (Appearance > Sound). It does not print twice inside the cooldown (set the seconds to 10 and repeat quickly). Turn off **Also note warnings in chat**: no line, toast and sound unchanged.
+- [ ] Turn off **Show a message on screen** on Home: no toast or banner, but the sound and the chat line stay. Appearance > Warnings explains the message is off and Preview still works.
+- [ ] Appearance > Warnings > Move: a sample toast appears above the settings with **Done** and **Cancel**. Drag it, press **Done**: it stays there on the next toast and after `/reload`. Move again, drag, press **Cancel**: it jumps back. Move again, drag, press **Escape**: it goes back, the Done/Cancel overlay is gone and the settings window stays open. Afterwards Escape closes windows as usual and nothing is left on screen. In combat (for example, attack a target dummy), press **Move**: chat says to leave combat and nothing moves. Start Move out of combat, drag, then enter combat: it goes back and the overlay is gone. **Reset position** puts it at the start.
+- [ ] Toast Background opacity 0: no box or border, only the text and icon. 80 and 100: box matches. Text and icon opacity 0 / 80 / 100: words and icon fade, the box is unchanged. Scale 100 and 150: the toast is 1.5 times larger and still readable and not cut off at the screen edge. Move the toast, then change its scale: it keeps its place.
+- [ ] Appearance > Explanations: click an (i) on a trainer row. The pinned explanation is a black box with wrapped text and a close button. The button and Escape both close it. **Preview** (a sample) closes by its timeout or its X button, and Escape does not close it. Background and text opacity 0 / 80 / 100 and scale 100 / 150 change only the pinned box; **Preview** shows it without a trainer.
+- [ ] The tooltip on hover (not pinned) is unchanged.
+- [ ] With a real explanation pinned, `/ddt preview explanation` and `/ddt demo` leave it in place: no sample explanation shows, and the real one is still open after the samples end.
+
+## 14. Previews and demo
+- [ ] `/ddt demo`: sample toasts/warnings, a row of marks with a "Sample" caption, a hover tooltip, an inert question and a pinned explanation show, nothing is bought, the Tally does not change and nothing is added to the log as a purchase.
+- [ ] `/ddt preview` lists toast, warning, mark, tooltip, explanation, prompt. Each `/ddt preview <name>` shows that one sample. `/ddt preview prompt` shows a question that buys nothing when accepted.
+- [ ] While a sample is showing, try to buy a flagged item: the real warning or question takes over.
+- [ ] `/ddt preview banana` says it is unknown and lists the kinds.
+- [ ] Appearance > Warnings **Preview** shows the chosen style; Explanations **Preview** shows a pinned explanation.
+
+## 15. Commands
+- [ ] `/ddt` opens at Home, also after the window was last left on Classes. `/ddt settings` opens Home. `/ddt settings appearance`, `warnings`, `explanations`, `sound`, `advanced`, `classes`, `debug`, `about`, `watch`, `progress` each open that page. `/ddt settings nothing` lists the valid pages.
+- [ ] `/ddt status` prints one line each for nudge, warnings, explanations and sound. `/ddt status nudge`, `warnings`, `explanations`, `sound` print that topic. With the nudge on a custom mix, `/ddt status nudge` lists the custom values. `/ddt status foo` lists the topics.
+- [ ] `/ddt help` lists the commands. `/ddt help appearance`, `rules` and `diagnostics` each print their group. `/ddt help foo` lists the topics.
+- [ ] `/ddt get` lists the keys. `/ddt get nudge` shows the value. `/ddt get nope` says the setting is unknown.
+- [ ] `/ddt set appearance.warning-style warning`: confirms, and the Appearance page (if open) and the next warning change at once, without a reload. `/ddt set appearance.toast.scale 150` works; `/ddt set appearance.toast.scale 400`, `... abc`, `/ddt set appearance.chat maybe`, `/ddt set nudge loud` and `/ddt set appearance.toast.scale` (no value) are refused with the allowed values, and `/ddt get` shows the old value. Set `appearance.warning-style toast` back.
+- [ ] `/ddt set` refreshes like the controls: with Appearance open, `/ddt set appearance.toast.scale 150` and `appearance.warning-style warning` update the page at once; with a trainer open, `/ddt set watch.spells off` and back on update the marks and filter; with a pinned explanation open, `/ddt set appearance.explanation.scale 150` resizes it.
+- [ ] `/ddt test` with Ask before buying off and the warning sound off: it says only the chat line would show (chat line on) or that nothing would happen (chat line off).
+- [ ] `/ddt set watch.spells off`, then `/ddt get watch.spells` says off; Home/What to watch agree. Set it back on.
+- [ ] `/ddt log` opens the report window; Escape closes it. Reopen it: the text is selected; Ctrl+A, Ctrl+C copies it. Edit the text, close, reopen: the report is fresh and unchanged. `/ddt export` opens the same report.
+- [ ] `/ddt log clear` asks first. **Cancel**: prints "log kept" and the log still has its lines. Run it again and accept: prints "log cleared"; with a real "Buy anyway?" question open, `/ddt log clear` asks in its own dialog and the question stays untouched; and `/ddt log` shows an empty log. `/ddt clear` empties it at once without asking.
+- [ ] If the report window cannot open (for example with the AceGUI library removed in a test copy), `/ddt log` prints the whole report in chat.
+- [ ] `/ddt debug on` and `/ddt debug off` print "debug on" / "debug off". `/ddt debug maybe` prints the usage.
+- [ ] Advanced > Debug > **Show debug report** opens the same report. The header lists the warning style, chat line and appearance settings.
+
+## 16. Game options and the AddOns list
+- [ ] Options > AddOns > Don't Do That > **Advanced** shows Tuning and Debug and an **Open classes** button (no class tree, and the game does not freeze). The button closes the game's Settings window and opens Advanced > Classes in the Don't Do That window, with only that path open.
+- [ ] Standalone `/ddt` > Advanced > Classes starts collapsed and the tree works as before.
+- [ ] Change **Ask me first** to **Mark it, but let me buy** on the root game-options page, then open `/ddt`: Home shows the same choice.
+- [ ] The Don't Do That window opens at about 600 by 460 and can be resized. Dropdowns, sliders and buttons are not stretched across the window.
+- [ ] At the character screen, the AddOns list shows the Don't Do That icon (a badge) next to the name, on both Classic Era and Forever.
+
 ## Not covered yet
-- Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt export`.
+- Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.
 - Anything on WoW Forever itself. Everything here is Classic Era until Forever is available.

@@ -11,7 +11,8 @@ function Prompt.AlertSettings()
   local p = (ns.db and ns.db.profile) or {}
   local a = p.alert or {}
   return { alertsEnabled = p.alerts ~= false, alertBanner = a.banner ~= false,
-    alertSound = a.sound, alertCooldown = a.cooldown, alertChannel = a.channel }
+    alertSound = a.sound, alertCooldown = a.cooldown, alertChannel = a.channel,
+    alertStyle = a.style, alertChat = a.chat ~= false }
 end
 
 -- A question says everything the banner would, so it gets the sound alone.
@@ -22,10 +23,11 @@ function Prompt.SoundOnly(settings)
   return copy
 end
 
--- When the question cannot be shown, the banner still says what the sound did.
+-- When the question cannot be shown, the on-screen message still says what the sound did.
+-- No chat line here: the attempt already printed one.
 function Prompt.BannerInstead(settings, verdict, name)
-  if settings.alertBanner and settings.alertsEnabled and ns.AlertBanner then
-    pcall(ns.AlertBanner.Show, verdict, name)
+  if settings.alertBanner and settings.alertsEnabled and ns.Alert then
+    ns.Alert.ShowVisual(verdict, name, settings)
   end
 end
 

@@ -110,3 +110,43 @@ test("Trigger can play the sound without the banner", function()
   truthy(ns.Alert.Trigger(defer, "spell:3", { alertBanner = true }, 10))
   eq(banners, 1)
 end)
+
+local function chatSpy()
+  local lines = {}
+  _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) lines[#lines + 1] = text end }
+  return lines
+end
+
+test("ShowVisual: warning style uses the large banner, anything else the toast", function()
+  local ns = fresh()
+  local toasts, banners = 0, 0
+  ns.Toast = { Show = function() toasts = toasts + 1 end }
+  ns.AlertBanner = { Show = function() banners = banners + 1 end }
+  ns.Alert.ShowVisual(defer, "n", { alertStyle = "warning" })
+  ns.Alert.ShowVisual(defer, "n", { alertStyle = "toast" })
+  ns.Alert.ShowVisual(defer, "n", {})
+  eq(banners, 1); eq(toasts, 2)
+end)
+
+test("chat line: one per attempt, even with alerts off; the cooldown still applies", function()
+  local ns = fresh()
+  local lines = chatSpy()
+  ns.Alert.PlaySound = function() error("alerts are off") end
+  ns.Toast = { Show = function() error("alerts are off") end }
+  falsy(ns.Alert.Trigger(defer, "spell:9", { alertsEnabled = false }, 10))
+  falsy(ns.Alert.Trigger(defer, "spell:9", { alertsEnabled = false }, 11))
+  _G.DEFAULT_CHAT_FRAME = nil
+  eq(#lines, 1)
+  truthy(lines[1]:find("Rank 2 in 2 levels", 1, true), "names the reason")
+end)
+
+test("chat line: printed alongside a question (sound-only settings) and not when chat is off", function()
+  local ns = fresh()
+  local lines = chatSpy()
+  ns.Alert.PlaySound = function() end
+  ns.Alert.Trigger(defer, "a", { alertBanner = false }, 1)
+  ns.Alert.Trigger(defer, "b", { alertChat = false }, 1)
+  falsy(ns.Alert.Trigger({ tier = "keep" }, "c", {}, 1))
+  _G.DEFAULT_CHAT_FRAME = nil
+  eq(#lines, 1)
+end)

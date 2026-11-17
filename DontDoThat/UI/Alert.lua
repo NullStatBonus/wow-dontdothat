@@ -1,5 +1,7 @@
 local addonName, ns = ...
 
+local L = ns.L
+
 local Alert = {}
 ns.Alert = Alert
 
@@ -72,13 +74,30 @@ function Alert.Trigger(verdict, actionKey, settings, atTime)
   elseif verdict.tier ~= "defer" then
     return false
   end
-  if settings.alertsEnabled == false then return false end
+  -- The cooldown comes before the alerts toggle: the chat line ignores that toggle but not the cooldown.
   if not Alert.ShouldFire(actionKey, atTime or now(), settings.alertCooldown or 3, Alert.state) then
     return false
   end
+  -- A real warning will fire: any demo or preview samples give way to it (a click that warns about nothing does not).
+  if ns.Demo and ns.Demo.Interrupt then pcall(ns.Demo.Interrupt) end
+  if settings.alertChat ~= false then pcall(Alert.ChatLine, verdict, verdict.name or actionKey) end
+  if settings.alertsEnabled == false then return false end
   pcall(Alert.PlaySound, settings.alertSound or (ns.Sounds and ns.Sounds.default), settings)
-  if settings.alertBanner ~= false and ns.AlertBanner and ns.AlertBanner.Show then
-    pcall(ns.AlertBanner.Show, verdict, verdict.name or actionKey)
-  end
+  if settings.alertBanner ~= false then Alert.ShowVisual(verdict, verdict.name or actionKey, settings) end
   return true
+end
+
+-- One chat line per warned attempt, kept even when a question or the on-screen message covers it.
+function Alert.ChatLine(verdict, name)
+  local frame = _G.DEFAULT_CHAT_FRAME
+  if not (frame and frame.AddMessage) then return end
+  local head, detail = ns.UIHelpers.BannerText(verdict, name)
+  local text = head .. (detail ~= "" and (" " .. detail:gsub("\n", " ")) or "")
+  frame:AddMessage("|cffff3333" .. L["Don't Do That:"] .. "|r " .. text)
+end
+
+-- The on-screen message in the chosen style: "toast" (small, movable) or "warning" (the large centered banner).
+function Alert.ShowVisual(verdict, name, settings)
+  local style = settings and settings.alertStyle == "warning" and ns.AlertBanner or ns.Toast or ns.AlertBanner
+  if style and style.Show then pcall(style.Show, verdict, name) end
 end

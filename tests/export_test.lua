@@ -1,7 +1,9 @@
 local H = require("harness")
 
 local function load()
-  local ns = { version = "0.1.0" }
+  local ns = { version = "0.1.0", L = setmetatable({}, { __index = function(_, k) return k end }) }
+  H.load("DontDoThat/Model/Settings.lua", ns)
+  H.load("DontDoThat/Core/Registry.lua", ns)
   H.load("DontDoThat/Debug/Export.lua", ns)
   return ns.Export
 end
@@ -51,5 +53,77 @@ end)
 
 test("show without WoW globals does not raise", function()
   local E = load()
-  eq(E.Show({ env = {} }), false)
+  truthy(E.Show({ env = {} }), "no window: the report goes to chat, nothing raises")
+end)
+
+test("report lists the presentation settings", function()
+  local E = load()
+  local text = E.Build({ settings = { alert = { style = "warning", chat = false }, toast = { scale = 80 }, explanation = { bgAlpha = 30 } },
+    presentation = { "sample: toast active" }, profileName = "Default", env = {} })
+  truthy(text:find("== Presentation ==", 1, true))
+  truthy(text:find("warning style: warning", 1, true))
+  truthy(text:find("chat record: off", 1, true))
+  truthy(text:find("toast: background nil, text nil, scale 80", 1, true) == nil)
+  truthy(text:find("toast: background 100, text 100, scale 80", 1, true))
+  truthy(text:find("active profile: Default", 1, true))
+  truthy(text:find("scope: settings shared", 1, true))
+  truthy(text:find("toast position: default", 1, true))
+  truthy(text:find("explanation: background 30", 1, true))
+  truthy(text:find("sample: toast active", 1, true))
+end)
+
+test("Show falls back to chat with the whole report when no window can be made", function()
+  local E = load()
+  local printed = {}
+  E.env = { LibStub = function() return nil end, DEFAULT_CHAT_FRAME = nil }
+  local real = _G.DEFAULT_CHAT_FRAME
+  _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, m) printed[#printed + 1] = m end }
+  local long = string.rep("Q", 600)
+  local ok = E.Show({ settings = { note = long }, env = {} })
+  _G.DEFAULT_CHAT_FRAME = real
+  E.env = nil
+  truthy(ok)
+  local all = table.concat(printed, "\n")
+  truthy(all:find("== Presentation ==", 1, true))
+  truthy(all:find("== Libraries ==", 1, true))
+  local xs = 0
+  for _, m in ipairs(printed) do truthy(#m <= 240); xs = xs + select(2, m:gsub("Q", "")) end
+  eq(xs, 600)
+end)
+
+test("Show opens one window and reopening replaces it", function()
+  local E = load()
+  local created, released = 0, 0
+  local gui = { Create = function(_, kind)
+    created = created + 1
+    local o = { kind = kind }
+    for _, m in ipairs({ "SetTitle", "SetStatusText", "SetLayout", "SetCallback", "SetLabel", "DisableButton", "SetText", "AddChild", "SetFocus", "HighlightText" }) do o[m] = function() end end
+    o.Release = function() released = released + 1 end
+    return o
+  end, Release = function() end }
+  E.env = { LibStub = function() return gui end }
+  truthy(E.Show({ env = {} })); truthy(E.Show({ env = {} }))
+  eq(created, 4); eq(released, 1, "the old window is released, not duplicated")
+  E.env = nil
+end)
+
+test("the log window closes on Escape and leaves UISpecialFrames when closed or replaced", function()
+  local E = load()
+  local onClose
+  local gui = { Create = function(_, kind)
+    local o = { kind = kind, frame = {} }
+    for _, m in ipairs({ "SetTitle", "SetStatusText", "SetLayout", "SetLabel", "DisableButton", "SetText", "AddChild", "SetFocus", "HighlightText" }) do o[m] = function() end end
+    o.SetCallback = function(_, name, fn) if name == "OnClose" then onClose = fn; o.close = fn end end
+    o.Release = function() end
+    return o
+  end, Release = function() end }
+  local env = { LibStub = function() return gui end, UISpecialFrames = {} }
+  E.env = env
+  truthy(E.Show({ env = {} }))
+  eq(env.UISpecialFrames, { "DontDoThatLogFrame" }); truthy(env.DontDoThatLogFrame)
+  truthy(E.Show({ env = {} })); eq(#env.UISpecialFrames, 1, "reopening does not duplicate")
+  local f = env.DontDoThatLogFrame
+  onClose({ frame = f })
+  eq(#env.UISpecialFrames, 0); eq(env.DontDoThatLogFrame, nil)
+  E.env = nil
 end)

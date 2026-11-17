@@ -22,7 +22,7 @@ You do not have to translate everything. Anything you leave out shows in English
 - **Keep markup.** A few sentences keep a color code or a leading marker outside the key, so the key is only the words. Do not add `|c...|r` codes to a translation.
 - **Whole sentences.** Each key is a complete sentence so it can be reordered; do not split one.
 - **Spell names** are not translated here. The game supplies them.
-- **Debug text** (`/ddt export` and the debug log) stays English so reports are readable by everyone.
+- **Debug text** (`/ddt log` and the debug log) stays English so reports are readable by everyone.
 
 ## Nothing is matched by English text
 

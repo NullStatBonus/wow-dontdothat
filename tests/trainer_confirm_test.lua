@@ -9,7 +9,7 @@ local function setup(opts)
     if opts.computeError then error("boom") end
     return { verdicts = opts.verdicts or {} }
   end }
-  ns.Alert = { Trigger = function(verdict, key, settings)
+  ns.Alert = { ShowVisual = function(v, n) ns.AlertBanner.Show(v, n) end, Trigger = function(verdict, key, settings)
     rec.alerts[#rec.alerts + 1] = key
     rec.alertSettings[#rec.alertSettings + 1] = settings
   end }
@@ -363,7 +363,7 @@ test("the TrainerConfirm.AlertSettings alias gives the same settings as Prompt.A
   local ns = setup({ profile = { alerts = false, alert = { banner = false, sound = "s", cooldown = 4, channel = "Dialog" } } })
   local a, p = ns.TrainerConfirm.AlertSettings(), ns.Prompt.AlertSettings()
   eq(a, p)
-  eq(a, { alertsEnabled = false, alertBanner = false, alertSound = "s", alertCooldown = 4, alertChannel = "Dialog" })
+  eq(a, { alertsEnabled = false, alertBanner = false, alertSound = "s", alertCooldown = 4, alertChannel = "Dialog", alertChat = true })
   local d = setup()
   eq(d.TrainerConfirm.AlertSettings(), d.Prompt.AlertSettings())
 end)
