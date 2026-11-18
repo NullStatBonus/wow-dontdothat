@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.3
+
+- Changed: The spell data now comes from WoW Forever build 1.60.1.70959. In this build, the Rogue spell Shank has two ranks. The addon now knows both ranks. Classic Era has no spell changes.
+
 ## 0.12.2
 
 - **Fixed: Classic Era now uses the correct mount prices.** The level 40 goal is 100g: 20g for riding and 80g for the mount. The level 60 goal is 1,000g for the epic mount. Before, the level 60 goal was 1,200g, which are WoW Forever prices.
