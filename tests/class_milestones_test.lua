@@ -4,7 +4,7 @@ local H = require("harness")
 local function fresh(class)
   local ns = { version = "0.1.0" }
   for _, f in ipairs({ "UI/Helpers.lua", "Data/Sounds.lua", "Data/SpellData.lua", "Data/RuleSpells.lua", "Data/SkipRevisions.lua", "Data/TalentData.lua", "Model/SpellData.lua", "Rules/Schema.lua", "Rules/Engine.lua", "Rules/Data/Hunter.lua",
-    "Rules/Data/Paladin.lua", "Rules/Data/Warlock.lua", "Model/Milestones.lua", "Model/Settings.lua", "Model/ItemCategory.lua", "Options/Options.lua" }) do
+    "Rules/Data/Paladin.lua", "Rules/Data/Warlock.lua", "Model/Milestones.lua", "Model/Settings.lua", "Model/ItemCategory.lua", "Intercepts/Adapter.lua", "Options/Options.lua" }) do
     H.load("DontDoThat/" .. f, ns)
   end
   ns.db = { profile = {} }
@@ -60,4 +60,29 @@ test("a Warlock's level 40 mount costs nothing and carries the Felsteed note; le
   local detail = ns.Options.MilestoneItems("WARLOCK")[1].detail
   truthy(detail:find("Your Felsteed is paid for in souls, not gold.", 1, true), detail)
   eq(ns.Options.MilestoneProgress({ GetMoney = function() return 5 * GOLD end }), nil, "no progress line for a free mount")
+end)
+
+test("Era progress uses the Era goal and shows the Honored discount", function()
+  local ns = fresh("HUNTER")
+  ns.Context.Profile = function() return { class = "HUNTER", milestone = { current = 60, state = "active" } } end
+  local env = { GetMoney = function() return 450 * GOLD end,
+    GetBuildInfo = function() return "1.15.9", "1", "", 11509 end,
+    UnitRace = function() return "Human", "Human" end,
+    GetFactionInfoByID = function() return "Stormwind", "", 6 end }
+  local line = ns.Options.MilestoneProgress(env)
+  truthy(line:find("900g", 1, true) or line:find("900 ", 1, true), line)
+  truthy(line:find("50%", 1, true), line)
+  truthy(line:find("10% off", 1, true), line)
+  env.GetFactionInfoByID = function() return "Stormwind", "", 5 end
+  line = ns.Options.MilestoneProgress(env)
+  falsy(line:find("off", 1, true), line)
+end)
+
+test("the Era level 60 line has no riding lesson", function()
+  local ns = fresh("HUNTER")
+  local saved = ns.Milestones.Client
+  ns.Milestones.Client = function() return "era" end
+  local items = ns.Options.MilestoneItems("HUNTER")
+  truthy(items[2].detail:find("No riding lesson", 1, true), items[2].detail)
+  ns.Milestones.Client = saved
 end)

@@ -280,10 +280,10 @@ end
 -- Riding is bought as a spell, and the player has it when the spellbook knows any of the IDs. Forever has
 -- Apprentice Riding (the level 40 goal) and Journeyman Riding (level 60). Classic Era has neither: riding is the
 -- racial passive of the player's mount (Horse Riding, Wolf Riding, Ram Riding, Tiger Riding, Raptor Riding, Kodo
--- Riding, Undead Horsemanship, Mechanostrider Piloting), confirmed absent by /ddt trainerids on Era. Era's level 60
--- riding is a higher skill rank of the same skill. A Paladin or Warlock has class mounts instead: Summon Warhorse / Felsteed are the level 40 goal and Summon
--- Charger / Dreadsteed the level 60 one, on both clients. Level 60 riding for the races on Era is read from the skill
--- line's max rank below.
+-- Riding, Undead Horsemanship, Mechanostrider Piloting), confirmed absent by /ddt trainerids on Era. Era has no
+-- epic riding lesson: the racial skill has one rank and every epic mount needs only that. A Paladin or Warlock has class mounts instead: Summon Warhorse / Felsteed are the level 40 goal and Summon
+-- Charger / Dreadsteed the level 60 one, on both clients. The level 60 mount for the races on Era is read from the
+-- epic mount item in the bags or bank below.
 local RIDING = {
   apprentice = { 33388, 33389, 824, 825, 826, 828, 10861, 18995, 10906, 10907, 13819, 1279399, 5784 },
   journeyman = { 33391, 33392, 23214, 23161 },
@@ -297,29 +297,23 @@ local function knowsAny(env, ids)
 end
 
 -- Classic Era's racial riding skills: spell ID -> the English name of the spell and of its skill line, which are the
--- same word (Horse Riding spell 824 and skill line 148). The skill's max rank is 75 once riding is learned and 150
--- once epic riding is, which is the only sign of level 60 riding there.
+-- same word (Horse Riding spell 824 and skill line 148). Listed for the debug report.
 local ERA_RIDING_SKILLS = {
   [824] = "Horse Riding", [825] = "Wolf Riding", [826] = "Ram Riding", [828] = "Tiger Riding",
   [10861] = "Raptor Riding", [18995] = "Kodo Riding", [10906] = "Undead Horsemanship", [10907] = "Mechanostrider Piloting",
 }
 Adapter.EraRidingSkills = ERA_RIDING_SKILLS
 
--- Has the player trained the 150 rank of a racial riding skill? The skill line is found through the client's name
--- for the racial spell, so this works in any language; GetSkillLineInfo gives no skill ID.
-local function epicRidingSkill(env)
-  local wanted = {}
-  for id, english in pairs(ERA_RIDING_SKILLS) do
-    wanted[(ns.SpellData and ns.SpellData.ClientName(env, id)) or english] = true
-    wanted[english] = true
-  end
-  local count = call(env, "GetNumSkillLines")
-  if type(count) ~= "number" then return false end
-  for i = 1, count do
-    local name, isHeader, _, _, _, _, maxRank = call(env, "GetSkillLineInfo", i)
-    if type(name) == "string" and not isHeader and wanted[name] and type(maxRank) == "number" and maxRank >= 150 then
-      return true
-    end
+-- Classic Era's level 60 epic mounts: every item that needs a riding skill and level 60 (ItemSparse 1.15.9).
+local ERA_EPIC_MOUNTS = { 8586, 12302, 12303, 12330, 12351, 12353, 12354, 13086, 13317, 13326, 13327, 13328, 13329, 13334, 15292, 15293, 16339, 16344, 18766, 18767, 18768, 18772, 18773, 18774, 18776, 18777, 18778, 18785, 18786, 18787, 18788, 18789, 18790, 18791, 18793, 18794, 18795, 18796, 18797, 18798, 18902 }
+Adapter.EraEpicMounts = ERA_EPIC_MOUNTS
+
+-- Does the player own an epic mount (bags or bank)? Era only: there the item is the only sign of it.
+local function ownsEpicMount(env)
+  if type(env.GetItemCount) ~= "function" then return false end
+  for _, id in ipairs(ERA_EPIC_MOUNTS) do
+    local ok, n = pcall(env.GetItemCount, id, true)
+    if ok and type(n) == "number" and n > 0 then return true end
   end
   return false
 end
@@ -328,8 +322,46 @@ function Adapter.ReadRiding(env)
   env = env or _G
   return {
     apprentice = knowsAny(env, RIDING.apprentice),
-    journeyman = knowsAny(env, RIDING.journeyman) or epicRidingSkill(env),
+    journeyman = knowsAny(env, RIDING.journeyman)
+      or (ns.Milestones ~= nil and ns.Milestones.Client(env) == "era" and ownsEpicMount(env)),
   }
+end
+
+-- The home faction of each race (its capital's reputation), whose Honored standing takes 10% off mounts and riding.
+local HOME_FACTION = {
+  Human = 72, Dwarf = 47, NightElf = 69, Gnome = 54, -- Stormwind, Ironforge, Darnassus, Gnomeregan Exiles
+  Orc = 76, Tauren = 81, Scourge = 68, Troll = 530, -- Orgrimmar, Thunder Bluff, Undercity, Darkspear Trolls
+}
+Adapter.HomeFaction = HOME_FACTION
+
+local function standingWith(env, factionID)
+  local rep = env.C_Reputation
+  if type(rep) == "table" and type(rep.GetFactionDataByID) == "function" then
+    local ok, data = pcall(rep.GetFactionDataByID, factionID)
+    if ok and type(data) == "table" and type(data.reaction) == "number" then return data.reaction end
+  end
+  local _, _, standing = call(env, "GetFactionInfoByID", factionID)
+  return type(standing) == "number" and standing or nil
+end
+
+-- PvP rank number (1 = Private / Scout ... 14), or nil. UnitPVPRank gives the rank's index, which GetPVPRankInfo
+-- turns into its number; without it, rank 1 is index 5.
+local function pvpRank(env)
+  local index = call(env, "UnitPVPRank", "player")
+  if type(index) ~= "number" or index <= 0 then return nil end
+  local _, number = call(env, "GetPVPRankInfo", index)
+  if type(number) == "number" then return number end
+  return index >= 5 and index - 4 or nil
+end
+
+-- What the player qualifies for: { honored = bool, pvpRank3 = bool }. Unreadable means no discount.
+function Adapter.ReadDiscounts(env)
+  env = env or _G
+  local _, race = call(env, "UnitRace", "player")
+  local faction = HOME_FACTION[race]
+  local standing = faction and standingWith(env, faction)
+  local rank = pvpRank(env)
+  return { honored = type(standing) == "number" and standing >= 6, pvpRank3 = type(rank) == "number" and rank >= 3 }
 end
 
 -- GetSkillLineInfo(i) -> name, isHeader, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank

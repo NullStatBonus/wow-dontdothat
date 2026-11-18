@@ -977,8 +977,10 @@ function Options.MilestoneItems(class)
     items[#items + 1] = { name = L["Level 40 mount"], detail = detail }
   end
   if d[60] then
-    items[#items + 1] = { name = L["Level 60 mount"],
-      detail = (L["%s for riding, plus %s for each epic mount."]):format(money(d[60].riding), money(d[60].mount)) }
+    local detail = (d[60].riding or 0) > 0
+      and (L["%s for riding, plus %s for each epic mount."]):format(money(d[60].riding), money(d[60].mount))
+      or (L["%s for an epic mount. No riding lesson is needed."]):format(money(d[60].mount))
+    items[#items + 1] = { name = L["Level 60 mount"], detail = detail }
   end
   return items
 end
@@ -1002,17 +1004,18 @@ function Options.MilestoneProgress(env)
   env = env or _G
   local okProfile, p = pcall(function() return ns.Context and ns.Context.Profile(env) end)
   local m = okProfile and p and p.milestone
-  local d = milestoneTargets(p and p.class)
-  if not (m and m.current and d[m.current] and type(env.GetMoney) == "function") then return nil end
+  if not (m and m.current and ns.Milestones and type(env.GetMoney) == "function") then return nil end
   local okMoney, have = pcall(env.GetMoney)
   if not okMoney or type(have) ~= "number" then return nil end
-  local goal = (d[m.current].riding or 0) + (d[m.current].mount or 0)
-  if goal <= 0 then return nil end
+  local okStanding, standing = pcall(function() return ns.Adapter and ns.Adapter.ReadDiscounts(env) end)
+  local goal, cut = ns.Milestones.Goal(m.current, p and p.class, ns.Milestones.Client(env), okStanding and standing or nil)
+  if not goal or goal <= 0 then return nil end
+  local off = cut > 0 and (" " .. L["(%d%% off for your reputation and rank)"]:format(math.floor(cut * 100 + 0.5))) or ""
   if have >= goal then
-    return "|cff33e633" .. L["You have %s. That's enough for your level %d mount."]:format(money(have), m.current) .. "|r"
+    return "|cff33e633" .. L["You have %s. That's enough for your level %d mount."]:format(money(have), m.current) .. "|r" .. off
   end
   return (L["You have |cffffd100%s|r of the |cffffd100%s|r you need (%d%%)."]):format(
-    money(have), money(goal), math.floor(have / goal * 100))
+    money(have), money(goal), math.floor(have / goal * 100)) .. off
 end
 
 function Options.Milestones()

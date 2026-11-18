@@ -180,6 +180,12 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] On the level 10 character, learn Tailoring after another character was asked about it: the question shows once.
 - [ ] Update from 0.12.0 with a mark saved: a character at that level or higher keeps the mark; a lower character does not. `/ddt export` shows "mounts marked bought (this character)".
 
+## 19. Mount goals per client
+- [ ] Classic Era, Progress: the level 40 mount says 100g for riding and your first mount; the level 60 mount says 1,000g for an epic mount and that no riding lesson is needed.
+- [ ] A character Honored with its home city (Stormwind, Ironforge, Darnassus, Gnomeregan, Orgrimmar, Thunder Bluff, Undercity, Darkspear): the progress line ends "(10% off for your reputation and rank)" and the goal is 10% lower. Below Honored: no note.
+- [ ] Era level 60 with an epic mount in the bags or bank: Progress says the level 60 mount is bought, without ticking the box.
+- [ ] WoW Forever, Progress: level 60 is 1,000g riding plus 200g for each epic mount.
+
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.
 - Anything on WoW Forever itself. Everything here is Classic Era until Forever is available.
