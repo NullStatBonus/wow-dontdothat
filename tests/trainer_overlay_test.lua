@@ -367,21 +367,21 @@ test("a profession row named for the trainer's title is still recognised by its 
   eq(ns.Adapter.TrainerProfessionId(env, { name = "Weak Troll's Blood Potion" }), nil, "a recipe row has no spell ID and is not a first lesson")
 end)
 
-test("Era level 60 riding is read from the racial riding skill's max rank, in any language", function()
-  local function riding(maxRank, name)
-    local lines = { { name, false, true, 75, 0, 0, maxRank }, { "Weapon Skills", true } }
-    return ns.Adapter.ReadRiding({
-      GetSpellInfo = function(id) return "Z" .. id end,
+test("Era level 60 riding is the epic mount item in the bags or bank, on Era only", function()
+  local saved = ns.Milestones
+  ns.Milestones = { Client = function(env) return env.era and "era" or "forever" end }
+  local function riding(owned, era)
+    return ns.Adapter.ReadRiding({ era = era,
       IsSpellKnown = function(id) return id == 824 end,
-      GetNumSkillLines = function() return #lines end,
-      GetSkillLineInfo = function(i) return unpack(lines[i]) end,
-    })
+      GetItemCount = function(id, bank) return (owned[id] and bank) and 1 or 0 end })
   end
-  eq(riding(75, "Z824"), { apprentice = true, journeyman = false }, "trained once: 75")
-  eq(riding(150, "Z824"), { apprentice = true, journeyman = true }, "epic riding: 150, under the client's own name")
-  eq(riding(150, "Horse Riding").journeyman, true, "the English name also matches")
-  eq(riding(150, "Unrelated Skill").journeyman, false)
-  eq(ns.Adapter.ReadRiding({}).journeyman, false, "no skill list at all")
+  eq(riding({}, true), { apprentice = true, journeyman = false }, "riding trained, no epic mount")
+  eq(riding({ [18776] = true }, true), { apprentice = true, journeyman = true }, "Swift Palomino, counted with the bank")
+  eq(riding({ [13334] = true }, true).journeyman, true, "Green Skeletal Warhorse")
+  eq(riding({ [2411] = true }, true).journeyman, false, "a level 40 mount is not the epic one")
+  eq(riding({ [18776] = true }, false).journeyman, false, "Forever needs Journeyman Riding")
+  eq(ns.Adapter.ReadRiding({ era = true }).journeyman, false, "no item call at all")
+  ns.Milestones = saved
 end)
 
 test("Forever's trainer rows come in Blizzard's mainline order and are read by it", function()

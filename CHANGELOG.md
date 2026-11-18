@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.2
+
+- **Fixed: Classic Era now uses the correct mount prices.** The level 40 goal is 100g: 20g for riding and 80g for the mount. The level 60 goal is 1,000g for the epic mount. Before, the level 60 goal was 1,200g, which are WoW Forever prices.
+- **Fixed: On Classic Era, the addon now finds your level 60 mount.** It looks for an epic mount in your bags or bank. Before, it never found it, and you had to tick the box yourself.
+- **New: The goal is lower when you get a discount.** At Honored with your home city, mounts and riding cost 10% less. On Classic Era, PvP rank 3 gives another 10%. Progress shows the discount.
+
 ## 0.12.1
 
 - **Fixed: All warnings stop when you buy the mount that you set as the stop point.** Before, only trainers stopped. Vendors, the auction house, slots, COD mail and resets continued to warn. To start the warnings again, clear the "bought" checkbox or set the stop point to the level 60 mount.
