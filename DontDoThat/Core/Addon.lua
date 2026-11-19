@@ -63,6 +63,11 @@ function addon:OnInitialize()
     local before = ns.Settings and ns.Settings.StyleBefore(_G.DontDoThatDB)
     self.db = AceDB:New("DontDoThatDB", ns.defaults, true)
     ns.db = self.db
+    -- Before anything reads db.char or classifies the profile: follow a change of the character key.
+    if ns.Settings and ns.Adapter then
+        local okKey, oldKey = pcall(ns.Adapter.ReadLegacyCharKey, _G)
+        if okKey then pcall(ns.Settings.MigrateCharKey, self.db.sv, self.db, oldKey) end
+    end
     if ns.Settings then
         local ok, name = pcall(self.db.GetCurrentProfile, self.db)
         ns.Settings.ClassifyStyle(self.db.profile, before, ok and name or nil)

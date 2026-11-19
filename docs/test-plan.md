@@ -193,6 +193,12 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] If you have more gold than the goal plus the price, the question has no such line. To check this with little gold, tick "I've already bought my level 40 mount" on Milestones; the goal becomes the level 60 mount, so the line shows again. Untick it after.
 - [ ] After the mount stop point is reached, no question has the line.
 
+## 21. Settings library update
+- [ ] Classic Era and WoW Forever, with Don't Do That, Closest Vendor and KeepThat all loaded: open each addon's settings window, `/reload`, visit a merchant. No Lua errors.
+- [ ] WoW Forever, a character with savings on Progress and a profile other than Default: after the update, Progress shows the same savings and observed prices, and the same profile is in use.
+- [ ] WoW Forever, the same character: pick another profile, `/reload`. The profile you picked stays.
+- [ ] Classic Era: savings and profile are unchanged after the update.
+
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.
 - Anything on WoW Forever itself. Everything here is Classic Era until Forever is available.

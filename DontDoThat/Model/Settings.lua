@@ -178,6 +178,29 @@ end
 local KEEP_ON_RESET = { professionAsked = true, milestoneOverride = true, revisionNotice = true, styleMarked = true }
 
 -- Puts every setting back to its default. With AceDB, removing a saved key lets the default show through again.
+-- Newer settings-library versions file a WoW Forever character as "Name Surname" instead of "Name - Realm". Moves
+-- this character's saved data and profile choice from oldKey to the key the loaded library uses, once: the old
+-- entries are removed, so a later run finds nothing. Data already under the new key is never overwritten.
+-- sv is the raw saved table (db.sv); its char and profileKeys may be missing on a fresh install.
+function Settings.MigrateCharKey(sv, db, oldKey)
+  local newKey = db and db.keys and db.keys.char
+  if type(sv) ~= "table" or type(oldKey) ~= "string" or type(newKey) ~= "string" or oldKey == newKey then return false end
+  local moved = false
+  if type(sv.char) == "table" and type(sv.char[oldKey]) == "table" and sv.char[newKey] == nil then
+    sv.char[newKey], sv.char[oldKey] = sv.char[oldKey], nil
+    moved = true
+  end
+  if type(sv.profileKeys) == "table" and sv.profileKeys[oldKey] ~= nil then
+    local old = sv.profileKeys[oldKey]
+    local okCurrent, current = pcall(db.GetCurrentProfile, db)
+    if type(old) == "string" and okCurrent and old ~= current then
+      if pcall(db.SetProfile, db, old) then moved = true end
+    end
+    sv.profileKeys[oldKey] = nil
+  end
+  return moved
+end
+
 function Settings.ResetAll(p)
   p = p or saved()
   if not p then return end
