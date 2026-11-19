@@ -11,7 +11,7 @@ local Demo = {}
 ns.Demo = Demo
 
 local SAMPLE_DIALOG = "DONTDOTHAT_SAMPLE"
-local STEP, LIFETIME = 2, 10 -- seconds between tour samples; every sample is gone by LIFETIME
+local STEP, LIFETIME = 5, 10 -- seconds between tour steps; a preview, and the tour's last step, end after LIFETIME
 local KINDS = { "toast", "warning", "mark", "tooltip", "explanation", "prompt" }
 Demo.Kinds = KINDS
 
@@ -168,7 +168,10 @@ local function showPrompt(verdict)
   local head = ns.UIHelpers.BannerText(verdict, labelled(verdict))
   local level = type(_G.UnitLevel) == "function" and _G.UnitLevel("player") or nil
   local earn = ns.EarnBack and ns.EarnBack.Line(verdict.cost, (level and level > 0) and level or 30)
-  local text = head .. "\n\n" .. tostring(verdict.reason) .. (earn and ("\n\n" .. earn) or "")
+  -- The mount fund line from your own gold and goal; when you'd still have enough (or have no goal), an example.
+  local okFund, fund = pcall(function() return ns.ConfirmPopup and ns.ConfirmPopup.FundLine(verdict.cost) end)
+  fund = okFund and fund or L["After this you'll have %s of the %s for your level %d mount."]:format("61g", "100g", 40)
+  local text = head .. "\n\n" .. tostring(verdict.reason) .. (earn and ("\n\n" .. earn) or "") .. "\n\n" .. fund
     .. "\n\n" .. L["This is a sample. Nothing will be bought."]
   local ok, dialog = pcall(_G.StaticPopup_Show, SAMPLE_DIALOG, text, nil, { sample = true })
   return ok and dialog and true or false
@@ -244,22 +247,36 @@ local function scheduleEnd(gen)
   after(LIFETIME, gen, function() Demo.End() end)
 end
 
--- The tour: the same five samples in the same order every run, with the marks and their hover tooltip.
+local function caption(i, count, text)
+  if ns.Prompt and ns.Prompt.Say then
+    pcall(ns.Prompt.Say, L["Demo %d of %d: %s"]:format(i, count, text))
+  end
+end
+
+-- The tour: the same five samples in the same order every run, one step at a time, STEP seconds apart. Each step
+-- clears the one before and names itself in chat, so the player can tell which message means what.
 function Demo.Run()
   local gen = begin()
   local set = samples()
-  playSound()
-  showMarks()
-  showTooltip(set.deferLow)
-  showPrompt(set.estimate)
-  local steps = { set.info, set.deferLow, set.defer, set.skip }
-  for i, verdict in ipairs(steps) do
+  local notice = settings().alertStyle == "warning" and L["a warning"] or L["a toast"]
+  local steps = {
+    { L["%s for a spell that is optional."]:format(notice), function() playSound(); showNotice(set.info) end },
+    { L["%s for a spell that is not worth buying yet."]:format(notice), function() showNotice(set.deferLow) end },
+    { L["%s for a spell to save your gold on."]:format(notice), function() showNotice(set.defer) end },
+    { L["%s for a rank the leveling guide skips."]:format(notice), function() showNotice(set.skip) end },
+    { L["the explanation you get when you click (i). Close it with its button."], function() showExplanation(set.skip) end },
+    { L["the trainer marks, with the tooltip you see when you point at a spell."],
+      function() showMarks(); showTooltip(set.deferLow) end },
+    { L["the question you get before a purchase, with the time to earn the gold back and what is left for your mount. Either button just closes it."], function() showPrompt(set.estimate) end },
+  }
+  for i, step in ipairs(steps) do
     after((i - 1) * STEP, gen, function()
-      showNotice(verdict)
-      if verdict == set.skip then showExplanation(verdict) end
+      if i > 1 then cleanup() end
+      caption(i, #steps, step[1])
+      step[2]()
     end)
   end
-  scheduleEnd(gen)
+  after((#steps - 1) * STEP + LIFETIME, gen, function() Demo.End() end)
   return true
 end
 

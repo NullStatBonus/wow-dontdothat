@@ -59,6 +59,7 @@ For COD mail and talent and pet resets, the game's own question stays on screen 
 - You choose how the message looks. **Toast** (the default for new installs) is a small box near the top of the screen that you can move, resize and make see-through. **Warning** is the large message in the middle of the screen. Players who already used the addon keep Warning until they choose Toast.
 - Every warning also adds one line to chat, so you can read it again. You can turn this off.
 - When the addon asks "Buy anyway?", the question is the warning. No second message shows.
+- If the purchase leaves you short of your next mount, the question says how much you will have left. For example: "After this you'll have 61g of the 100g for your level 40 mount." The line does not show when you will still have enough, or after the mount stop point.
 - You can click an **(i)** to keep its explanation open. It is a black box that wraps its text, closes with its button or Escape, and has its own opacity and scale. A sample explanation (from a preview or `/ddt demo`) closes by itself or with its button, not Escape.
 - You choose how strongly the addon warns you: marks only, ask about spells to wait for, or ask about everything.
 - The addon warns you at most once every **3** seconds for the same item. You can change this time. The chat line follows the same wait.
@@ -121,7 +122,7 @@ The addon has its own icon in the AddOns list at the character screen.
 | `/ddt get` | Lists the setting keys. |
 | `/ddt get <key>` | Shows one setting. |
 | `/ddt set <key> <value>` | Changes one setting. A value that does not fit is refused and nothing changes. Open settings pages, trainer marks, the toast and an open explanation update at once, as with the settings controls. |
-| `/ddt demo` | Shows sample toasts and warnings, marks (captioned "Sample"), a tooltip, a question and a kept-open explanation. It does not buy anything. |
+| `/ddt demo` | Shows the samples one at a time, five seconds apart: four toasts or warnings, a kept-open explanation, marks (captioned "Sample") with a tooltip, and a question. A chat line names each sample. The tour takes about 40 seconds. It does not buy anything. |
 | `/ddt preview [name]` | Shows one sample: `toast`, `warning`, `mark`, `tooltip`, `explanation` or `prompt`. Without a name it lists them. |
 | `/ddt test` | Shows a sample warning and question. It does not buy anything. If "Ask before buying" and the sound are both off, it says only the chat line would show (when the chat line is on). |
 | `/ddt revision` | Shows the revision of the skip list in use. |

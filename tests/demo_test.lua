@@ -43,8 +43,37 @@ test("demo: one fixed set, labelled, with accurate reasons and an estimated pric
   eq(env.popups[1].which, "DONTDOTHAT_SAMPLE")
   truthy(env.popups[1].text:find("about", 1, true), "estimated price")
   truthy(env.popups[1].text:find("grinding", 1, true), "earn-back line")
+  truthy(env.popups[1].text:find("After this you'll have 61g of the 100g for your level 40 mount.", 1, true), "an example fund line with no goal")
   local a, b = ns.Demo.Samples(), ns.Demo.Samples()
   eq(a, b)
+  finish()
+end)
+
+test("demo: one step at a time, five seconds apart, each named in chat, ending after the last", function()
+  local ns, env = fresh()
+  ns.Demo.Run()
+  eq(#env.toast, 1); eq(#env.popups, 0); eq(#env.chat, 1)
+  truthy(env.chat[1]:find("Demo 1 of 7: a toast for a spell that is optional.", 1, true), env.chat[1])
+  local delays = {}
+  for _, t in ipairs(env.timers) do delays[#delays + 1] = t.d end
+  eq(delays, { 5, 10, 15, 20, 25, 30, 40 })
+  env.timers[1].fn()
+  eq(#env.toast, 2); eq(env.toast[2].v.tier, "deferLow")
+  truthy(env.chat[2]:find("Demo 2 of 7: ", 1, true))
+  env.timers[6].fn()
+  eq(#env.popups, 1, "the question comes last")
+  truthy(env.chat[#env.chat]:find("Demo 7 of 7: the question", 1, true))
+  env.timers[7].fn()
+  falsy(ns.Demo.Active())
+  finish()
+end)
+
+test("demo: the sample question uses your own mount fund line when there is one", function()
+  local ns, env = fresh()
+  ns.ConfirmPopup.FundLine = function(cost) return "FUND " .. cost end
+  ns.Demo.Preview("prompt")
+  truthy(env.popups[1].text:find("FUND 15000", 1, true), env.popups[1].text)
+  falsy(env.popups[1].text:find("61g", 1, true))
   finish()
 end)
 
@@ -72,13 +101,14 @@ test("demo: touches no cooldown, ledger, once-only flag, and prints no chat reco
   ns.Demo.Run(); env.run(); ns.Demo.Preview("prompt"); ns.Demo.End()
   eq(ns.Alert.state, { last = {} })
   eq(ns.db.profile.professionAsked, { x = true })
-  eq(#env.chat, 0)
+  eq(#env.chat, 7, "only the step captions")
+  for _, line in ipairs(env.chat) do truthy(line:find("Demo %d of 7: "), line) end
   finish()
 end)
 
 test("demo: the sample question is its own dialog and does nothing when answered", function()
   local ns, env = fresh()
-  ns.Demo.Run()
+  ns.Demo.Run(); env.run()
   local d = _G.StaticPopupDialogs.DONTDOTHAT_SAMPLE
   truthy(d); falsy(_G.StaticPopupDialogs.DONTDOTHAT_CONFIRM)
   eq(d.OnAccept(nil, env.popups[1].data), nil); eq(d.OnCancel(nil, env.popups[1].data), nil)
@@ -129,7 +159,9 @@ test("demo: a new run makes the old timers inert", function()
   local toasts, popups = #env.toast, #env.popups
   for _, x in ipairs(old) do x.fn() end
   eq(#env.toast, toasts); eq(#env.popups, popups)
-  eq(popups, 2)
+  eq(toasts, 2, "each run drew only its first step"); eq(popups, 0)
+  env.run()
+  eq(#env.popups, 1, "only the new run asks")
   finish()
 end)
 
@@ -193,7 +225,8 @@ test("demo: a firing alert with only its chat line still ends the samples", func
   ns.Demo.Run()
   falsy(ns.Alert.Trigger({ tier = "defer", name = "Real" }, "spell:5", { alertsEnabled = false }, 100))
   falsy(ns.Demo.Active())
-  eq(#env.chat, 1)
+  eq(#env.chat, 2, "the first step's caption, then the alert's chat line")
+  falsy(env.chat[2]:find("Demo ", 1, true))
   finish()
 end)
 
@@ -243,6 +276,8 @@ test("demo: the tour also shows the marks and their hover tooltip", function()
   stub("GameTooltip", { SetOwner = function() end, SetText = function() end, Show = function() end,
     Hide = function() end, GetOwner = function() end })
   truthy(ns.Demo.Run())
+  eq(attached, 0, "not in the first step")
+  env.run(25)
   eq(attached, 3); eq(augmented, 1)
   ns.Demo.End()
   undo()
