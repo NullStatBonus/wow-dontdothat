@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.1
+
+- **Fixed: On WoW Forever, each character keeps its savings and profile.** A newer settings library saves characters under a new name. The addon now moves your data to that name once.
+- Changed: The addon now uses the same library versions as Closest Vendor and KeepThat. On WoW Forever, this fixes the transparency of color pickers in addons that use these libraries.
+
 ## 0.13.0
 
 - **New: The "Buy anyway?" question shows your mount fund.** If a purchase leaves you short of your next mount, the question says so. For example: "After this you'll have 61g of the 100g for your level 40 mount." The line does not show when you still have enough gold. It also does not show after the mount stop point.

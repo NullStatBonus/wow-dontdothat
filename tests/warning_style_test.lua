@@ -6,6 +6,9 @@ local function loadAce()
   _G.LibStub = nil
   _G.GetRealmName = function() return "Realm" end
   _G.UnitName = function() return "Hero" end
+  _G.UnitNameUnmodified = function() return "Hero" end
+  _G.RegionalUniqueNamesEnabled = function() return false end
+  _G.strlenutf8 = function(s) return #s end
   _G.UnitClass = function() return "Warrior", "WARRIOR" end
   _G.UnitRace = function() return "Human", "Human" end
   _G.UnitFactionGroup = function() return "Alliance" end
@@ -22,7 +25,7 @@ local function loadAce()
 end
 
 local function cleanup()
-  for _, k in ipairs({ "LibStub", "GetRealmName", "UnitName", "UnitClass", "UnitRace", "UnitFactionGroup",
+  for _, k in ipairs({ "LibStub", "GetRealmName", "UnitName", "UnitNameUnmodified", "RegionalUniqueNamesEnabled", "strlenutf8", "UnitClass", "UnitRace", "UnitFactionGroup",
       "GetLocale", "GetCurrentRegion", "GetCurrentRegionName", "CreateFrame", "DontDoThatDB" }) do _G[k] = nil end
 end
 
