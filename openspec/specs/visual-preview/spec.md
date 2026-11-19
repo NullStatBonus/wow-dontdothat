@@ -6,7 +6,7 @@ Safe ways to see the addon's warnings without buying anything: the /ddt demo tou
 ## Requirements
 
 ### Requirement: Broad safe demo
-`/ddt demo` SHALL exercise representative marks, hover tooltip, pinned reason, selected warning style and an inert confirmation using synthetic data. Samples SHALL be labeled and expire within ten seconds or close explicitly; normal warning fade MAY finish earlier. Real disabled states MAY be bypassed for samples only. Gameplay, settings, ledger, one-time profession flags and real cooldown/deduplication SHALL remain unchanged.
+`/ddt demo` SHALL exercise representative marks, hover tooltip, pinned reason, selected warning style and an inert confirmation using synthetic data. The tour SHALL show one sample at a time, at least five seconds apart, and SHALL add one chat line per step that names what that step shows. Samples SHALL be labeled; the tour SHALL end within 45 seconds or close explicitly, and a single preview SHALL expire within ten seconds; normal warning fade MAY finish earlier. Real disabled states MAY be bypassed for samples only. Gameplay, settings, ledger, one-time profession flags and real cooldown/deduplication SHALL remain unchanged.
 
 #### Scenario: No purchase
 - **WHEN** any demo prompt is accepted or cancelled
@@ -19,6 +19,10 @@ Safe ways to see the addon's warnings without buying anything: the /ddt demo tou
 #### Scenario: Representative tiers
 - **WHEN** demo runs
 - **THEN** it shows the same fixed set every time: one informational, one defer-low-value, one defer, one skipped rank and one estimated-price/earn-back sample, each with accurate reasons and costs and without fabricating live decisions
+
+#### Scenario: One sample at a time
+- **WHEN** demo runs
+- **THEN** each step starts at least five seconds after the one before, only that step's sample is new on screen, and a chat line names it
 
 ### Requirement: Focused preview and live priority
 `/ddt preview` SHALL list toast, warning, mark, tooltip, explanation and prompt. A named preview SHALL show that surface using the production drawing helpers with injected sample data. Alternate styles SHALL NOT save preferences. Existing `/ddt test` SHALL retain its integration-test behavior. Real user actions and live warnings/questions SHALL take priority and cancel conflicting samples.

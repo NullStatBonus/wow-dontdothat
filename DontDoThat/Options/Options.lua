@@ -1002,17 +1002,14 @@ end
 -- "You have 12g of the 100g you need (12%)." for the mount being saved for; nil when it can't be worked out.
 function Options.MilestoneProgress(env)
   env = env or _G
-  local okProfile, p = pcall(function() return ns.Context and ns.Context.Profile(env) end)
-  local m = okProfile and p and p.milestone
-  if not (m and m.current and ns.Milestones and type(env.GetMoney) == "function") then return nil end
+  if not (ns.Milestones and type(env.GetMoney) == "function") then return nil end
+  local level, goal, cut = ns.Milestones.Target(env)
+  if not level then return nil end
   local okMoney, have = pcall(env.GetMoney)
   if not okMoney or type(have) ~= "number" then return nil end
-  local okStanding, standing = pcall(function() return ns.Adapter and ns.Adapter.ReadDiscounts(env) end)
-  local goal, cut = ns.Milestones.Goal(m.current, p and p.class, ns.Milestones.Client(env), okStanding and standing or nil)
-  if not goal or goal <= 0 then return nil end
   local off = cut > 0 and (" " .. L["(%d%% off for your reputation and rank)"]:format(math.floor(cut * 100 + 0.5))) or ""
   if have >= goal then
-    return "|cff33e633" .. L["You have %s. That's enough for your level %d mount."]:format(money(have), m.current) .. "|r" .. off
+    return "|cff33e633" .. L["You have %s. That's enough for your level %d mount."]:format(money(have), level) .. "|r" .. off
   end
   return (L["You have |cffffd100%s|r of the |cffffd100%s|r you need (%d%%)."]):format(
     money(have), money(goal), math.floor(have / goal * 100)) .. off

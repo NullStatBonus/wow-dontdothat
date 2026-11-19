@@ -61,6 +61,19 @@ function Milestones.Goal(level, class, client, standing)
   return math.floor(base * (1 - cut) + 0.5), cut
 end
 
+-- The current mount goal for this character: level, copper and discount, or nil when there is no active milestone,
+-- the class can't be read, or the mount is free. Shared by the Progress page and the purchase question.
+function Milestones.Target(env)
+  env = env or _G
+  local okProfile, p = pcall(function() return ns.Context and ns.Context.Profile(env) end)
+  local m = okProfile and p and p.milestone
+  if not (m and m.current) then return nil end
+  local okStanding, standing = pcall(function() return ns.Adapter and ns.Adapter.ReadDiscounts(env) end)
+  local goal, cut = Milestones.Goal(m.current, p.class, Milestones.Client(env), okStanding and standing or nil)
+  if not goal or goal <= 0 then return nil end
+  return m.current, goal, cut
+end
+
 -- Deferral is continuous: warnings stay active from the start until the level 60 mount is
 -- acquired. `current` is the next unbought mount (40, then 60); it only drives progress display.
 -- manualOverride: nil or { [40] = true, [60] = true } marking milestones complete.

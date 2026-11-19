@@ -138,6 +138,7 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 
 ## 14. Previews and demo
 - [ ] `/ddt demo`: sample toasts/warnings, a row of marks with a "Sample" caption, a hover tooltip, an inert question and a pinned explanation show, nothing is bought, the Tally does not change and nothing is added to the log as a purchase.
+- [ ] `/ddt demo` pace: one sample at a time, about five seconds apart, in this order: four toasts (or warnings), the explanation, the marks with a tooltip, the question. Each step adds a chat line "Demo N of 7: …" that matches what is on screen. The question has the mount fund line: your own numbers when the sample price leaves you short, else the 61g of 100g example. Everything is gone about 40 seconds after the start.
 - [ ] `/ddt preview` lists toast, warning, mark, tooltip, explanation, prompt. Each `/ddt preview <name>` shows that one sample. `/ddt preview prompt` shows a question that buys nothing when accepted.
 - [ ] While a sample is showing, try to buy a flagged item: the real warning or question takes over.
 - [ ] `/ddt preview banana` says it is unknown and lists the kinds.
@@ -185,6 +186,12 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] A character Honored with its home city (Stormwind, Ironforge, Darnassus, Gnomeregan, Orgrimmar, Thunder Bluff, Undercity, Darkspear): the progress line ends "(10% off for your reputation and rank)" and the goal is 10% lower. Below Honored: no note.
 - [ ] Era level 60 with an epic mount in the bags or bank: Progress says the level 60 mount is bought, without ticking the box.
 - [ ] WoW Forever, Progress: level 60 is 1,000g riding plus 200g for each epic mount.
+
+## 20. Mount fund line in the question
+- [ ] With less gold than the mount goal on Progress, buy a spell with a red mark (or use `/ddt test`). Below the earn-back line, the question says "After this you'll have X of the Y for your level N mount." X is your gold minus the price. Y and N match Progress.
+- [ ] At a vendor, ask about a flagged item. The question has the same line, with that item's price.
+- [ ] If you have more gold than the goal plus the price, the question has no such line. To check this with little gold, tick "I've already bought my level 40 mount" on Milestones; the goal becomes the level 60 mount, so the line shows again. Untick it after.
+- [ ] After the mount stop point is reached, no question has the line.
 
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.

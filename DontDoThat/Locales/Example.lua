@@ -9,6 +9,7 @@ if type(GetLocale) ~= "function" or GetLocale() ~= "xxXX" then return end
 local L = ns.L
 -- L["Buy anyway?"] = "..."
 -- L["Costs about %s"] = "..."
+-- L["After this you'll have %s of the %s for your level %d mount."] = "..."
 
 -- Skip list revisions: the reasons a rank is skipped, where a skip came from, and the notice and replies about them.
 -- The numbers (%d) are filled in by the addon; keep them in your translation.

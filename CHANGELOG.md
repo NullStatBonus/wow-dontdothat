@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.0
+
+- **New: The "Buy anyway?" question shows your mount fund.** If a purchase leaves you short of your next mount, the question says so. For example: "After this you'll have 61g of the 100g for your level 40 mount." The line does not show when you still have enough gold. It also does not show after the mount stop point.
+- **Changed: The demo is slower.** `/ddt demo` shows one sample at a time, five seconds apart. A chat line tells you what each sample is. The demo takes about 40 seconds. The sample question also shows the mount fund line.
+
 ## 0.12.3
 
 - Changed: The spell data now comes from WoW Forever build 1.60.1.70959. In this build, the Rogue spell Shank has two ranks. The addon now knows both ranks. Classic Era has no spell changes.

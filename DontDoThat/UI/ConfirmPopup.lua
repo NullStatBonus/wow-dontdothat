@@ -71,10 +71,29 @@ function Popup.Show(text, onConfirm, onCancel)
   return true
 end
 
+-- "After this you'll have 61g of the 100g for your level 40 mount.", or nil when the player still has enough
+-- after paying, or when the price, gold or goal is unknown.
+function Popup.FundLine(cost, env)
+  env = env or _G
+  if type(cost) ~= "number" or cost <= 0 or not ns.Milestones or type(env.GetMoney) ~= "function" then return nil end
+  local ok, level, goal = pcall(ns.Milestones.Target, env)
+  if not (ok and level) then return nil end
+  local okMoney, have = pcall(env.GetMoney)
+  if not okMoney or type(have) ~= "number" then return nil end
+  local left = math.max(have - cost, 0)
+  if left >= goal then return nil end
+  local money = ns.UIHelpers.FormatMoney
+  return L["After this you'll have %s of the %s for your level %d mount."]:format(money(left), money(goal), level)
+end
+
 -- The "Buy anyway?" question for a flagged purchase.
 function Popup.Ask(verdict, onConfirm, onCancel)
   local head = ns.UIHelpers.BannerText(verdict)
   local reason = verdict and verdict.reason or ""
-  local earn = ns.EarnBack and ns.EarnBack.Line(verdict and verdict.cost)
-  return Popup.Show(head .. "\n\n" .. tostring(reason) .. (earn and ("\n\n" .. earn) or "") .. "\n\n" .. L["Buy anyway?"], onConfirm, onCancel)
+  local cost = verdict and verdict.cost
+  local earn = ns.EarnBack and ns.EarnBack.Line(cost)
+  local okFund, fund = pcall(Popup.FundLine, cost)
+  fund = okFund and fund or nil
+  return Popup.Show(head .. "\n\n" .. tostring(reason) .. (earn and ("\n\n" .. earn) or "") .. (fund and ("\n\n" .. fund) or "")
+    .. "\n\n" .. L["Buy anyway?"], onConfirm, onCancel)
 end
