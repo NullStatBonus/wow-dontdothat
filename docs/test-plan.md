@@ -201,7 +201,13 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] WoW Forever, a character with savings and a non-default profile: turn off every addon that ships the newer library (Closest Vendor, KeepThat), `/reload`. Progress and the profile are unchanged. Turn them on again, `/reload`: still unchanged.
 
 ## 22. Reset all settings takes effect at once
-- [ ] Reset all settings, then (no `/reload`) buy a piece of armor over 1 silver at a vendor and answer No. Send saved variables: the character's `itemsAvoided` went up by one, and the profile holds no `itemModes` or `minPrice`.
+Each check starts with Home > **Reset all settings** and no `/reload` before the action.
+- [ ] Reset, then buy a piece of armor over 1 silver at a vendor and answer No. Then `/reload` and send saved variables.
+  Check: the question shows. The character's ledger `itemsAvoided` is one higher, and the profile has no `itemModes` or `minPrice`.
+- [ ] Type `/ddt revision 1`, reset, then open Advanced > Classes > your class.
+  Check: the "Ranks to skip follow skip list revision N" line names the same revision as `/ddt revision`, not 1.
+- [ ] Appearance > Warnings > **Move**, drag the toast away, then reset. Then `/ddt preview toast`, `/reload` and send saved variables.
+  Check: the Move box closes and the sample toast shows at top center. The profile has no `toast.point`.
 
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.
