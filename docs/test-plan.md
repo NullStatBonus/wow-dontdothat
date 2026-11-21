@@ -198,6 +198,7 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] WoW Forever, a character with savings on Progress and a profile other than Default: after the update, Progress shows the same savings and observed prices, and the same profile is in use.
 - [ ] WoW Forever, the same character: pick another profile, `/reload`. The profile you picked stays.
 - [ ] Classic Era: savings and profile are unchanged after the update.
+- [ ] WoW Forever, a character with savings and a non-default profile: turn off every addon that ships the newer library (Closest Vendor, KeepThat), `/reload`. Progress and the profile are unchanged. Turn them on again, `/reload`: still unchanged.
 
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.

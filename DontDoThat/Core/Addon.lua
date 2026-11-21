@@ -65,8 +65,8 @@ function addon:OnInitialize()
     ns.db = self.db
     -- Before anything reads db.char or classifies the profile: follow a change of the character key.
     if ns.Settings and ns.Adapter then
-        local okKey, oldKey = pcall(ns.Adapter.ReadLegacyCharKey, _G)
-        if okKey then pcall(ns.Settings.MigrateCharKey, self.db.sv, self.db, oldKey) end
+        local okKeys, keys = pcall(ns.Adapter.ReadCharKeys, _G)
+        if okKeys then pcall(ns.Settings.MigrateCharKeys, self.db.sv, self.db, keys) end
     end
     if ns.Settings then
         local ok, name = pcall(self.db.GetCurrentProfile, self.db)

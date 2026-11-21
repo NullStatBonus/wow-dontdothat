@@ -91,12 +91,15 @@ local GLOBALS = { "LibStub", "GetRealmName", "UnitName", "UnitNameUnmodified", "
 local function cleanup() for _, k in ipairs(GLOBALS) do _G[k] = nil end end
 
 local logout
-local function login(forever)
+-- mode "forever": AceDB 40 on Forever. "era": Classic Era. "older": WoW Forever with a library that ignores regional
+-- names (AceDB 33): AceDB loads with RegionalUniqueNamesEnabled missing, so its key is "Name - Realm".
+local function login(mode)
+  local forever = mode == "forever" or mode == "older"
   _G.LibStub = nil
   _G.GetRealmName = function() return "Realm" end
   _G.UnitName = function() return "Hero" end
   _G.UnitNameUnmodified = function() if forever then return "Hero", "Surname" end return "Hero" end
-  _G.RegionalUniqueNamesEnabled = function() return forever end
+  _G.RegionalUniqueNamesEnabled = mode ~= "older" and function() return forever end or nil
   _G.C_GameRules = { IsGameRuleActive = function() return false end }
   _G.Enum = { GameRule = { RPRuleset = 1, PvPRuleset = 2, HardcoreRuleset = 3 } }
   _G.strlenutf8 = function(s) return #s end
@@ -116,7 +119,9 @@ local function login(forever)
   H.load("DontDoThat/Model/Settings.lua", ns)
   H.load("DontDoThat/Intercepts/Adapter.lua", ns)
   local db = _G.LibStub("AceDB-3.0"):New("DontDoThatDB", { profile = { alerts = true }, char = { ledger = {} } }, true)
-  ns.Settings.MigrateCharKey(db.sv, db, ns.Adapter.ReadLegacyCharKey(_G))
+  if mode == "older" then _G.RegionalUniqueNamesEnabled = function() return true end end -- the client still has it
+  -- As Core/Addon.lua OnInitialize does it.
+  ns.Settings.MigrateCharKeys(db.sv, db, ns.Adapter.ReadCharKeys(_G))
   return db
 end
 
@@ -130,24 +135,24 @@ end
 
 test("AceDB 40 on Forever: savings, prices and profile choice survive; a second login changes nothing", function()
   _G.DontDoThatDB = savedUnderOldKey()
-  local db = login(true)
+  local db = login("forever")
   eq(db.keys.char, NEW)
   eq(db.char.ledger.saved, 1234); eq(db.char.costCache["spell:1"], 100)
   eq(db:GetCurrentProfile(), "Alt"); eq(db.profile.alerts, false)
   eq(_G.DontDoThatDB.profileKeys[OLD], nil); eq(_G.DontDoThatDB.char[OLD], nil)
   logout(nil, "PLAYER_LOGOUT")
-  db = login(true)
+  db = login("forever")
   eq(db.char.ledger.saved, 1234); eq(db:GetCurrentProfile(), "Alt")
   db:SetProfile("Default")
   logout(nil, "PLAYER_LOGOUT")
-  db = login(true)
+  db = login("forever")
   eq(db:GetCurrentProfile(), "Default", "a profile picked after the move stays")
   cleanup()
 end)
 
 test("AceDB 40 on Era: the keys are equal and nothing moves", function()
   _G.DontDoThatDB = savedUnderOldKey()
-  local db = login(false)
+  local db = login("era")
   eq(db.keys.char, OLD)
   eq(db.char.ledger.saved, 1234); eq(db:GetCurrentProfile(), "Alt")
   eq(_G.DontDoThatDB.profileKeys[OLD], "Alt")
@@ -156,7 +161,63 @@ end)
 
 test("AceDB 40 on Forever: a fresh install loads without error", function()
   _G.DontDoThatDB = {}
-  local db = login(true)
+  local db = login("forever")
   eq(db:GetCurrentProfile(), "Default"); eq(type(db.char.ledger), "table")
   cleanup()
+end)
+
+test("adapter: candidate keys are Name - Realm, plus Name Surname with regional names", function()
+  local ns = {}
+  H.load("DontDoThat/Intercepts/Adapter.lua", ns)
+  local A = ns.Adapter
+  local function env(regional, surname)
+    return { UnitName = function() return "Hero" end, GetRealmName = function() return "Realm" end,
+      RegionalUniqueNamesEnabled = regional, UnitNameUnmodified = function() return "Hero", surname end }
+  end
+  eq(A.ReadCharKeys(env(function() return true end, "Surname")), { OLD, NEW })
+  eq(A.ReadCharKeys(env(function() return false end, "Surname")), { OLD }, "regional names off")
+  eq(A.ReadCharKeys(env(nil, "Surname")), { OLD }, "no RegionalUniqueNamesEnabled")
+  eq(A.ReadCharKeys(env(function() return true end, nil)), { OLD }, "no surname")
+  eq(A.ReadCharKeys(env(function() return true end, "")), { OLD }, "empty surname")
+  eq(A.ReadCharKeys(env(function() error("x") end, "Surname")), { OLD }, "an erroring call")
+  eq(A.ReadCharKeys({}), {}, "nothing readable")
+end)
+
+test("older library on Forever: data saved under Name Surname comes back, then moves forward again", function()
+  _G.DontDoThatDB = savedUnderOldKey()
+  local db = login("forever")
+  eq(db.keys.char, NEW); eq(db.char.ledger.saved, 1234)
+  logout(nil, "PLAYER_LOGOUT")
+  db = login("older")
+  eq(db.keys.char, OLD)
+  eq(db.char.ledger.saved, 1234); eq(db.char.costCache["spell:1"], 100)
+  eq(db:GetCurrentProfile(), "Alt")
+  eq(_G.DontDoThatDB.char[NEW], nil); eq(_G.DontDoThatDB.profileKeys[NEW], nil)
+  logout(nil, "PLAYER_LOGOUT")
+  db = login("older")
+  eq(db.char.ledger.saved, 1234, "a second login with the older library changes nothing")
+  logout(nil, "PLAYER_LOGOUT")
+  db = login("forever")
+  eq(db.keys.char, NEW)
+  eq(db.char.ledger.saved, 1234); eq(db:GetCurrentProfile(), "Alt")
+  eq(_G.DontDoThatDB.char[OLD], nil); eq(_G.DontDoThatDB.profileKeys[OLD], nil)
+  cleanup()
+end)
+
+test("older library on Forever: with data under both keys, both stay as they are", function()
+  _G.DontDoThatDB = savedUnderOldKey()
+  _G.DontDoThatDB.char[NEW] = { ledger = { saved = 7 } }
+  local db = login("older")
+  eq(db.char.ledger.saved, 1234)
+  eq(_G.DontDoThatDB.char[NEW].ledger.saved, 7)
+  cleanup()
+end)
+
+test("MigrateCharKeys: tries each key, tolerates a bad list", function()
+  local S = settings()
+  local sv = { char = { [NEW] = { ledger = { saved = 1 } } } }
+  local db = fakeDb(sv, OLD)
+  truthy(S.MigrateCharKeys(sv, db, { OLD, NEW }))
+  eq(sv.char[OLD].ledger.saved, 1)
+  falsy(S.MigrateCharKeys(sv, db, nil))
 end)
