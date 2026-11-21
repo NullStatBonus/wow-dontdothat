@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.2
+
+- **Fixed: On WoW Forever, each character keeps its savings and profile when you turn off an addon.** Some addons, such as Closest Vendor and KeepThat, bring a newer settings library. When you turn them off, the game uses the older library again. The addon now moves your data back to the name that library uses.
+
 ## 0.13.1
 
 - **Fixed: On WoW Forever, each character keeps its savings and profile.** A newer settings library saves characters under a new name. The addon now moves your data to that name once.

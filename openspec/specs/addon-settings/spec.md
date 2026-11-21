@@ -358,11 +358,19 @@ The system SHALL show on the Rules page the revision in use and, for every rank 
 - **THEN** Ranks to skip lists revision 1's ranks with the reason revision 1 records for each
 
 ### Requirement: Character data survives a character-key change
-When the settings library files this character under a different key than the `Name - Realm` key older versions used, the system SHALL move the character's saved data (savings ledger, observed prices, mount marks, profession answers) and profile choice to the new key at login, before anything reads them. It SHALL act at most once per character, SHALL NOT overwrite data already saved under the new key, and SHALL change nothing when the two keys are equal.
+When the settings library files this character under a different key than one used before (`Name - Realm`, or on WoW Forever `Name Surname`), the system SHALL move the character's saved data (savings ledger, observed prices, mount marks, profession answers) and profile choice to the key in use at login, before anything reads them. It SHALL act at most once per key change, SHALL NOT overwrite data saved under the key in use, and SHALL change nothing when the keys are equal.
 
 #### Scenario: WoW Forever character after the library update
 - **WHEN** a WoW Forever character with savings and a chosen profile saved under `Name - Realm` logs in and the loaded library uses `Name Surname`
 - **THEN** Progress shows the same savings and observed prices, and the character uses the same profile as before
+
+#### Scenario: Back to the older library
+- **WHEN** a WoW Forever character with savings and a chosen profile saved under `Name Surname` logs in and the loaded library uses `Name - Realm` again
+- **THEN** Progress shows the same savings and observed prices, and the character uses the same profile as before
+
+#### Scenario: Forward again
+- **WHEN** the same character later logs in with a library that uses `Name Surname` again
+- **THEN** the data and profile choice move back, and nothing is left under `Name - Realm`
 
 #### Scenario: Later logins
 - **WHEN** the same character logs in again after the move

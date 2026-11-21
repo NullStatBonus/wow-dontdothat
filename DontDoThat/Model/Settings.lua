@@ -201,6 +201,17 @@ function Settings.MigrateCharKey(sv, db, oldKey)
   return moved
 end
 
+-- MigrateCharKey for each earlier key in turn, so the data follows the loaded library in either direction. The key
+-- in use is skipped; with two candidates holding data, the first moves and the second is never copied over it.
+function Settings.MigrateCharKeys(sv, db, keys)
+  local moved = false
+  for _, key in ipairs(type(keys) == "table" and keys or {}) do
+    local ok, did = pcall(Settings.MigrateCharKey, sv, db, key)
+    moved = moved or (ok and did) or false
+  end
+  return moved
+end
+
 function Settings.ResetAll(p)
   p = p or saved()
   if not p then return end

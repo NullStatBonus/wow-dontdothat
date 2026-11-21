@@ -155,6 +155,21 @@ function Adapter.ReadLegacyCharKey(env)
   return name .. " - " .. realm
 end
 
+-- Every key a settings-library version may have filed this character under: "Name - Realm", and on WoW Forever
+-- (regional unique names) "Name Surname". Missing or unreadable parts are left out.
+function Adapter.ReadCharKeys(env)
+  env = env or _G
+  local keys = {}
+  keys[#keys + 1] = Adapter.ReadLegacyCharKey(env)
+  if call(env, "RegionalUniqueNamesEnabled") == true then
+    local name, surname = call(env, "UnitNameUnmodified", "player")
+    if type(name) == "string" and name ~= "" and type(surname) == "string" and surname ~= "" then
+      keys[#keys + 1] = name .. " " .. surname
+    end
+  end
+  return keys
+end
+
 function Adapter.ReadPlayer(env)
   env = env or _G
   local _, class = call(env, "UnitClass", "player")
