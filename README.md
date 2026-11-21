@@ -68,6 +68,8 @@ For COD mail and talent and pet resets, the game's own question stays on screen 
 
 The Progress page adds up the gold you kept.
 It also shows how close you are to your mount.
+On Classic Era the level 40 goal is 100g (20g riding, 80g mount) and the level 60 goal is 1,000g.
+The goal is 10% lower at Honored with your home city. On Classic Era, PvP rank 3 takes off another 10%. Progress shows the discount.
 
 ## How the advice is made
 

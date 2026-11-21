@@ -14,18 +14,23 @@ local function literal(src, i)
 end
 
 -- Adds every L["..."] key in one source file to `used`.
-local function scan(path, used)
+local function scan(path, used, invalid)
   local f = io.open(path); local src = f:read("*a"); f:close()
   local pos = 1
   while true do
-    local s, e = src:find("%f[%w_]L%[", pos)
+    local s, e = src:find("%f[%w_]L%s*%[%s*", pos)
     if not s then break end
     local c = src:sub(e + 1, e + 1)
     if c == '"' or c == "'" then
       local value, after = literal(src, e + 1)
-      if type(value) == "string" then used[value] = true end
+      if type(value) == "string" and src:find("^%s*%]", after) then
+        used[value] = true
+      elseif invalid then
+        invalid[#invalid + 1] = path .. ": " .. src:sub(s):match("^[^\n]*")
+      end
       pos = after
     else
+      if invalid then invalid[#invalid + 1] = path .. ": " .. src:sub(s):match("^[^\n]*") end
       pos = e + 1
     end
   end
@@ -33,11 +38,11 @@ end
 
 -- Every L["..."] key in the addon source under dir (libraries and locale files excluded).
 function M.usedKeys(dir)
-  local used = {}
+  local used, invalid = {}, {}
   local p = io.popen('find "' .. dir .. '" -name "*.lua" -not -path "*/Libs/*" -not -path "*/Locales/*"')
-  for path in p:lines() do scan(path, used) end
+  for path in p:lines() do scan(path, used, invalid) end
   p:close()
-  return used
+  return used, invalid
 end
 
 -- The keys one source file asks for.

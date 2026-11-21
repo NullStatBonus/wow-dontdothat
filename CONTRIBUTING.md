@@ -38,6 +38,7 @@ Behavior is specified in `openspec/specs/`. A change to behavior goes through an
 ## Code
 
 - **Match the surrounding code**: naming, comment density and idiom. Keep changes small and focused.
+- The project rules for docs, tests and code are in [AGENTS.md](AGENTS.md). In short:
 - **Keep the game out of the logic.** `DontDoThat/Rules/` and `DontDoThat/Model/` are plain Lua with no client calls, so they can be tested. All client API reads go through `DontDoThat/Intercepts/Adapter.lua`, wrapped in `pcall`, so a missing or changed function degrades to "no data" instead of an error.
 - **Write tests** for every behavior change in `tests/` (one `*_test.lua` per area). New rule data needs the per-class tests to pass: every spell family must be classified.
 - **Settings pages** are built with the shared `newPage` builder in `DontDoThat/Options/Options.lua`. Use its helpers for spacing, notes and amounts so every page looks the same.
@@ -54,8 +55,7 @@ Behavior is specified in `openspec/specs/`. A change to behavior goes through an
 
 ## Versions and releases
 
-- Bump `## Version:` in **both** TOC files to the same value when a change's specs are applied. Before 1.0.0 a new capability or user-visible feature raises the minor number and a fix to existing behavior raises the patch number.
-- Add one line for the version to `CHANGELOG.md`.
+- Versioning and the `CHANGELOG.md` format follow the rules in [AGENTS.md](AGENTS.md) (OpenSpec, Git, and releases). `make check` fails when the TOC version has no changelog section.
 - Releases are tagged `vX.Y.Z` on the commit that carries the bump; see `docs/publishing.md`. Maintainers publish.
 
 ## Commits and pull requests
