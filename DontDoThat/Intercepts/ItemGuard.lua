@@ -9,11 +9,12 @@ local Guard = {}
 ns.ItemGuard = Guard
 
 local disabledReason
-local pending -- spend waiting for the money drop: { amount, before, counted, t }
+local pending -- purchases waiting for the money drop: { amount, before, counted, expires }
+local bidDebit, lastMoney -- see NoteSpend
 local buying = false -- true while our purchase call runs, so a blocked "UNKNOWN()" call is known to be ours
 local trace -- defined below
 
-function Guard.Reset() disabledReason = nil; pending = nil end
+function Guard.Reset() disabledReason = nil; pending = nil; bidDebit = nil; lastMoney = nil end
 function Guard.DisabledReason() return disabledReason end
 
 function Guard.Disable(reason)
@@ -50,38 +51,63 @@ local function now() return ns.Adapter.ReadTime() or 0 end
 
 local function money() return ns.Adapter.ReadMoney() end
 
+-- Each purchase waits in its own entry with its own deadline. The money level last seen is the baseline for the
+-- next drop. A known bid raises a debit allowance that is taken off a drop before purchases settle, so the
+-- gold a bid takes never settles an earlier purchase that failed.
 function Guard.NoteSpend(amount, isBid, before)
+  if type(amount) ~= "number" then return end
+  if not before then
+    if isBid and ns.Log then ns.Log.Add("items: bid of %s is not counted as spent", tostring(amount)) end
+    return
+  end
+  if not pending then pending = {} end
+  if #pending == 0 and not (bidDebit and bidDebit.amount > 0) then lastMoney = before end
   if isBid then
+    bidDebit = { amount = (bidDebit and bidDebit.amount or 0) + amount, expires = now() + SPEND_WINDOW }
     if ns.Log then ns.Log.Add("items: bid of %s is not counted as spent", tostring(amount)) end
     return
   end
-  if not before or type(amount) ~= "number" then return end
-  -- Purchases close together share one slot: the server may not have taken the first price yet.
-  if pending and now() - pending.t <= SPEND_WINDOW then
-    pending.amount, pending.t = pending.amount + amount, now()
-  else
-    pending = { amount = amount, before = before, counted = 0, t = now() }
-  end
-  if ns.Log then ns.Log.Add("items: spend of %d pending (money %d)", amount, pending.before) end
+  pending[#pending + 1] = { amount = amount, before = before, counted = 0, expires = now() + SPEND_WINDOW }
+  if ns.Log then ns.Log.Add("items: spend of %d pending (money %d)", amount, before) end
 end
 
 function Guard.OnMoney()
-  local p = pending
-  if not p then return end
   local current = money()
-  if now() - p.t > SPEND_WINDOW then
-    pending = nil
-    if ns.Log then ns.Log.Add("items: pending spend of %d expired, not counted", p.amount) end
-    return
+  local list = pending or {}
+  local t = now()
+  local kept = {}
+  for _, e in ipairs(list) do
+    if t > e.expires then
+      if ns.Log then ns.Log.Add("items: pending spend of %d expired, not counted", e.amount) end
+    else
+      kept[#kept + 1] = e
+    end
   end
-  local drop = current and (p.before - current) or 0
-  local spent = math.min(drop, p.amount) - p.counted
-  if spent <= 0 then return end
-  p.counted = p.counted + spent
-  if p.counted >= p.amount then pending = nil end
-  local state = ledgerState()
-  if state then ns.Ledger.RecordItemPerformed(state, spent) end
-  if ns.Log then ns.Log.Add("items: spent %d counted (money dropped %d, price %d)", spent, drop, p.amount) end
+  pending = kept
+  if bidDebit and t > bidDebit.expires then bidDebit = nil end
+  local previous = lastMoney
+  lastMoney = current
+  if not current or not previous then return end
+  local drop = math.max(previous - current, 0)
+  if bidDebit then
+    local taken = math.min(drop, bidDebit.amount)
+    drop = drop - taken
+    bidDebit.amount = bidDebit.amount - taken
+    if bidDebit.amount <= 0 then bidDebit = nil end
+  end
+  local available, remaining = drop, {}
+  for _, e in ipairs(pending) do
+    local spent = math.min(available, e.amount - e.counted)
+    if spent > 0 then
+      available = available - spent
+      e.counted = e.counted + spent
+      local state = ledgerState()
+      if state then ns.Ledger.RecordItemPerformed(state, spent) end
+      if ns.Log then ns.Log.Add("items: spent %d counted (money dropped %d, price %d)", spent, drop, e.amount) end
+    end
+    if e.counted < e.amount then remaining[#remaining + 1] = e end
+  end
+  pending = remaining
 end
 
 -- Runs the purchase, then notes it as a pending spend unless it was dropped (proceed returned false).

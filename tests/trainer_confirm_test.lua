@@ -90,6 +90,48 @@ test("accepting with the selection unchanged runs Blizzard's handler", function(
   eq(boughtIndex, {})
 end)
 
+local function listEnv(env, rows)
+  env.GetNumTrainerServices = function() return #rows end
+  env.GetTrainerServiceInfo = function(i) local r = rows[i]; if r then return r[1], r[2], r[3] end end
+  env.GetTrainerServiceCost = function(i) return rows[i] and rows[i][4] end
+  env.BuyTrainerService = function(i) env.boughtIdx = env.boughtIdx or {}; env.boughtIdx[#env.boughtIdx + 1] = i end
+end
+
+test("a list that shifted while the question was open buys the matching row, not the one now at the index", function()
+  local logs = {}
+  local ns, env, button, rec = setup({ verdicts = { [5] = DEFER } })
+  ns.Log.Add = function(fmt, ...) logs[#logs + 1] = string.format(fmt, ...) end
+  local rows = { { "H", "", "header" }, { "A", "Rank 1", "available", 10 }, { "B", "", "available", 20 },
+    { "C", "", "available", 30 }, { "Shot", "Rank 2", "available", 600 } }
+  listEnv(env, rows)
+  env.ClassTrainerFrame.selectedService = 5
+  ns.TrainerConfirm.Install(env)
+  button.script(button, "LeftButton")
+  -- a category collapses: the rows above close up, so index 5 is gone and the shot sits at 3
+  local shifted = { rows[1], rows[2], rows[5] }
+  listEnv(env, shifted)
+  env.ClassTrainerFrame.selectedService = 3
+  rec.asks[1].confirm()
+  eq(env.boughtIdx, { 3 })
+  eq(#rec.bought, 0)
+end)
+
+test("a shifted list with another row at the saved index never buys that row", function()
+  local logs = {}
+  local ns, env, button, rec = setup({ verdicts = { [5] = DEFER } })
+  ns.Log.Add = function(fmt, ...) logs[#logs + 1] = string.format(fmt, ...) end
+  listEnv(env, { { "A", "", "available", 1 }, { "B", "", "available", 2 }, { "C", "", "available", 3 },
+    { "D", "", "available", 4 }, { "Shot", "Rank 2", "available", 600 } })
+  ns.TrainerConfirm.Install(env)
+  button.script(button, "LeftButton")
+  listEnv(env, { { "A", "", "available", 1 }, { "B", "", "available", 2 }, { "C", "", "available", 3 },
+    { "D", "", "available", 4 }, { "Other", "", "available", 9 } })
+  rec.asks[1].confirm()
+  eq(env.boughtIdx, nil, "nothing bought")
+  eq(#rec.bought, 0, "Blizzard's handler not run either")
+  eq(logs[#logs], "confirm: the trainer list changed while the question was open, nothing bought")
+end)
+
 test("declining never runs the original", function()
   local ns, env, button, rec = setup({ verdicts = { [5] = DEFER } })
   ns.TrainerConfirm.Install(env)

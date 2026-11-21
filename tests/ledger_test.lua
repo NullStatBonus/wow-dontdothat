@@ -132,6 +132,16 @@ test("a finished mount goal keeps the amounts from the last run while it was act
   -- After the mount the player buys the ranks the addon held back, as advised: they do not count as spent.
   r = L.Compute(finished, { svc(3, { cost = 100, learned = true }), svc(4, { cost = 200, learned = true }) }, engine, {}, state)
   eq(r.verified, 100); eq(r.spentAgainst, 200)
-  r = L.Compute(finished, { svc(3, { cost = 100 }) }, engine, {}, L.NewState())
-  eq(r.verified, 0, "without a saved run (Start the count over), a finished goal counts nothing")
+end)
+test("a finished goal with no saved run is judged once as if active and saved", function()
+  local engine = { Evaluate = function(p)
+    if p.milestone and p.milestone.state == "active" then return { tier = "defer" } end
+    return { tier = "keep" }
+  end }
+  local finished = { class = "TEST", level = 60, milestone = { current = nil, state = "finished" } }
+  local state = L.NewState()
+  local r = L.Compute(finished, { svc(3, { cost = 100 }), svc(3, { cost = 100, learned = true }) }, engine, {}, state)
+  eq(r.projected + r.verified + r.spentAgainst > 0, true, "not zero")
+  eq(state.lastActive, r, "saved for later calls")
+  eq(finished.milestone.state, "finished", "the caller's profile is untouched")
 end)

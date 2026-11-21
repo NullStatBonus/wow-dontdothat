@@ -20,7 +20,7 @@ local function legacy(rows)
   env.GetAuctionItemInfo = function(_, i)
     local r = rows[i]
     if not r then return nil end
-    return r.name, 0, 1, 1, true, 1, "", 100, 10, r.buyout, 0, nil, nil, r.owner
+    return r.name, 0, r.count or 1, 1, true, 1, "", 100, 10, r.buyout, 0, nil, nil, r.owner
   end
   env.GetAuctionItemLink = function(_, i) return rows[i] and rows[i].link end
   env.PlaceAuctionBid = function(t, i, amount) env.bought[#env.bought + 1] = { t, i, amount } end
@@ -115,4 +115,37 @@ test("modern PlaceBid: accepting after the auction changed drops the purchase", 
   info = { itemLink = "|Hitem:1|h[A]|h", buyoutAmount = 500 }
   runs[1].proceed()
   eq(#placed, 1)
+end)
+
+test("legacy: a different stack size at the same index drops the purchase", function()
+  local rows = { { name = "A", link = "|Hitem:1|h[A]|h", buyout = 500, owner = "X", count = 20 } }
+  local env = legacy(rows)
+  local runs = {}
+  for _, listType in ipairs({ "list", "bidder" }) do
+    local ns = setup(env, runs)
+    ns.ItemGuard.Run = function(_, _, _, _, proceed) runs[#runs + 1] = { proceed = proceed } end
+    env.PlaceAuctionBid(listType, 1, 500)
+    rows[1].count = 1 -- a sort put a 1-stack at the same price here
+    eq(runs[#runs].proceed(), false, listType)
+    eq(#env.bought, 0)
+    rows[1].count = 20
+    runs[#runs].proceed()
+    eq(#env.bought, 1)
+    env.bought = {}
+    ns.Auction.Reset(); env.PlaceAuctionBid = function(t, i, a) env.bought[#env.bought + 1] = { t, i, a } end
+  end
+end)
+
+test("modern PlaceBid: a changed quantity drops the purchase", function()
+  local info = { itemLink = "|Hitem:1|h[A]|h", buyoutAmount = 500, quantity = 20 }
+  local placed = {}
+  local env = { C_AuctionHouse = { GetAuctionInfoByID = function() return info end,
+    PlaceBid = function(id, amount) placed[#placed + 1] = { id, amount } end } }
+  local runs = {}
+  local ns = setup(env, runs)
+  ns.ItemGuard.Run = function(_, _, _, _, proceed) runs[#runs + 1] = { proceed = proceed } end
+  env.C_AuctionHouse.PlaceBid(7, 500)
+  info = { itemLink = "|Hitem:1|h[A]|h", buyoutAmount = 500, quantity = 1 }
+  eq(runs[1].proceed(), false)
+  eq(#placed, 0)
 end)

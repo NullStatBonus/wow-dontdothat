@@ -129,6 +129,36 @@ local function run(env, verdict, proceed, ...)
   end
 end
 
+-- The identity of the trainer row at an index (name, rank text, cost), or nil when the client does not give it.
+local function rowIdentity(env, index)
+  if type(env.GetTrainerServiceInfo) ~= "function" then return nil end
+  local ok, a, b, c, d = pcall(env.GetTrainerServiceInfo, index)
+  if not ok or a == nil then return nil end
+  local name, sub, kind = a, b, c
+  if ns.Adapter and ns.Adapter.TrainerServiceInfo then name, sub, kind = ns.Adapter.TrainerServiceInfo(a, b, c, d) end
+  local cost
+  if type(env.GetTrainerServiceCost) == "function" then
+    local okc, value = pcall(env.GetTrainerServiceCost, index)
+    if okc then cost = value end
+  end
+  return { name = name, sub = sub or "", cost = cost, header = kind == "header" }
+end
+
+local function sameRow(a, b)
+  return a and b and not b.header and a.name == b.name and a.sub == b.sub and a.cost == b.cost
+end
+
+-- Where the service the question was about is now: its saved index if the row there still matches, else the
+-- index of the matching row (a collapsed or expanded category moves rows), else nil.
+local function findService(env, index, wanted)
+  if sameRow(wanted, rowIdentity(env, index)) then return index end
+  local okn, count = pcall(env.GetNumTrainerServices or function() end)
+  if not okn or type(count) ~= "number" then return nil end
+  for i = 1, count do
+    if sameRow(wanted, rowIdentity(env, i)) then return i end
+  end
+end
+
 -- original(self, ...) is the Train button's own handler.
 function Confirm.Handle(env, original, button, ...)
   local ok, verdict, index = pcall(Confirm.Decide, env)
@@ -138,10 +168,20 @@ function Confirm.Handle(env, original, button, ...)
   end
   -- Buy the service the question was about, not whatever is selected by the time the player accepts. While the
   -- selection is unchanged, Blizzard's handler runs (it also shows the profession-slot dialog and refreshes the list).
+  local wanted = type(index) == "number" and rowIdentity(env, index) or nil
   return run(env, verdict, function(...)
-    if type(env.BuyTrainerService) == "function" and type(index) == "number" and selectedIndex(env) ~= index then
-      if ns.Log then ns.Log.Add("confirm: buying the service chosen when asked (%s)", tostring(index)) end
-      return env.BuyTrainerService(index)
+    local target = index
+    if wanted then
+      target = findService(env, index, wanted)
+      if not target then
+        if ns.Log then ns.Log.Add("confirm: the trainer list changed while the question was open, nothing bought") end
+        return
+      end
+    end
+    if type(env.BuyTrainerService) == "function" and type(target) == "number"
+      and (target ~= index or selectedIndex(env) ~= index) then
+      if ns.Log then ns.Log.Add("confirm: buying the service chosen when asked (%s)", tostring(target)) end
+      return env.BuyTrainerService(target)
     end
     return original(button, ...)
   end, ...)

@@ -132,6 +132,13 @@ function Tally.ObserveLive(env, trainer)
   for _, row in ipairs(trainer.rows) do
     if not row.header and row.cost then ns.Ledger.RecordCost(db.costCache, row.familyId, row.rank, row.cost) end
   end
+  -- Keep the finished-goal snapshot current: it is what the Tally shows once the mount is bought.
+  if ns.Context and ns.Context.Profile and db.ledger then
+    local ok, profile = pcall(ns.Context.Profile, env)
+    if ok and profile and profile.milestone and profile.milestone.state == "active" then
+      pcall(Tally.Compute, profile, db.catalog, db.ledger, db.costCache, env)
+    end
+  end
 end
 
 local function money(copper)

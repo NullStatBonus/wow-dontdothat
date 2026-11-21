@@ -46,6 +46,7 @@ local function installModern(env)
       local ok, info = pcall(api.GetAuctionInfoByID, auctionID)
       local link = ok and type(info) == "table" and info.itemLink or nil
       local buyout = ok and type(info) == "table" and info.buyoutAmount or nil
+      local quantity = ok and type(info) == "table" and info.quantity or nil
       if not link or type(amount) ~= "number" then
         pcall(ns.ItemGuard.Trace, { surface = "ah", total = type(amount) == "number" and amount or nil,
           outcome = "passed through: could not read the auction" })
@@ -55,7 +56,8 @@ local function installModern(env)
       return ns.ItemGuard.Run("ah", nameOf(link), link, amount, function()
         -- The question may have stayed open while the auction changed hands or sold.
         local okNow, now = pcall(api.GetAuctionInfoByID, auctionID)
-        if not okNow or type(now) ~= "table" or now.itemLink ~= link or now.buyoutAmount ~= buyout then
+        if not okNow or type(now) ~= "table" or now.itemLink ~= link or now.buyoutAmount ~= buyout
+          or (quantity ~= nil and now.quantity ~= nil and now.quantity ~= quantity) then
           if ns.Log then ns.Log.Add("items: auction %s changed while the question was open, purchase dropped", tostring(auctionID)) end
           return false
         end
@@ -97,11 +99,11 @@ local function installModern(env)
   return false
 end
 
--- ok, name, buyoutPrice, owner from GetAuctionItemInfo (returns: name, texture, count, quality, canUse, level,
+-- ok, name, buyoutPrice, owner, count from GetAuctionItemInfo (returns: name, texture, count, quality, canUse, level,
 -- levelColHeader, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, bidderFullName, owner, ...).
 local function readRow(env, listType, index)
   local r = { pcall(env.GetAuctionItemInfo, listType, index) }
-  return r[1], r[2], r[11], r[15]
+  return r[1], r[2], r[11], r[15], r[4]
 end
 
 function Auction.Install(env)
@@ -122,7 +124,7 @@ function Auction.Install(env)
         outcome = "passed through: list type " .. tostring(listType) .. " / amount " .. type(amount) })
       return original(listType, index, amount, ...)
     end
-    local ok, name, buyout, owner = readRow(env, listType, index)
+    local ok, name, buyout, owner, count = readRow(env, listType, index)
     if not ok or not name then
       pcall(ns.ItemGuard.Trace, { surface = "ah", total = amount, outcome = "passed through: could not read the auction" })
       return original(listType, index, amount, ...)
@@ -133,9 +135,9 @@ function Auction.Install(env)
     return ns.ItemGuard.Run("ah", name, link, amount, function()
       -- The list may have changed (new search, sort, page) while the question was open; the index would then
       -- name another auction.
-      local okNow, nowName, nowBuyout, nowOwner = readRow(env, listType, index)
+      local okNow, nowName, nowBuyout, nowOwner, nowCount = readRow(env, listType, index)
       local nowLink = type(env.GetAuctionItemLink) == "function" and env.GetAuctionItemLink(listType, index) or nil
-      if not okNow or nowName ~= name or nowLink ~= link or nowBuyout ~= buyout
+      if not okNow or nowName ~= name or nowLink ~= link or nowBuyout ~= buyout or nowCount ~= count
         or (owner ~= nil and nowOwner ~= nil and nowOwner ~= owner) then -- a seller name can load late
         if ns.Log then ns.Log.Add("items: auction %s %s changed while the question was open, purchase dropped",
           tostring(listType), tostring(index)) end

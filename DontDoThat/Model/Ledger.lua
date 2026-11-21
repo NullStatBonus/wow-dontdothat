@@ -116,10 +116,17 @@ function Ledger.IsDeferTier(tier) return tier == "defer" or tier == "deferLow" e
 
 -- state (optional, the saved ledger): while the mount goal runs, the result is kept in state.lastActive. Once the
 -- goal is finished every spell is "keep", so the amounts from the last run while it was active are shown instead.
+-- A finished goal with no saved run (never viewed, or the count was started over) is judged once as if it were
+-- still active and the result is saved, so the totals are never zero just because nothing was recorded in time.
 function Ledger.Compute(profile, services, engine, costCache, state)
   local active = profile.milestone and profile.milestone.state == "active"
   if not active and state and type(state.lastActive) == "table" then return state.lastActive end
   local judged = profile
+  if not active then
+    judged = {}
+    for k, v in pairs(profile) do judged[k] = v end
+    judged.milestone = { current = (profile.milestone and profile.milestone.current) or 60, state = "active" }
+  end
   local result = { verified = 0, projected = 0, spentAgainst = 0, items = {} }
   for _, svc in ipairs(services) do
     local eligible = svc.learned or (svc.available and (svc.unlockLevel or 0) <= profile.level)
@@ -148,7 +155,7 @@ function Ledger.Compute(profile, services, engine, costCache, state)
       end
     end
   end
-  if active and state then state.lastActive = result end
+  if state then state.lastActive = result end
   return result
 end
 

@@ -193,8 +193,10 @@ local function countSkippedWhenClosed(key, frame)
   frame.dontdothatResets = true
   pcall(frame.HookScript, frame, "OnHide", function(self)
     local key, kind = self.dontdothatKey, KINDS[self.dontdothatKey]
-    if kind and pending[key] and shownFrame[key] == self then
+    -- Only the game's own dialog (pending == true) counts; our question hiding the reused frame is not a decline.
+    if kind and pending[key] == true and shownFrame[key] == self then
       pending[key] = nil
+      shownFrame[key] = nil
       local state = ledgerState()
       if state then kind.avoided(state, lastQuote[key]) end
       if ns.Log then ns.Log.Add("reset: %s skipped", kind.label) end
@@ -212,12 +214,24 @@ local function warn(key, kind, quiet)
     "reset:" .. key, settings)
 end
 
+-- The price is either already known from the game's event, or read from the game now.
+local function takeQuote(env, key, kind, which, data)
+  if kind.price then
+    local ok, cost = pcall(kind.price, env, data, which)
+    lastQuote[key] = ok and type(cost) == "number" and cost or nil
+  end
+  -- Forever sends only the talent-wipe event, and its fee rises each time: always take the latest quote.
+  if key == "pet" and which == "CONFIRM_TALENT_WIPE" then lastQuote.pet = lastQuote.talent end
+  seen[key] = { dialog = which, price = lastQuote[key] or "unknown" }
+end
+
 local function present(env, key, kind, which, data)
   if pending[key] then
     -- The game opened its dialog again while ours (or our note on the first) is up: keep the second one guarded too.
     if pending[key] == "own" then
       if type(env.StaticPopup_Hide) == "function" then pcall(env.StaticPopup_Hide, which) end
     else
+      takeQuote(env, key, kind, which, data)
       local frame = findFrame(env, which)
       if frame then
         shownFrame[key] = frame
@@ -228,14 +242,7 @@ local function present(env, key, kind, which, data)
     return
   end
   pending[key] = true
-  -- The price is either already known from the game's event, or read from the game now.
-  if kind.price then
-    local ok, cost = pcall(kind.price, env, data, which)
-    lastQuote[key] = ok and type(cost) == "number" and cost or nil
-  end
-  -- Forever sends only the talent-wipe event, and its fee rises each time: always take the latest quote.
-  if key == "pet" and which == "CONFIRM_TALENT_WIPE" then lastQuote.pet = lastQuote.talent end
-  seen[key] = { dialog = which, price = lastQuote[key] or "unknown" }
+  takeQuote(env, key, kind, which, data)
   local useOwn = ownDialog() and not kind.warnOnly and (not kind.usable or kind.usable(env, data))
 
   if useOwn then
@@ -260,6 +267,7 @@ local function present(env, key, kind, which, data)
       function()
         if not pending[key] then return end
         pending[key] = nil
+        shownFrame[key] = nil
         local state = ledgerState()
         if state then kind.avoided(state, lastQuote[key]) end
         if ns.Log then ns.Log.Add("reset: %s skipped", kind.label) end
@@ -267,6 +275,7 @@ local function present(env, key, kind, which, data)
       end)
     if shown then
       pending[key] = "own"
+      shownFrame[key] = nil -- hiding the game's frame now is not the player declining
       -- Ours is up, so put the game's away. Hiding it does not run its Cancel.
       if type(env.StaticPopup_Hide) == "function" then pcall(env.StaticPopup_Hide, which) end
       return
@@ -305,6 +314,7 @@ local function isPetWipe(env, which)
   current = current:lower()
   local pet = stem(env.CONFIRM_PET_UNLEARN_COST) or stem(env.CONFIRM_PET_UNLEARN)
   -- A client without either string keeps the old English check rather than losing pet resets.
+  if not pet and type(env.PET) == "string" and env.PET ~= "" then pet = env.PET:lower() end
   return current:find(pet or "pet", 1, true) ~= nil
 end
 
@@ -333,6 +343,7 @@ end
 local function onConfirmed(key)
   if not pending[key] then return end
   pending[key] = nil
+  shownFrame[key] = nil
   local state = ledgerState()
   if state then KINDS[key].performed(state, lastQuote[key]) end
   if ns.Log then ns.Log.Add("reset: %s done", KINDS[key].label) end

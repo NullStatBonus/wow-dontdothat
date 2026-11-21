@@ -177,8 +177,8 @@ end
 -- Spell families whose ID changed when the spell data was rebuilt (0.14.0): old family ID -> new one.
 Settings.RENAMED_FAMILIES = { PALADIN = { [25902] = 20473 }, PRIEST = { [401955] = 1309595 } }
 
--- Moves spell switches saved under an old family ID to the new one, and drops trainer records kept under it
--- (the next trainer visit records them again). A switch already saved under the new ID wins. Safe to run every load.
+-- Moves spell switches saved under an old family ID to the new one, and re-keys trainer records kept under it
+-- (a rank seen once may never be seen again). A switch or record already saved under the new ID wins. Safe to run every load.
 function Settings.MigrateFamilyIds(p, c, renamed)
   renamed = renamed or Settings.RENAMED_FAMILIES
   local abilities = type(p) == "table" and type(p.ruleOff) == "table" and p.ruleOff.abilities
@@ -196,9 +196,19 @@ function Settings.MigrateFamilyIds(p, c, renamed)
       if type(c) == "table" then
         for _, cache in ipairs({ c.catalog, c.costCache }) do
           if type(cache) == "table" then
+            local moves = {}
             for key, record in pairs(cache) do
-              local family = type(record) == "table" and record.familyId or tonumber(tostring(key):match("^(%d+)[:#]"))
-              if family == old then cache[key] = nil end
+              local id, rest = tostring(key):match("^(%d+)([:#].*)$")
+              local family = type(record) == "table" and record.familyId or tonumber(id)
+              if family == old and rest then moves[#moves + 1] = { key, new .. rest } end
+            end
+            for _, m in ipairs(moves) do
+              local record = cache[m[1]]
+              cache[m[1]] = nil
+              if cache[m[2]] == nil then
+                if type(record) == "table" then record.familyId = new end
+                cache[m[2]] = record
+              end
             end
           end
         end

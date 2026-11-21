@@ -330,3 +330,44 @@ test("a failed accept leaves the reopened dialog usable: our question shows agai
   popup("CONFIRM_BUY_STABLE_SLOT")
   truthy(shown.text, "our question is asked again, not the game's dialog hidden")
 end)
+
+test("our question hiding the reused frame is not a decline (#review5)", function()
+  local ns, env, shown, calls, popup = setup({ enabled = true, warnings = true, blockingConfirmations = false })
+  local frame = hookFrame("CONFIRM_BUY_BANK_SLOT", "Buy a bank slot?")
+  env.StaticPopup1 = frame
+  popup("CONFIRM_BUY_BANK_SLOT") -- game's dialog annotated, hook installed
+  ns.db.profile.blockingConfirmations = true
+  frame.hide() -- declined
+  eq(ns.db.char.ledger.itemsAvoided, 1)
+  popup("CONFIRM_BUY_BANK_SLOT") -- our question now; the addon hides the game's frame
+  frame.hide()
+  eq(ns.db.char.ledger.itemsAvoided, 1, "hiding for our question is not a skip")
+  shown.yes()
+  eq(ns.db.char.ledger.itemsAvoided, 1)
+  eq(ns.db.char.ledger.spentAgainst, 25000)
+end)
+
+test("a reopened warn-only dialog takes the new price (#review6)", function()
+  local ns, env, shown, calls, popup = setup()
+  local frame = hookFrame("COD_CONFIRMATION", "Pay 7s?")
+  env.StaticPopup1 = frame
+  popup("COD_CONFIRMATION")
+  eq(ns.Resets.Status().cod.lastSeen.price, 700)
+  env.OpenMailFrame.cod = 50000
+  popup("COD_CONFIRMATION")
+  eq(ns.Resets.Status().cod.lastSeen.price, 50000)
+  frame.hide()
+  eq(ns.db.char.ledger.itemsAvoidedCopper, 50000)
+end)
+
+test("pet reset falls back to the localized PET word (#review8)", function()
+  local ns, env, shown, calls, popup = setup()
+  env.PET = "Begleiter"
+  env.StaticPopup1 = dialogText("CONFIRM_TALENT_WIPE", "Alle Fertigkeiten deines Begleiters vergessen?")
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen.dialog, "CONFIRM_TALENT_WIPE")
+  ns.Resets.Reset()
+  env.StaticPopup1 = dialogText("CONFIRM_TALENT_WIPE", "Alle Talente vergessen?")
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen, "not seen this session")
+end)
