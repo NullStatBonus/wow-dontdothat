@@ -751,7 +751,11 @@ function Probe.TrainerIds(env, opts)
   local worked, rows = {}, 0
   for i = 1, count do
     local name, _, vals = firstValue(env, "GetTrainerServiceInfo", i)
-    if name ~= nil and vals[3] ~= "header" and rows < (opts.rows or 8) then
+    local kind = vals[3]
+    if name ~= nil and ns.Adapter and ns.Adapter.TrainerServiceInfo then
+      kind = select(3, ns.Adapter.TrainerServiceInfo(unpack(vals, 1, 6)))
+    end
+    if name ~= nil and kind ~= "header" and rows < (opts.rows or 8) then
       rows = rows + 1
       local res = safeCall(env, resolve(env, "GetTrainerServiceInfo"), i)
       add("")

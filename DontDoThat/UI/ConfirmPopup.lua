@@ -12,7 +12,7 @@ local current
 
 local function say(message)
   if _G.DEFAULT_CHAT_FRAME and _G.DEFAULT_CHAT_FRAME.AddMessage then
-    pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME, "|cffff3333Don't Do That:|r " .. message)
+    pcall(_G.DEFAULT_CHAT_FRAME.AddMessage, _G.DEFAULT_CHAT_FRAME, "|cffff3333" .. L["Don't Do That:"] .. "|r " .. message)
   end
 end
 
@@ -41,7 +41,10 @@ local function register()
     button2 = _G.CANCEL or L["Cancel"],
     -- Called as (dialog, data, ...). Returning nothing lets the game close the dialog.
     OnAccept = function(_, data) answer("accept", data) end,
-    OnCancel = function(_, data) answer("cancel", data) end,
+    OnCancel = function(_, data)
+      if type(data) == "table" and not data.shown then return end
+      answer("cancel", data)
+    end,
     timeout = 0,
     whileDead = true,
     hideOnEscape = true,
@@ -56,6 +59,8 @@ end
 function Popup.Show(text, onConfirm, onCancel)
   if type(_G.StaticPopup_Show) ~= "function" or not register() then return false end
   if current then answer("cancel", current) end -- a previous unanswered prompt counts as cancelled
+  -- `shown` stays false until the game returns a dialog: Era calls OnCancel itself when it has no free slot,
+  -- and that is not the player declining.
   local data = { onConfirm = onConfirm, onCancel = onCancel }
   current = data
   local ok, dialog = pcall(_G.StaticPopup_Show, KEY, text, nil, data)
@@ -67,6 +72,7 @@ function Popup.Show(text, onConfirm, onCancel)
     if ns.Log then ns.Log.Add("popup: could not be shown") end
     return false
   end
+  data.shown = true
   if ns.Log then ns.Log.Add("popup: shown") end
   return true
 end

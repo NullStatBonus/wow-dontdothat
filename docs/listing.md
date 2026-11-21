@@ -39,7 +39,7 @@ Don't Do That is the leveling addon that keeps your gold for your **level 40** a
 - **Shop smart.** The addon also asks before you buy gear, bags, potions and more, at vendors and the auction house. It guards bank slots, stable slots, COD mail, talent and pet resets, and your first profession lesson too.
 - **Hear it coming.** A loud sound, a movable toast (or the large Warning message) and one line in chat tell you before you spend gold you do not need to spend yet.
 - **Advice for your class and spec.** It follows the Wowhead leveling guides and the game's spell data.
-- **See your savings grow.** The Progress page shows the gold you kept and how close you are to your mount.
+- **See your savings grow.** The Progress page shows the gold you kept and how close you are to your mount. It counts only spells you can buy, and only gold that really leaves your bags.
 - **A trainer filter.** Hide every spell that the addon marks as skippable.
 
 It only asks. It never stops a purchase. It turns off when you buy your mount, and you can turn off each part before that.

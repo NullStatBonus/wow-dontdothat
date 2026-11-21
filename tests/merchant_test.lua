@@ -31,3 +31,34 @@ test("vendor buy still reads the legacy call", function()
   env.BuyMerchantItem(1, 2)
   eq(seen.total, 1000)
 end)
+
+test("legacy row: extendedCost is the 8th value, a usable item is still guarded", function()
+  local env, seen = setup({
+    GetMerchantItemLink = function() return "|Hitem:1|h[Bag]|h" end,
+    -- name, texture, price, quantity, numAvailable, isPurchasable, isUsable, extendedCost
+    GetMerchantItemInfo = function() return "Bag", nil, 500, 1, -1, true, true, nil end,
+  })
+  env.BuyMerchantItem(1, 1)
+  eq(seen.total, 500)
+end)
+
+test("legacy row: a token item (8th value set) passes through unguarded", function()
+  local env, seen = setup({
+    GetMerchantItemLink = function() return "|Hitem:1|h[Bag]|h" end,
+    GetMerchantItemInfo = function() return "Bag", nil, 500, 1, -1, true, false, true end,
+  })
+  env.BuyMerchantItem(1, 1)
+  eq(seen.name, nil)
+  truthy(seen.bought)
+end)
+
+test("a bundle bought with no quantity costs the whole bundle price", function()
+  local env, seen = setup({
+    GetMerchantItemLink = function() return "|Hitem:1|h[Arrows]|h" end,
+    GetMerchantItemInfo = function() return "Arrows", nil, 100, 200 end,
+  })
+  env.BuyMerchantItem(1)
+  eq(seen.total, 100)
+  env.BuyMerchantItem(1, 50)
+  eq(seen.total, 25, "a split quantity stays per unit")
+end)

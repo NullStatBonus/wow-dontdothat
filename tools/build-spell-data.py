@@ -178,8 +178,11 @@ def main():
     subtext = {r["ID"]: r["NameSubtext_lang"] for r in t["Spell"]}
     levels = {r["SpellID"]: r for r in t["SpellLevels"]}
     lines = {r["ID"]: r["DisplayName_lang"] for r in t["SkillLine"]}
+    rank_alias = {}
 
     def rank_of(sid):
+        if sid in rank_alias:
+            return rank_alias[sid]
         m = re.search(r"(\d+)", subtext.get(sid, "") or "")
         return int(m.group(1)) if m else None
 
@@ -187,18 +190,42 @@ def main():
         r = levels.get(sid)
         return (int(r["SpellLevel"]) or int(r["BaseLevel"]) or 0) if r else 0
 
+
+    def class_rows(mask, accept):
+        """SkillLineAbility rows of one class. Some taught spells carry ClassMask 0 (Holy Light Rank 5, Curse of
+        Agony Rank 2): keep those when the class has the same spell under another rank. AcquireMethod 3 rows are
+        granted effects (Holy Shock damage, a second Prayer of Mending ID, rankless twins of Holy Light): when the class
+        has a taught row of that name but none of the same rank and level, the row becomes an alternate ID of the
+        taught row of the same level (rank_alias), or is dropped when there is none."""
+        def key(r):
+            return (r["SkillLine"], names.get(r["Spell"]), rank_of(r["Spell"]), level_of(r["Spell"]))
+
+        pool = [r for r in t["SkillLineAbility"] if accept(lines.get(r["SkillLine"], ""))]
+        direct = [r for r in pool if int(r["ClassMask"] or 0) & mask]
+        anchors = {k[:2] for k in map(key, direct)}
+        seen = {key(r) for r in direct if r["AcquireMethod"] != "3"}
+        extra = [r for r in pool if not int(r["ClassMask"] or 0) and key(r)[:2] in anchors and key(r) not in seen]
+        both = direct + extra
+        taught = [key(r) for r in both if r["AcquireMethod"] != "3"]
+        names_taught = {k[:2] for k in taught}
+        kept = []
+        for r in both:
+            if r["AcquireMethod"] == "3" and key(r)[:2] in names_taught and key(r) not in taught:
+                twin = [k for k in taught if k[:2] == key(r)[:2] and k[3] == key(r)[3]]
+                if not twin:
+                    continue
+                rank_alias[r["Spell"]] = twin[0][2]
+            kept.append(r)
+        return kept
+
     blocks, counts = {}, {}
 
     if "HUNTER" in classes and "HUNTER" not in keep:
         export = parse_export(args.export)
         sold_families = {name for kind in export.values() for (name, _) in kind}
         rows = {}
-        for r in t["SkillLineAbility"]:
-            if not int(r["ClassMask"] or 0) & HUNTER_MASK:
-                continue
+        for r in class_rows(HUNTER_MASK, lambda line: line in CLASS_LINES or line in PET_LINES):
             line = lines.get(r["SkillLine"], "")
-            if line not in CLASS_LINES and line not in PET_LINES:
-                continue
             sid = r["Spell"]
             name = names.get(sid, "")
             if not name:
@@ -222,11 +249,7 @@ def main():
 
     if "PALADIN" in classes and "PALADIN" not in keep:
         rows = {}
-        for r in t["SkillLineAbility"]:
-            if not int(r["ClassMask"] or 0) & PALADIN_MASK:
-                continue
-            if lines.get(r["SkillLine"], "") not in PALADIN_LINES:
-                continue
+        for r in class_rows(PALADIN_MASK, lambda line: line in PALADIN_LINES):
             sid = r["Spell"]
             name = names.get(sid, "")
             if not name:
@@ -241,11 +264,7 @@ def main():
         if cls not in classes or cls in keep:
             continue
         rows = {}
-        for r in t["SkillLineAbility"]:
-            if not int(r["ClassMask"] or 0) & cfg["mask"]:
-                continue
-            if lines.get(r["SkillLine"], "") not in cfg["lines"]:
-                continue
+        for r in class_rows(cfg["mask"], lambda line: line in cfg["lines"]):
             sid = r["Spell"]
             name = names.get(sid, "")
             if not name:

@@ -113,3 +113,35 @@ test("pet reset counters feed the totals separately from respecs", function()
   eq(t.projected, 10 + s.petResetSavings)
   eq(t.spentAgainst, 1000)
 end)
+
+test("optional (info) spells are not counted, as on the Savings page", function()
+  local engine = { Evaluate = function() return { tier = "info", cost = 100 } end }
+  local r = L.Compute(profile, { svc(3, { cost = 100 }) }, engine, {})
+  eq(r.projected, 0); eq(#r.items, 0)
+end)
+test("a finished mount goal keeps the amounts from the last run while it was active", function()
+  local engine = { Evaluate = function(p)
+    if p.milestone and p.milestone.state == "active" then return { tier = "defer" } end
+    return { tier = "keep" }
+  end }
+  local state = L.NewState()
+  local active = { class = "TEST", level = 60, milestone = { current = 40, state = "active" } }
+  local r = L.Compute(active, { svc(3, { cost = 100 }), svc(4, { cost = 200, learned = true }) }, engine, {}, state)
+  eq(r.verified, 100); eq(r.spentAgainst, 200)
+  local finished = { class = "TEST", level = 60, milestone = { current = nil, state = "finished" } }
+  -- After the mount the player buys the ranks the addon held back, as advised: they do not count as spent.
+  r = L.Compute(finished, { svc(3, { cost = 100, learned = true }), svc(4, { cost = 200, learned = true }) }, engine, {}, state)
+  eq(r.verified, 100); eq(r.spentAgainst, 200)
+end)
+test("a finished goal with no saved run is judged once as if active and saved", function()
+  local engine = { Evaluate = function(p)
+    if p.milestone and p.milestone.state == "active" then return { tier = "defer" } end
+    return { tier = "keep" }
+  end }
+  local finished = { class = "TEST", level = 60, milestone = { current = nil, state = "finished" } }
+  local state = L.NewState()
+  local r = L.Compute(finished, { svc(3, { cost = 100 }), svc(3, { cost = 100, learned = true }) }, engine, {}, state)
+  eq(r.projected + r.verified + r.spentAgainst > 0, true, "not zero")
+  eq(state.lastActive, r, "saved for later calls")
+  eq(finished.milestone.state, "finished", "the caller's profile is untouched")
+end)

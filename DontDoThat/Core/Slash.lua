@@ -34,19 +34,14 @@ end
 -- Its own dialog, so asking never cancels an open purchase question (the shared popup cancels the previous one).
 local LOG_CLEAR = "DONTDOTHAT_LOG_CLEAR"
 local function askClearLog(text, onYes, onNo)
-    if type(_G.StaticPopup_Show) ~= "function" or type(_G.StaticPopupDialogs) ~= "table" then return false end
-    if not _G.StaticPopupDialogs[LOG_CLEAR] then
-        _G.StaticPopupDialogs[LOG_CLEAR] = {
-            text = "%s",
-            button1 = _G.ACCEPT or L["Accept"],
-            button2 = _G.CANCEL or L["Cancel"],
-            OnAccept = function(_, data) if data and data.yes then data.yes() end end,
-            OnCancel = function(_, data) if data and data.no then data.no() end end,
-            timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
-        }
-    end
-    local ok, dialog = pcall(_G.StaticPopup_Show, LOG_CLEAR, text, nil, { yes = onYes, no = onNo })
-    return ok and dialog ~= nil
+    return ns.Adapter.ShowDialog(_G, LOG_CLEAR, {
+        text = "%s",
+        button1 = _G.ACCEPT or L["Accept"],
+        button2 = _G.CANCEL or L["Cancel"],
+        OnAccept = function(_, data) if data and data.yes then data.yes() end end,
+        OnCancel = function(_, data) if data and data.no then data.no() end end,
+        timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+    }, text, { yes = onYes, no = onNo })
 end
 
 local function value(key, p)

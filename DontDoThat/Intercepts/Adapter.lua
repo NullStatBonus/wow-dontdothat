@@ -181,11 +181,48 @@ end
 -- GetTalentTabInfo(i): id-first shape (id, name, description, icon, pointsSpent, ...) observed on
 -- Classic Era 1.15.9; the older (name, icon, pointsSpent) shape is also accepted.
 -- Returns an array indexed by tab: { name = , points = }.
+-- Forever has no talent tabs, only C_Traits nodes (see traitTalents below). Points per tab are the summed
+-- currentRank of the nodes whose spell is a talent in Data/TalentData.lua; ns.TalentTabs gives the talent's tab.
+local talentOfSpell
+local function traitTabs(env)
+  local tabs = {}
+  local CT, T = env.C_ClassTalents, env.C_Traits
+  if type(CT) ~= "table" or type(T) ~= "table" or not ns.TalentSpells or not ns.TalentTabs then return tabs end
+  if not talentOfSpell or talentOfSpell.source ~= ns.TalentSpells then
+    talentOfSpell = { source = ns.TalentSpells }
+    for talentId, spells in pairs(ns.TalentSpells) do
+      for _, spellId in ipairs(spells) do talentOfSpell[spellId] = talentId end
+    end
+  end
+  local ok, configID = pcall(CT.GetActiveConfigID)
+  if not ok or not configID then return tabs end
+  local okc, cfg = pcall(T.GetConfigInfo, configID)
+  if not okc or type(cfg) ~= "table" or type(cfg.treeIDs) ~= "table" then return tabs end
+  for _, treeID in ipairs(cfg.treeIDs) do
+    local okn, nodes = pcall(T.GetTreeNodes, treeID)
+    for _, nodeID in ipairs(okn and type(nodes) == "table" and nodes or {}) do
+      local _, node = pcall(T.GetNodeInfo, configID, nodeID)
+      local entryID = type(node) == "table" and (node.currentRank or 0) > 0 and node.activeEntry and node.activeEntry.entryID
+      if entryID then
+        local _, entry = pcall(T.GetEntryInfo, configID, entryID)
+        local _, def = pcall(T.GetDefinitionInfo, type(entry) == "table" and entry.definitionID or 0)
+        local talentId = type(def) == "table" and def.spellID and talentOfSpell[def.spellID]
+        local tab = talentId and ns.TalentTabs[talentId]
+        if tab then
+          tabs[tab] = tabs[tab] or { points = 0 }
+          tabs[tab].points = tabs[tab].points + node.currentRank
+        end
+      end
+    end
+  end
+  return tabs
+end
+
 function Adapter.ReadTalentTabs(env)
   env = env or _G
   local tabs = {}
   local count = call(env, "GetNumTalentTabs")
-  if type(count) ~= "number" then return tabs end
+  if type(count) ~= "number" then return traitTabs(env) end
   for i = 1, count do
     local a, b, c, _, e = call(env, "GetTalentTabInfo", i)
     if a ~= nil then
@@ -434,4 +471,25 @@ function Adapter.IsSpellKnown(env, id)
     if ok then return known == true end
   end
   return nil
+end
+
+-- The player's money in copper, or nil when the client cannot say.
+function Adapter.ReadMoney(env)
+  local m = call(env or _G, "GetMoney")
+  return type(m) == "number" and m or nil
+end
+
+-- Seconds of game time (GetTime), or nil without a clock.
+function Adapter.ReadTime(env)
+  local now = call(env or _G, "GetTime")
+  return type(now) == "number" and now or nil
+end
+
+-- Shows the StaticPopup dialog `key`, registering `dialog` under it the first time. True when a dialog came up.
+function Adapter.ShowDialog(env, key, dialog, text, data)
+  env = env or _G
+  if type(env.StaticPopup_Show) ~= "function" or type(env.StaticPopupDialogs) ~= "table" then return false end
+  if not env.StaticPopupDialogs[key] then env.StaticPopupDialogs[key] = dialog end
+  local ok, shown = pcall(env.StaticPopup_Show, key, text, nil, data)
+  return ok and shown ~= nil
 end

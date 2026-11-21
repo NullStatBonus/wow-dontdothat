@@ -71,6 +71,12 @@ It also shows how close you are to your mount.
 On Classic Era the level 40 goal is 100g (20g riding, 80g mount) and the level 60 goal is 1,000g.
 The goal is 10% lower at Honored with your home city. On Classic Era, PvP rank 3 takes off another 10%. Progress shows the discount.
 
+What the Tally counts:
+
+- **Kept so far** counts only spells your character can buy from a trainer. Other races' spells, spell effects and the first rank of a talent you have do not count. Optional (blue) spells do not count, so the Tally agrees with Projected savings.
+- **Spent on things the addon marked** goes up only when your gold really goes down after the purchase, within 5 seconds, and by no more than the price. A purchase that fails (full bags, not enough gold) does not count. An auction bid does not count, because you get the gold back if someone outbids you. A buyout counts. Purchases you make after only a warning (no question) count too.
+- When you buy (or mark) your last mount, the Tally keeps the amounts it showed before.
+
 ## How the advice is made
 
 The advice comes from three sources:
@@ -148,6 +154,8 @@ Switches take `on` or `off`. Opacity is 0 to 100, scale is 50 to 200 and `alert.
 - Wowhead has leveling guides for Priest, Mage, Druid, Shaman and Warrior. The other classes have no guide check.
 - The addon does not mark or question beast training. Beast training is the pet abilities that cost training points. The addon does check the Pet Trainer NPC.
 - The addon does not judge talent choices. It only warns you about the cost of a talent reset.
+- On WoW Forever, the addon reads your talent points from the game's talent trees to choose your spec.
+- Version 0.14.0 gives Holy Shock (Paladin) and Shadow Word: Death (Priest) new spell IDs. A switch you set for them moves to the new ID when you log in.
 
 ### Your characters
 
@@ -160,6 +168,10 @@ Switches take `on` or `off`. Opacity is 0 to 100, scale is 50 to 200 and `alert.
 - The **Reset all settings** button puts the style back to Toast, even for players who had Warning.
 - The Warning style has no look or position settings. Your toast settings are kept for when you switch back.
 - You can't move the toast in combat. Entering combat while moving it puts it back where it was.
+- A plain right-click on a vendor stack is checked at the price of the whole stack. A split stack is checked at the price of the amount you buy.
+- If the auction list changes while a question is open (you sort, search or turn the page), Buy anyway buys nothing. Open the question again for the auction you want.
+- On Classic Era, Buy anyway at a trainer buys the spell the question named, even if you click another row while it is open.
+- If the game has no free dialog for a question, the purchase goes ahead and does not count as turned down.
 
 ### WoW Forever
 
@@ -187,7 +199,7 @@ You can also use **Advanced > Debug**: turn on **Record debug information**, the
 The report holds:
 
 - The addon version.
-- Your settings, including how warnings look, and your gold tally.
+- Your settings, including how warnings look, and your gold tally. The **Rules** part lists every setting with its value, also the ones you never changed: nudge level, prompt tiers, What to watch, stop point, skip revision, item kinds and the minimum price.
 - The items and the vendor and auction decisions that the addon saw.
 - A log of what the addon saw and decided.
 - The libraries that the game loaded, and the game functions that the addon uses.

@@ -174,6 +174,49 @@ function Settings.MigrateCharMarks(c, shared, level)
   c.migratedMarks = true
 end
 
+-- Spell families whose ID changed when the spell data was rebuilt (0.14.0): old family ID -> new one.
+Settings.RENAMED_FAMILIES = { PALADIN = { [25902] = 20473 }, PRIEST = { [401955] = 1309595 } }
+
+-- Moves spell switches saved under an old family ID to the new one, and re-keys trainer records kept under it
+-- (a rank seen once may never be seen again). A switch or record already saved under the new ID wins. Safe to run every load.
+function Settings.MigrateFamilyIds(p, c, renamed)
+  renamed = renamed or Settings.RENAMED_FAMILIES
+  local abilities = type(p) == "table" and type(p.ruleOff) == "table" and p.ruleOff.abilities
+  for class, map in pairs(renamed) do
+    local mine = type(abilities) == "table" and abilities[class]
+    for old, new in pairs(map) do
+      if type(mine) == "table" then
+        for _, key in ipairs({ old, tostring(old) }) do
+          if mine[key] ~= nil then
+            if mine[new] == nil then mine[new] = mine[key] end
+            mine[key] = nil
+          end
+        end
+      end
+      if type(c) == "table" then
+        for _, cache in ipairs({ c.catalog, c.costCache }) do
+          if type(cache) == "table" then
+            local moves = {}
+            for key, record in pairs(cache) do
+              local id, rest = tostring(key):match("^(%d+)([:#].*)$")
+              local family = type(record) == "table" and record.familyId or tonumber(id)
+              if family == old and rest then moves[#moves + 1] = { key, new .. rest } end
+            end
+            for _, m in ipairs(moves) do
+              local record = cache[m[1]]
+              cache[m[1]] = nil
+              if cache[m[2]] == nil then
+                if type(record) == "table" then record.familyId = new end
+                cache[m[2]] = record
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
 -- Settings that record what the player has already done rather than how they like things.
 local KEEP_ON_RESET = { professionAsked = true, milestoneOverride = true, revisionNotice = true, styleMarked = true }
 
@@ -200,10 +243,16 @@ function Settings.MigrateCharKey(sv, db, oldKey)
   if type(sv.profileKeys) == "table" and sv.profileKeys[oldKey] ~= nil then
     local old = sv.profileKeys[oldKey]
     local okCurrent, current = pcall(db.GetCurrentProfile, db)
-    if type(old) == "string" and okCurrent and old ~= current then
-      if pcall(db.SetProfile, db, old) then moved = true end
+    local done = type(old) ~= "string" -- nothing usable to carry over
+    if type(old) == "string" and okCurrent then
+      -- A fresh key starts on Default; any other profile there was picked on purpose and stays.
+      if old == current or current ~= "Default" then
+        done = true
+      elseif pcall(db.SetProfile, db, old) then
+        done, moved = true, true
+      end
     end
-    sv.profileKeys[oldKey] = nil
+    if done then sv.profileKeys[oldKey] = nil end
   end
   return moved
 end

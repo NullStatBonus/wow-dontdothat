@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.14.0
+
+- **Changed: "Spent on things the addon marked" counts a purchase only when your gold goes down.** Bids do not count.
+- Changed: Purchases after a warning without a question now count as spent too.
+- Changed: The Tally does not count optional (blue) spells. Now it agrees with Projected savings.
+- Fixed: Classic Era trainers buy the spell the question named. Before, a click on another row changed the purchase.
+- Fixed: An auction question buys nothing when the list changes. Before, it could buy a different auction.
+- Fixed: Classic Era asks before a buyout from the Bids tab. Before, these buyouts had no question.
+- Fixed: Classic Era vendors ask about items you can use. Before, the addon could skip them.
+- Fixed: A right-click on a vendor stack uses the price of the whole stack. Before, it used the price of one item.
+- Fixed: A question that the game cannot show does not count as turned down. Before, it counted and the purchase went ahead.
+- Fixed: COD warnings work after you cancel a talent reset. Before, they could stop for the session.
+- Fixed: On WoW Forever, each pet reset records its own price. Before, every reset recorded the first price.
+- Fixed: Mail taken with Shift-click uses the price of that mail. Before, it used the last mail you opened.
+- Fixed: The Tally does not count other races' spells or talent first ranks. Before, "Kept so far" was too high.
+- Fixed: Your mount purchase does not clear the Tally amounts. Before, the spell amounts went to zero.
+- Fixed: Prayer of Mending counts once in Projected savings. Before, it counted twice.
+- Fixed: The addon knows Holy Light rank 5, Curse of Agony (Bane of Agony) rank 2 and the Holy Shock ranks. Before, these were missing or wrong.
+- Fixed: On WoW Forever, the addon reads your talent points to find your spec. Before, it saw no points.
+- Fixed: "Worth about" amounts follow the skip list revision. Before, they kept the old amounts until you reloaded.
+- Fixed: A profession question shows the earn-back and mount fund lines. Before, these lines were missing.
+
 ## 0.13.4
 
 - **Fixed: Reset all settings brings back purchase warnings at once.** Before, vendor and auction house warnings stopped until you reloaded.

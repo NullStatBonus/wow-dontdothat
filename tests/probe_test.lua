@@ -358,3 +358,19 @@ test("a Forever trainer row, in Blizzard's mainline order, is snapshotted by its
   eq(snap.services[2].status, "used"); eq(snap.services[2].rank, 2); eq(snap.services[2].learned, true)
   truthy(table.concat(ns.Probe.ServiceLines(snap.services), "\n"):find("Serpent Sting rank=2 level=10", 1, true))
 end)
+
+test("trainer ids: on Forever a header row (type word second) is skipped like on Era", function()
+  local ns = {}
+  H.load("DontDoThat/Intercepts/Adapter.lua", ns)
+  H.load("DontDoThat/Debug/Probe.lua", ns)
+  local rows = { { "Beast Mastery", "header", 0, 0, "", "" }, { "Aimed Shot", "available", 1, 10, "Rank 1", "" } }
+  local env = {
+    GetNumTrainerServices = function() return #rows end,
+    GetTrainerServiceInfo = function(i) return unpack(rows[i]) end,
+    GetSpellInfo = function() return nil end,
+    UIParent = {},
+  }
+  local text = ns.Probe.TrainerIds(env)
+  falsy(text:find("Beast Mastery", 1, true), text)
+  truthy(text:find("Aimed Shot", 1, true), text)
+end)

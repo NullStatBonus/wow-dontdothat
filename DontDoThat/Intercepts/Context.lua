@@ -5,6 +5,8 @@ local addonName, ns = ...
 local Context = {}
 ns.Context = Context
 
+local lastPoints -- the talent points last logged, so the log gets a line only when they change
+
 function Context.Profile(env)
   local player = ns.Adapter.ReadPlayer(env)
   if not player.class then return nil end
@@ -16,6 +18,13 @@ function Context.Profile(env)
   for key, spec in pairs(classData.specs or {}) do
     local tab = spec.tree and tabs[spec.tree]
     treePoints[key] = tab and tab.points or 0
+  end
+  local summary = {}
+  for i, tab in ipairs(tabs) do summary[#summary + 1] = i .. "=" .. tostring(tab.points) end
+  summary = table.concat(summary, " ")
+  if summary ~= lastPoints then
+    lastPoints = summary
+    if ns.Log then ns.Log.Add("spec: talent points per tree %s", summary ~= "" and summary or "unknown") end
   end
   local riding = ns.Adapter.ReadRiding(env)
   local saved = ns.db and ns.db.profile

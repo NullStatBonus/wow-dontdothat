@@ -127,3 +127,35 @@ test("the log window closes on Escape and leaves UISpecialFrames when closed or 
   eq(#env.UISpecialFrames, 0); eq(env.DontDoThatLogFrame, nil)
   E.env = nil
 end)
+
+-- The Rules block: every profile default shows with its effective value, saved or not.
+local function loadWithDefaults()
+  local ns = { version = "0.1.0", L = setmetatable({}, { __index = function(_, k) return k end }) }
+  _G.LibStub = function() return setmetatable({}, { __index = function() return function() return {} end end }) end
+  local stubbed = { CreateFrame = function() return {} end }
+  for k, v in pairs(stubbed) do _G[k] = v end
+  H.load("DontDoThat/Core/Addon.lua", ns)
+  _G.LibStub = nil; _G.CreateFrame = nil
+  H.load("DontDoThat/Model/Settings.lua", ns)
+  H.load("DontDoThat/Core/Registry.lua", ns)
+  H.load("DontDoThat/Debug/Export.lua", ns)
+  return ns
+end
+
+test("build: the Rules block lists every profile default with defaults applied", function()
+  local ns = loadWithDefaults()
+  local text = ns.Export.Build({ settings = { tuning = { skipRevision = 2 }, minPrice = 5000 }, env = {} })
+  local rules = text:match("== Rules ==\n(.-)\n\n== ")
+  truthy(rules, text)
+  local n = 0
+  for key in pairs(ns.defaults.profile) do
+    n = n + 1
+    truthy(rules:find("\n  " .. key .. ": ", 1, true) or rules:find("^  " .. key .. ": "), "missing profile default: " .. key)
+  end
+  truthy(n > 10)
+  truthy(rules:find("minPrice: 5000", 1, true)); truthy(rules:find("blockingConfirmations: true", 1, true))
+  truthy(rules:find("skip revision: 2", 1, true)); truthy(rules:find("stop point: level 60", 1, true))
+  truthy(rules:find("nudge level: ask", 1, true)); truthy(rules:find("prompt tiers: defer=true, deferLow=false, info=false", 1, true))
+  truthy(rules:find("what to watch: spells=true, professions=true, shopping=true", 1, true))
+  truthy(rules:find("itemModes: {ammo=ah", 1, true))
+end)

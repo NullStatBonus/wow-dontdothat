@@ -36,6 +36,22 @@ test("explanation: click pins a black surface sized to its text; the same indica
   restore()
 end)
 
+test("tooltip: the minimum width set on hover is reset on leave and when hidden", function()
+  local ns, restore = fresh()
+  local widths, owner = {}, nil
+  _G.GameTooltip = { SetOwner = function(_, o) owner = o end, SetText = function() end, AddLine = function() end, Show = function() end,
+    Hide = function() end, GetOwner = function() return owner end, SetMinimumWidth = function(_, w) widths[#widths + 1] = w end }
+  local b = ns.InfoBubble.Create(_G.UIParent, VERDICT)
+  b.scripts.OnEnter(b)
+  eq(widths, { 230 })
+  b.scripts.OnLeave(b)
+  eq(widths, { 230, 0 }, "reset on leave")
+  b.scripts.OnEnter(b)
+  b.scripts.OnHide(b)
+  eq(widths, { 230, 0, 230, 0 }, "reset when hidden while hovered")
+  restore()
+end)
+
 test("explanation: own background and text alpha and scale; alpha 0 draws no background", function()
   local profile = { explanation = { bgAlpha = 0, textAlpha = 60, scale = 150 } }
   local ns, restore = fresh(profile)

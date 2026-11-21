@@ -5,7 +5,7 @@ local H = require("harness")
 local function setup(profile)
   local ns = { }
   for _, f in ipairs({ "UI/Helpers.lua", "Data/GoldRates.lua", "Model/EarnBack.lua", "Model/Ledger.lua",
-    "Intercepts/Prompt.lua", "Intercepts/Resets.lua" }) do
+    "Intercepts/Adapter.lua", "Intercepts/Prompt.lua", "Intercepts/Resets.lua" }) do
     H.load("DontDoThat/" .. f, ns)
   end
   ns.db = { profile = profile or { enabled = true, warnings = true, blockingConfirmations = true },
@@ -132,6 +132,7 @@ end)
 
 test("talent reset: warn only, with the pet trainer's dialog told apart by its text", function()
   local ns, env, shown, calls, popup = setup()
+  env.CONFIRM_PET_UNLEARN = "Do you want to unlearn all of your pet's skills?"
   local frame, current = dialogText("CONFIRM_TALENT_WIPE", "Are you sure you want to reset your talents?")
   env.StaticPopup1 = frame
   popup("CONFIRM_TALENT_WIPE")
@@ -234,4 +235,139 @@ test("once the mount is bought, every kind leaves the game's dialog alone", func
   saving = true
   popup("CONFIRM_BUY_BANK_SLOT")
   truthy(shown.text)
+end)
+
+-- A frame that keeps its OnHide hooks, like a StaticPopup.
+local function hookFrame(which, body)
+  local frame, getter = dialogText(which, body)
+  local hooks = {}
+  frame.HookScript = function(_, name, fn) if name == "OnHide" then hooks[#hooks + 1] = fn end end
+  frame.hide = function() for _, fn in ipairs(hooks) do fn(frame) end end
+  frame.hooks = hooks
+  return frame, getter
+end
+
+test("a reused dialog frame counts the kind it shows now (#44)", function()
+  local ns, env, shown, calls, popup = setup()
+  local frame = hookFrame("CONFIRM_TALENT_WIPE", "Do you want to unlearn all of your talents?")
+  env.StaticPopup1 = frame
+  popup("CONFIRM_TALENT_WIPE")
+  frame.hide() -- talent reset cancelled
+  eq(ns.db.char.ledger.respecsAvoided, 1)
+  frame.which = "COD_CONFIRMATION"
+  popup("COD_CONFIRMATION")
+  frame.hide() -- COD cancelled in the same frame
+  eq(ns.db.char.ledger.itemsAvoided, 1)
+  eq(#frame.hooks, 1)
+  popup("COD_CONFIRMATION") -- the COD warning is not suppressed afterwards
+  frame.hide()
+  eq(ns.db.char.ledger.itemsAvoided, 2)
+  env.TakeInboxItem(5, 1) -- ordinary mail is not counted as the old COD
+  eq(ns.db.char.ledger.spentAgainst, 0)
+end)
+
+test("Forever pet reset: every reset takes the current quote (#53)", function()
+  local ns, env, shown, calls, popup, events = setup()
+  env.CONFIRM_PET_UNLEARN = "Do you want to unlearn all of your pet's skills?"
+  local frame = hookFrame("CONFIRM_TALENT_WIPE", "Do you want to unlearn all of your pet's skills? The cost will increase each time you do it.")
+  env.StaticPopup1 = frame
+  events.CONFIRM_TALENT_WIPE(nil, 100000)
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen.price, 100000)
+  frame.hide()
+  events.CONFIRM_TALENT_WIPE(nil, 200000)
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen.price, 200000)
+end)
+
+test("the same dialog opened again while ours is up is put away too (#60)", function()
+  local ns, env, shown, calls, popup = setup()
+  popup("CONFIRM_BUY_BANK_SLOT")
+  eq(calls[#calls], "hide:CONFIRM_BUY_BANK_SLOT")
+  calls[#calls] = nil
+  popup("CONFIRM_BUY_BANK_SLOT")
+  eq(calls[#calls], "hide:CONFIRM_BUY_BANK_SLOT")
+end)
+
+test("the same warn-only dialog opened again is annotated again (#60)", function()
+  local ns, env, shown, calls, popup = setup()
+  local frame, current = hookFrame("COD_CONFIRMATION", "Pay 7s?")
+  env.StaticPopup1 = frame
+  popup("COD_CONFIRMATION")
+  frame.text.SetText(nil, "Pay 7s?") -- the game rewrote the text for the second dialog
+  popup("COD_CONFIRMATION")
+  truthy(current():find("Paying a COD costs gold", 1, true), current())
+end)
+
+test("COD auto-loot reads the shift-clicked mail's price (#60)", function()
+  local ns, env, shown, calls, popup = setup()
+  env.GetInboxHeaderInfo = function(i) return nil, nil, nil, nil, 0, (i == 3) and 4200 or 1 end
+  popup("COD_CONFIRMATION_AUTO_LOOT", 3)
+  eq(ns.Resets.Status().cod.lastSeen.price, 4200)
+end)
+
+test("pet reset is told apart by the client's own string, in any language (#60)", function()
+  local ns, env, shown, calls, popup = setup()
+  env.CONFIRM_PET_UNLEARN = "Willst du alle Fertigkeiten deines Begleiters verlernen?"
+  local frame, current = dialogText("CONFIRM_TALENT_WIPE", "Willst du alle Fertigkeiten deines Begleiters verlernen? Die Kosten steigen jedes Mal.")
+  env.StaticPopup1 = frame
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen.dialog, "CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().talent.lastSeen, "not seen this session")
+  -- an English "pet" in a talent dialog no longer counts
+  ns.Resets.Reset()
+  env.StaticPopup1 = dialogText("CONFIRM_TALENT_WIPE", "Reset your talents, competitor?")
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen, "not seen this session")
+end)
+
+test("a failed accept leaves the reopened dialog usable: our question shows again", function()
+  local ns, env, shown, calls, popup = setup()
+  env.BuyStableSlot = function() error("blocked") end
+  popup("CONFIRM_BUY_STABLE_SLOT")
+  shown.yes()
+  shown.text = nil
+  popup("CONFIRM_BUY_STABLE_SLOT")
+  truthy(shown.text, "our question is asked again, not the game's dialog hidden")
+end)
+
+test("our question hiding the reused frame is not a decline (#review5)", function()
+  local ns, env, shown, calls, popup = setup({ enabled = true, warnings = true, blockingConfirmations = false })
+  local frame = hookFrame("CONFIRM_BUY_BANK_SLOT", "Buy a bank slot?")
+  env.StaticPopup1 = frame
+  popup("CONFIRM_BUY_BANK_SLOT") -- game's dialog annotated, hook installed
+  ns.db.profile.blockingConfirmations = true
+  frame.hide() -- declined
+  eq(ns.db.char.ledger.itemsAvoided, 1)
+  popup("CONFIRM_BUY_BANK_SLOT") -- our question now; the addon hides the game's frame
+  frame.hide()
+  eq(ns.db.char.ledger.itemsAvoided, 1, "hiding for our question is not a skip")
+  shown.yes()
+  eq(ns.db.char.ledger.itemsAvoided, 1)
+  eq(ns.db.char.ledger.spentAgainst, 25000)
+end)
+
+test("a reopened warn-only dialog takes the new price (#review6)", function()
+  local ns, env, shown, calls, popup = setup()
+  local frame = hookFrame("COD_CONFIRMATION", "Pay 7s?")
+  env.StaticPopup1 = frame
+  popup("COD_CONFIRMATION")
+  eq(ns.Resets.Status().cod.lastSeen.price, 700)
+  env.OpenMailFrame.cod = 50000
+  popup("COD_CONFIRMATION")
+  eq(ns.Resets.Status().cod.lastSeen.price, 50000)
+  frame.hide()
+  eq(ns.db.char.ledger.itemsAvoidedCopper, 50000)
+end)
+
+test("pet reset falls back to the localized PET word (#review8)", function()
+  local ns, env, shown, calls, popup = setup()
+  env.PET = "Begleiter"
+  env.StaticPopup1 = dialogText("CONFIRM_TALENT_WIPE", "Alle Fertigkeiten deines Begleiters vergessen?")
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen.dialog, "CONFIRM_TALENT_WIPE")
+  ns.Resets.Reset()
+  env.StaticPopup1 = dialogText("CONFIRM_TALENT_WIPE", "Alle Talente vergessen?")
+  popup("CONFIRM_TALENT_WIPE")
+  eq(ns.Resets.Status().pet.lastSeen, "not seen this session")
 end)

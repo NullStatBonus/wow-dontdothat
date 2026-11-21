@@ -114,8 +114,8 @@ end
 
 function addon:OnEnable()
     if ns.Settings then
-        local ok, level = pcall(UnitLevel, "player")
-        ns.Settings.MigrateCharMarks(self.db.char, self.db.profile, ok and level or nil)
+        ns.Settings.MigrateCharMarks(self.db.char, self.db.profile, ns.Adapter.ReadPlayer(_G).level)
+        ns.Settings.MigrateFamilyIds(self.db.profile, self.db.char)
     end
     if ns.Options then ns.Options.Register(self) end
     if ns.TrainerFilter then ns.TrainerFilter.Enable(_G) end

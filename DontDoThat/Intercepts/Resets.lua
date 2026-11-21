@@ -88,7 +88,14 @@ local KINDS = {
     done = { "TakeInboxItem", "AutoLootMailItem" }, label = L["COD mail"],
     title = L["Pay for this mail?"], ask = L["Pay anyway?"], rises = false,
     advice = L["Paying a COD costs gold. Only pay it if you really want what's in the mail."],
-    price = function(env) return type(env.OpenMailFrame) == "table" and env.OpenMailFrame.cod or nil end,
+    -- Auto-loot (shift-click) passes the mail index as data; the open mail is only the last one opened.
+    price = function(env, data, which)
+      if which == "COD_CONFIRMATION_AUTO_LOOT" and type(data) == "number" and type(env.GetInboxHeaderInfo) == "function" then
+        local ok, _, _, _, _, _, cod = pcall(env.GetInboxHeaderInfo, data)
+        if ok and type(cod) == "number" then return cod end
+      end
+      return type(env.OpenMailFrame) == "table" and env.OpenMailFrame.cod or nil
+    end,
     warnOnly = true,
     avoided = function(state, cost) ns.Ledger.RecordItemAvoided(state, cost) end,
     performed = function(state, cost) ns.Ledger.RecordItemPerformed(state, cost) end,
@@ -179,12 +186,17 @@ local function annotate(env, frame, kind, which)
   return true
 end
 
-local function countSkippedWhenClosed(kind, key, frame)
+-- One OnHide hook per frame; the frame remembers which kind it shows now (the game reuses frames for several dialogs).
+local function countSkippedWhenClosed(key, frame)
+  frame.dontdothatKey = key
   if frame.dontdothatResets or type(frame.HookScript) ~= "function" then return end
   frame.dontdothatResets = true
   pcall(frame.HookScript, frame, "OnHide", function(self)
-    if pending[key] and shownFrame[key] == self then
+    local key, kind = self.dontdothatKey, KINDS[self.dontdothatKey]
+    -- Only the game's own dialog (pending == true) counts; our question hiding the reused frame is not a decline.
+    if kind and pending[key] == true and shownFrame[key] == self then
       pending[key] = nil
+      shownFrame[key] = nil
       local state = ledgerState()
       if state then kind.avoided(state, lastQuote[key]) end
       if ns.Log then ns.Log.Add("reset: %s skipped", kind.label) end
@@ -202,16 +214,35 @@ local function warn(key, kind, quiet)
     "reset:" .. key, settings)
 end
 
-local function present(env, key, kind, which, data)
-  if pending[key] then return end
-  pending[key] = true
-  -- The price is either already known from the game's event, or read from the game now.
+-- The price is either already known from the game's event, or read from the game now.
+local function takeQuote(env, key, kind, which, data)
   if kind.price then
-    local ok, cost = pcall(kind.price, env, data)
+    local ok, cost = pcall(kind.price, env, data, which)
     lastQuote[key] = ok and type(cost) == "number" and cost or nil
   end
-  if key == "pet" and not lastQuote.pet then lastQuote.pet = lastQuote.talent end -- Forever sends the talent-wipe event
+  -- Forever sends only the talent-wipe event, and its fee rises each time: always take the latest quote.
+  if key == "pet" and which == "CONFIRM_TALENT_WIPE" then lastQuote.pet = lastQuote.talent end
   seen[key] = { dialog = which, price = lastQuote[key] or "unknown" }
+end
+
+local function present(env, key, kind, which, data)
+  if pending[key] then
+    -- The game opened its dialog again while ours (or our note on the first) is up: keep the second one guarded too.
+    if pending[key] == "own" then
+      if type(env.StaticPopup_Hide) == "function" then pcall(env.StaticPopup_Hide, which) end
+    else
+      takeQuote(env, key, kind, which, data)
+      local frame = findFrame(env, which)
+      if frame then
+        shownFrame[key] = frame
+        pcall(annotate, env, frame, kind, which)
+        pcall(countSkippedWhenClosed, key, frame)
+      end
+    end
+    return
+  end
+  pending[key] = true
+  takeQuote(env, key, kind, which, data)
   local useOwn = ownDialog() and not kind.warnOnly and (not kind.usable or kind.usable(env, data))
 
   if useOwn then
@@ -230,16 +261,21 @@ local function present(env, key, kind, which, data)
           ok, err = pcall(fn)
         end
         if not ok and ns.Log then ns.Log.Add("reset: %s call failed: %s", kind.label, tostring(err)) end
+        -- Our question is closed. If the game's function never ran (blocked or failed), a reopened dialog must stay.
+        if pending[key] == "own" then pending[key] = nil end
       end,
       function()
         if not pending[key] then return end
         pending[key] = nil
+        shownFrame[key] = nil
         local state = ledgerState()
         if state then kind.avoided(state, lastQuote[key]) end
         if ns.Log then ns.Log.Add("reset: %s skipped", kind.label) end
         if kind.afterCancel then pcall(kind.afterCancel, env) end
       end)
     if shown then
+      pending[key] = "own"
+      shownFrame[key] = nil -- hiding the game's frame now is not the player declining
       -- Ours is up, so put the game's away. Hiding it does not run its Cancel.
       if type(env.StaticPopup_Hide) == "function" then pcall(env.StaticPopup_Hide, which) end
       return
@@ -253,7 +289,7 @@ local function present(env, key, kind, which, data)
     shownFrame[key] = frame
     local ok, done = pcall(annotate, env, frame, kind, which)
     noted = ok and done == true
-    pcall(countSkippedWhenClosed, kind, key, frame)
+    pcall(countSkippedWhenClosed, key, frame)
   else
     pending[key] = nil
   end
@@ -261,14 +297,25 @@ local function present(env, key, kind, which, data)
   if not useOwn then warn(key, kind, noted) end
 end
 
--- Is this CONFIRM_TALENT_WIPE really the pet trainer's? Its text talks about the pet (the client's word for it, or English).
+-- The part of a client string before its first %s, used to recognise the dialog text in any language.
+local function stem(str)
+  if type(str) ~= "string" then return end
+  local head = str:match("^[^%%]*"):gsub("^%s+", ""):gsub("%s+$", "")
+  if #head >= 8 then return head:lower() end
+end
+
+-- Is this CONFIRM_TALENT_WIPE really the pet trainer's? The dialog text is compared with the client's own
+-- pet-unlearn string, so it works in every language.
 local function isPetWipe(env, which)
   local frame = findFrame(env, which)
   local text = frame and textObject(frame)
   local current = text and type(text.GetText) == "function" and text:GetText()
   if type(current) ~= "string" then return false end
   current = current:lower()
-  return current:find("pet", 1, true) ~= nil or (type(env.PET) == "string" and current:find(env.PET:lower(), 1, true) ~= nil)
+  local pet = stem(env.CONFIRM_PET_UNLEARN_COST) or stem(env.CONFIRM_PET_UNLEARN)
+  -- A client without either string keeps the old English check rather than losing pet resets.
+  if not pet and type(env.PET) == "string" and env.PET ~= "" then pet = env.PET:lower() end
+  return current:find(pet or "pet", 1, true) ~= nil
 end
 
 local function onPopupShown(env, which, data)
@@ -296,6 +343,7 @@ end
 local function onConfirmed(key)
   if not pending[key] then return end
   pending[key] = nil
+  shownFrame[key] = nil
   local state = ledgerState()
   if state then KINDS[key].performed(state, lastQuote[key]) end
   if ns.Log then ns.Log.Add("reset: %s done", KINDS[key].label) end
@@ -303,6 +351,7 @@ end
 
 local function refuse(env, func)
   disabledReason = "blocked: " .. tostring(func)
+  for k, v in pairs(pending) do if v == "own" then pending[k] = nil end end
   if ns.Log then ns.Log.Add("reset: our question switched off (%s)", disabledReason) end
   ns.Prompt.Say("|cffff3333" .. L["Don't Do That:"] .. "|r " .. L["this game version won't let it confirm these for you. Try again; it will add a warning to the game's own question instead."])
 end

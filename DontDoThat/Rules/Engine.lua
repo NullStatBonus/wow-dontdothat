@@ -287,7 +287,7 @@ end
 local function evaluateProfessionLearn(profile, action)
   local name = action.profession
   if (profile.professions or {})[name] or (profile.professionAsked or {})[name] then return keep(profile) end
-  local v = verdict(profile, "defer", "professionLearn", learn.reason:format(action.displayName or learn.names[name] or tostring(name)), nil, false)
+  local v = verdict(profile, "defer", "professionLearn", learn.reason:format(action.displayName or learn.names[name] or tostring(name)), action.cost, false)
   v.profession = name
   return v
 end

@@ -138,6 +138,12 @@ function Bubble.Create(parent, verdict)
         local c = b.baseColor or DEFAULT_COLOR
         t:SetTextColor(c[1], c[2], c[3])
         GameTooltip:Hide()
+        if GameTooltip.SetMinimumWidth then GameTooltip:SetMinimumWidth(0) end -- the width is shared with every tooltip
+      end)
+    end)
+    b:SetScript("OnHide", function()
+      pcall(function()
+        if GameTooltip.SetMinimumWidth and GameTooltip:GetOwner() == b then GameTooltip:SetMinimumWidth(0) end
       end)
     end)
     b:SetScript("OnClick", function(self)

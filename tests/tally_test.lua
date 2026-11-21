@@ -38,6 +38,23 @@ test("two trainers that share a name are told apart, so one cannot make the othe
   eq(aimed.trainer, "Creature-A")
 end)
 
+test("a trainer visit while the goal is active refreshes the saved snapshot", function()
+  ns.Tally.Reset()
+  ns.db = { char = { catalog = {}, costCache = {}, ledger = ns.Ledger.NewState() } }
+  local active = true
+  ns.Context = { Profile = function()
+    return { class = "HUNTER", level = 60, plausibleSpecs = { "BM" },
+      milestone = active and { current = 40, state = "active" } or { state = "finished" } }
+  end }
+  ns.Tally.ObserveLive(env("Creature-A", "Hunter Trainer"), trainer({ row("Aimed Shot", 19434, 1, 400) }))
+  truthy(ns.db.char.ledger.lastActive, "snapshot stored by the visit, without viewing the Tally")
+  local saved = ns.db.char.ledger.lastActive
+  active = false
+  ns.Tally.ObserveLive(env("Creature-A", "Hunter Trainer"), trainer({ row("Serpent Sting", 1978, 1, 400) }))
+  eq(ns.db.char.ledger.lastActive, saved, "a finished goal does not overwrite the snapshot")
+  ns.Context = nil
+end)
+
 test("a spell gone from the same trainer's complete list counts as bought", function()
   ns.Tally.Reset()
   ns.db = { char = { catalog = {}, costCache = {} } }
@@ -62,4 +79,15 @@ test("a spell outside the bundled tables is tracked by the spell ID the tooltip 
   ns.Tally.ObserveLive(e, trainer({ { name = "Different name in another language", spellId = 2551, level = 5, cost = 100, available = true } }))
   eq(ns.db.char.catalog["2551#0"].state, "open", "the same spell under another name is still the same row")
   eq(ns.db.char.catalog["2552#0"].state, "learned", "the row that vanished is bought")
+end)
+
+test("a purchase that turns a row into used is seen even when the row count stays the same", function()
+  ns.Tally.Reset()
+  ns.db = { char = { catalog = {}, costCache = {} } }
+  local e = env("Creature-A", "Hunter Trainer")
+  local aimed = row("Aimed Shot", 19434, 1, 400)
+  ns.Tally.ObserveLive(e, trainer({ aimed }))
+  eq(ns.db.char.catalog["19434#1"].state, "open")
+  ns.Tally.ObserveLive(e, trainer({ { name = "Aimed Shot", familyId = 19434, rank = 1, level = 10, cost = 400, learned = true } }))
+  eq(ns.db.char.catalog["19434#1"].state, "learned")
 end)

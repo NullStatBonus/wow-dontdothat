@@ -29,6 +29,11 @@ end
 -- Forever has only the retail-style C_AuctionHouse API. Items: PlaceBid(auctionID, amount). Commodities:
 -- ConfirmCommoditiesPurchase(itemID, quantity) after a quote, so the total is summed from the quoted results.
 -- Only used when the legacy PlaceAuctionBid is absent; the Classic path is untouched.
+-- An amount below the buyout price (or an auction with no buyout) is a bid, not a purchase.
+local function isBid(amount, buyout)
+  return not (type(buyout) == "number" and buyout > 0 and amount >= buyout)
+end
+
 local function nameOf(link) return type(link) == "string" and link:match("%[(.-)%]") or nil end
 
 local function installModern(env)
@@ -40,14 +45,24 @@ local function installModern(env)
     modern.PlaceBid = function(auctionID, amount, ...)
       local ok, info = pcall(api.GetAuctionInfoByID, auctionID)
       local link = ok and type(info) == "table" and info.itemLink or nil
+      local buyout = ok and type(info) == "table" and info.buyoutAmount or nil
+      local quantity = ok and type(info) == "table" and info.quantity or nil
       if not link or type(amount) ~= "number" then
         pcall(ns.ItemGuard.Trace, { surface = "ah", total = type(amount) == "number" and amount or nil,
           outcome = "passed through: could not read the auction" })
         return bid(auctionID, amount, ...)
       end
       local args = { ... }
-      return ns.ItemGuard.Run("ah", nameOf(link), link, amount,
-        function() return bid(auctionID, amount, unpack(args)) end)
+      return ns.ItemGuard.Run("ah", nameOf(link), link, amount, function()
+        -- The question may have stayed open while the auction changed hands or sold.
+        local okNow, now = pcall(api.GetAuctionInfoByID, auctionID)
+        if not okNow or type(now) ~= "table" or now.itemLink ~= link or now.buyoutAmount ~= buyout
+          or (quantity ~= nil and now.quantity ~= nil and now.quantity ~= quantity) then
+          if ns.Log then ns.Log.Add("items: auction %s changed while the question was open, purchase dropped", tostring(auctionID)) end
+          return false
+        end
+        return bid(auctionID, amount, unpack(args))
+      end, isBid(amount, buyout))
     end
     api.PlaceBid = modern.PlaceBid
   end
@@ -84,6 +99,13 @@ local function installModern(env)
   return false
 end
 
+-- ok, name, buyoutPrice, owner, count from GetAuctionItemInfo (returns: name, texture, count, quality, canUse, level,
+-- levelColHeader, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, bidderFullName, owner, ...).
+local function readRow(env, listType, index)
+  local r = { pcall(env.GetAuctionItemInfo, listType, index) }
+  return r[1], r[2], r[11], r[15], r[4]
+end
+
 function Auction.Install(env)
   env = env or _G
   if installed then return true end
@@ -96,20 +118,33 @@ function Auction.Install(env)
   end
   wrapper = function(listType, index, amount, ...)
     -- Only other people's auctions; never the player's own listings.
-    if listType ~= "list" or type(amount) ~= "number" then
+    -- "bidder" is the Bids tab, where a buyout of an auction already bid on is placed.
+    if (listType ~= "list" and listType ~= "bidder") or type(amount) ~= "number" then
       pcall(ns.ItemGuard.Trace, { surface = "ah", total = type(amount) == "number" and amount or nil,
         outcome = "passed through: list type " .. tostring(listType) .. " / amount " .. type(amount) })
       return original(listType, index, amount, ...)
     end
-    local ok, name = pcall(env.GetAuctionItemInfo, listType, index)
+    local ok, name, buyout, owner, count = readRow(env, listType, index)
     if not ok or not name then
       pcall(ns.ItemGuard.Trace, { surface = "ah", total = amount, outcome = "passed through: could not read the auction" })
       return original(listType, index, amount, ...)
     end
     local link = type(env.GetAuctionItemLink) == "function" and env.GetAuctionItemLink(listType, index) or nil
+    if ns.Log then ns.Log.Add("items: auction %s %s checked (%s)", listType, tostring(index), tostring(amount)) end
     local args = { ... }
-    return ns.ItemGuard.Run("ah", name, link, amount,
-      function() return original(listType, index, amount, unpack(args)) end)
+    return ns.ItemGuard.Run("ah", name, link, amount, function()
+      -- The list may have changed (new search, sort, page) while the question was open; the index would then
+      -- name another auction.
+      local okNow, nowName, nowBuyout, nowOwner, nowCount = readRow(env, listType, index)
+      local nowLink = type(env.GetAuctionItemLink) == "function" and env.GetAuctionItemLink(listType, index) or nil
+      if not okNow or nowName ~= name or nowLink ~= link or nowBuyout ~= buyout or nowCount ~= count
+        or (owner ~= nil and nowOwner ~= nil and nowOwner ~= owner) then -- a seller name can load late
+        if ns.Log then ns.Log.Add("items: auction %s %s changed while the question was open, purchase dropped",
+          tostring(listType), tostring(index)) end
+        return false
+      end
+      return original(listType, index, amount, unpack(args))
+    end, isBid(amount, buyout))
   end
   env.PlaceAuctionBid = wrapper
   installed = true

@@ -267,3 +267,24 @@ test("MigrateCharKeys: tries each key, tolerates a bad list", function()
   eq(sv.char[OLD].ledger.saved, 1)
   falsy(S.MigrateCharKeys(sv, db, nil))
 end)
+
+test("char key: a profile picked under the new key is not overwritten by the old key's choice", function()
+  local S = settings()
+  local sv = { char = {}, profileKeys = { [OLD] = "Alt", [NEW] = "Mine" } }
+  local db = fakeDb(sv, NEW, "Mine")
+  S.MigrateCharKey(sv, db, OLD)
+  eq(db.current, "Mine"); eq(#db.switched, 0)
+  eq(sv.profileKeys[OLD], nil)
+end)
+
+test("char key: a failed SetProfile keeps the old choice for the next login", function()
+  local S = settings()
+  local sv = { char = {}, profileKeys = { [OLD] = "Alt", [NEW] = "Default" } }
+  local db = fakeDb(sv, NEW)
+  function db:SetProfile() error("no such profile") end
+  falsy(S.MigrateCharKey(sv, db, OLD))
+  eq(sv.profileKeys[OLD], "Alt")
+  db.SetProfile = function(self, name) self.current = name end
+  truthy(S.MigrateCharKey(sv, db, OLD))
+  eq(db.current, "Alt"); eq(sv.profileKeys[OLD], nil)
+end)

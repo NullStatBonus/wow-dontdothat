@@ -116,7 +116,7 @@ local worthMemo, worthCount = {}, 0
 -- A redraw asks the same question many times; answers are reused for a quarter of a second. Without a clock, never reused.
 local recentAnswers = {}
 local function recent(key, compute)
-  local now = type(_G.GetTime) == "function" and _G.GetTime() or nil
+  local now = ns.Adapter and ns.Adapter.ReadTime() or nil
   local held = recentAnswers[key]
   if now and held and now - held.at < 0.25 then return held.value end
   local value = compute()
@@ -137,12 +137,16 @@ end
 -- Everything that can change a worth: the rules, the specs, the talents and the prices seen so far.
 local function ruleSignature(p, stop)
   local parts = { p.class, stop, table.concat(p.plausibleSpecs or {}, ",") }
-  local talents, seenPrices = {}, 0
+  local talents, seenPrices, priceTotal = {}, 0, 0
   for id, active in pairs(p.activeTalents or {}) do if active then talents[#talents + 1] = tostring(id) end end
   table.sort(talents)
   parts[#parts + 1] = table.concat(talents, ",")
-  for _ in pairs(ns.db and ns.db.char and ns.db.char.costCache or {}) do seenPrices = seenPrices + 1 end
-  parts[#parts + 1] = seenPrices
+  for _, price in pairs(ns.db and ns.db.char and ns.db.char.costCache or {}) do
+    seenPrices = seenPrices + 1
+    if type(price) == "number" then priceTotal = priceTotal + price end
+  end
+  parts[#parts + 1] = seenPrices .. "/" .. priceTotal
+  parts[#parts + 1] = tostring(p.rules and p.rules.skipRevision)
   for _, bucket in ipairs({ "offAbilities", "offTags", "offKinds" }) do
     local names = {}
     for name in pairs(p.rules and p.rules[bucket] or {}) do names[#names + 1] = tostring(name) end
@@ -432,7 +436,7 @@ local function alertSettings()
   return {}
 end
 
-local CHANNEL_CHOICES = { Master = "Master", SFX = L["Sound effects"], Music = "Music", Ambience = "Ambience", Dialog = "Dialog" }
+local CHANNEL_CHOICES = { Master = L["Master"], SFX = L["Sound effects"], Music = L["Music"], Ambience = L["Ambience"], Dialog = L["Dialog"] }
 local CHANNEL_ORDER = { "Master", "SFX", "Music", "Ambience", "Dialog" }
 
 local function alert() local p = profile(); return p and p.alert or {} end
@@ -950,7 +954,7 @@ function Options.Rules()
 
   local intro = newPage(L["Classes"], 0, L["Classes"], L["Open a class to see what the addon marks and why. Tick or untick anything to decide what you're told about."])
   for key, widget in pairs(intro.args) do classes[key] = widget end
-  return { type = "group", name = ("Classes (%d)"):format(classCount), order = 3, childGroups = "tree", args = classes }
+  return { type = "group", name = L["Classes (%d)"]:format(classCount), order = 3, childGroups = "tree", args = classes }
 end
 
 ---------------------------------------------------------------------------
@@ -1128,9 +1132,9 @@ end
 local MODE_CHOICES = { off = L["Off"], vendor = L["Vendor"], ah = L["Auction house"], both = L["Both"] }
 local MODE_ORDER = { "off", "vendor", "ah", "both" }
 local COIN = {
-  g = "|TInterface\\MoneyFrame\\UI-GoldIcon:14:14:2:0|t Gold",
-  s = "|TInterface\\MoneyFrame\\UI-SilverIcon:14:14:2:0|t Silver",
-  c = "|TInterface\\MoneyFrame\\UI-CopperIcon:14:14:2:0|t Copper",
+  g = "|TInterface\\MoneyFrame\\UI-GoldIcon:14:14:2:0|t " .. L["Gold"],
+  s = "|TInterface\\MoneyFrame\\UI-SilverIcon:14:14:2:0|t " .. L["Silver"],
+  c = "|TInterface\\MoneyFrame\\UI-CopperIcon:14:14:2:0|t " .. L["Copper"],
 }
 local COIN_UNIT = { g = 10000, s = 100, c = 1 }
 
@@ -1576,6 +1580,7 @@ end
 -- Builds every page again and hands the tables to the registry, so a list that depends on a setting (the ranks to
 -- skip follow the skip revision) shows the new choice. Safe to call when the options window was never opened.
 function Options.Rebuild()
+  worthMemo, worthCount = {}, 0
   local config = libs()
   if not config then return false end
   registerTables(config)

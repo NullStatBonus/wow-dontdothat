@@ -110,7 +110,7 @@ local function guarded(over)
   local ns = fresh()
   over = over or {}
   local shown = {}
-  for _, f in ipairs({ "Intercepts/Prompt.lua", "Intercepts/ItemGuard.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
+  for _, f in ipairs({ "Intercepts/Adapter.lua", "Intercepts/Prompt.lua", "Intercepts/ItemGuard.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
   ns.db = { profile = { enabled = true, blockingConfirmations = true, alerts = true, minPrice = 100,
       traceItems = over.trace ~= false,
       itemModes = over.modes or { armor = "both", food = "ah" } },
@@ -132,8 +132,13 @@ test("a flagged purchase is traced, asked about, and recorded when declined", fu
   eq(t[1].outcome, "question shown, declined, not bought")
   eq(ns.db.char.ledger.itemsAvoided, 1); eq(ns.db.char.ledger.itemsAvoidedCopper, 5000)
   ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() bought = true end)
+  _G.GetMoney = function() return 100000 end
   shown.yes()
-  truthy(bought); eq(ns.db.char.ledger.spentAgainst, 5000)
+  truthy(bought); eq(ns.db.char.ledger.spentAgainst, 0, "counted only when the money drops")
+  _G.GetMoney = function() return 95000 end
+  ns.ItemGuard.OnMoney()
+  eq(ns.db.char.ledger.spentAgainst, 5000)
+  _G.GetMoney = nil
   _G.GetItemInfoInstant = nil
 end)
 
