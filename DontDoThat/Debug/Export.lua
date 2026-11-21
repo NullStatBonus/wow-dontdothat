@@ -136,6 +136,45 @@ function Export.Build(sources)
     end
     return lines
   end)
+  section("Rules", function()
+    local p = sources.settings
+    local defaults = ns.defaults and ns.defaults.profile
+    if type(p) ~= "table" or type(defaults) ~= "table" then return { "  (not available)" } end
+    -- A value as it acts: the saved one, else the default; tables are merged one key at a time.
+    local function effective(saved, default)
+      if type(default) ~= "table" then
+        if saved == nil then return default end
+        return saved
+      end
+      local out = {}
+      if type(saved) ~= "table" then saved = {} end
+      for k, v in pairs(default) do out[k] = effective(saved[k], v) end
+      for k, v in pairs(saved) do if out[k] == nil then out[k] = v end end
+      return out
+    end
+    local function compact(v)
+      if type(v) ~= "table" then return tostring(v) end
+      local parts = {}
+      for _, k in ipairs(sortedKeys(v)) do parts[#parts + 1] = tostring(k) .. "=" .. compact(v[k]) end
+      return "{" .. table.concat(parts, ", ") .. "}"
+    end
+    local S = ns.Settings
+    local lines = {}
+    for _, key in ipairs(sortedKeys(defaults)) do
+      lines[#lines + 1] = ("  %s: %s"):format(key, compact(effective(p[key], defaults[key])))
+    end
+    if S then
+      local tiers = S.PromptTiers(p)
+      lines[#lines + 1] = ("  nudge level: %s"):format(tostring(S.Nudge(p)))
+      lines[#lines + 1] = ("  prompt tiers: defer=%s, deferLow=%s, info=%s"):format(
+        tostring(tiers.defer), tostring(tiers.deferLow), tostring(tiers.info))
+      lines[#lines + 1] = ("  what to watch: spells=%s, professions=%s, shopping=%s"):format(
+        tostring(S.Watching("spells", p)), tostring(S.Watching("professions", p)), tostring(S.Watching("shopping", p)))
+      lines[#lines + 1] = ("  stop point: level %s mount"):format(tostring(S.StopAfter(p)))
+      lines[#lines + 1] = ("  skip revision: %s"):format(S.SkipRevision(p) and tostring(S.SkipRevision(p)) or "newest")
+    end
+    return lines
+  end)
   section("Items", function()
     local r = sources.items
     if type(r) == "function" then r = r() end

@@ -612,3 +612,30 @@ test("the mount checkboxes belong to this character", function()
   page.args.have40.set(nil, false)
   eq(ns.db.char.milestoneOverride[40], nil)
 end)
+
+test("worth line: a changed skip revision or price gives a new amount, and Rebuild clears the cache", function()
+  local ns = loadSettings({})
+  ns.db.char = { costCache = { a = 100 } }
+  ns.Context = { Profile = function() return { class = "WARRIOR", rules = ns.Settings.RulesFor("WARRIOR") } end }
+  ns.Savings.Worth = function(p, _, cache) return (p.rules.skipRevision or 9) * 1000000 + cache.a * 10000 end
+  local function worth() return ns.Options.Tuning().args.kind_skipRank.desc() end
+  local first = worth()
+  ns.db.profile.tuning = { skipRevision = 1 }
+  local second = worth()
+  truthy(first ~= second, "skip revision is part of the key")
+  ns.db.char.costCache.a = 300
+  truthy(worth() ~= second, "a changed price is part of the key")
+  ns.Savings.Worth = function() return 777 * 10000 end
+  truthy(not worth():find("777", 1, true), "the old amount is kept until a rebuild")
+  ns.Options.Rebuild()
+  truthy(worth():find("777", 1, true), "Rebuild cleared the cache")
+end)
+
+test("classes page and price boxes take their text from the translation table", function()
+  local ns = loadSettings({})
+  ns.L = setmetatable({}, { __index = function(_, k) return "<" .. k .. ">" end })
+  H.load("DontDoThat/Options/Options.lua", ns)
+  truthy(ns.Options.Rules().name:find("<Classes (%d)>", 1, true) or ns.Options.Rules().name:find("^<Classes"), ns.Options.Rules().name)
+  truthy(ns.Options.Watch().args.minGold.name:find("<Gold>", 1, true))
+  truthy(ns.Options.Sound().args.channel.values.Music == "<Music>")
+end)

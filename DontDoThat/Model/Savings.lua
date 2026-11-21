@@ -18,17 +18,14 @@ function Savings.Compute(profile, stopLevel, costCache)
   local planned = {}
   for k, v in pairs(profile) do planned[k] = v end
   planned.milestone = { current = stopLevel, state = "active" }
-  local talent = {}
-  for _, id in ipairs(data.talentSpells or {}) do talent[id] = true end
+  local buyable = ns.SpellData.Buyable(profile.class)
   for _, row in ipairs(ns.SpellData.Rows(profile.class)) do
     local level = row.level or 0
-    -- A talent's first rank comes with the talent; later ranks are bought.
     local familyId = ns.SpellData.FamilyOfId(profile.class, row.id)
-    local free = talent[familyId] and (row.rank or 1) <= 1
-    if (row.kind == "class" or row.kind == "pet") and level > 1 and level <= stopLevel and not free then
+    if level > 1 and level <= stopLevel and buyable(row) then
       local verdict = ns.Rules.Evaluate(planned, { kind = "spell", name = row.name, familyId = familyId,
         rank = row.rank, unlockLevel = level })
-      if verdict.tier == "defer" or verdict.tier == "deferLow" then
+      if ns.Ledger.IsDeferTier(verdict.tier) then
         local cost, estimate = ns.SpellData.Cost(profile.class, row)
         -- A rank-less row would share one key with every other rank-less spell of its name, so it has no seen price.
         local seen = row.rank and costCache and costCache[ns.Ledger.CostKey(familyId, row.rank)]

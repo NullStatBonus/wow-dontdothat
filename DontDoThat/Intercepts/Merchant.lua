@@ -21,10 +21,11 @@ function Merchant.Status(env)
   }
 end
 
--- price in GetMerchantItemInfo is for one bundle of `bundle` units; qty is units asked for.
+-- price in GetMerchantItemInfo is for one bundle of `bundle` units; qty is units asked for. No qty buys one
+-- whole bundle, so it costs the full price.
 function Merchant.Total(price, bundle, qty)
   bundle = (type(bundle) == "number" and bundle > 0) and bundle or 1
-  qty = (type(qty) == "number" and qty > 0) and qty or 1
+  if type(qty) ~= "number" or qty <= 0 then return price end -- no quantity: one whole bundle
   return math.floor(price * qty / bundle + 0.5)
 end
 
@@ -32,7 +33,7 @@ end
 -- C_MerchantFrame.GetItemInfo(index) returns a table instead (stackCount, hasExtendedCost). Docs only, not yet seen on Forever.
 local function rowInfo(env, index)
   if type(env.GetMerchantItemInfo) == "function" then
-    local name, _, price, bundle, _, _, extendedCost = env.GetMerchantItemInfo(index)
+    local name, _, price, bundle, _, _, _, extendedCost = env.GetMerchantItemInfo(index)
     return name, price, bundle, extendedCost
   end
   local api = env.C_MerchantFrame
@@ -80,7 +81,7 @@ local function hookTooltip(env)
   if type(env.hooksecurefunc) ~= "function" or type(tip) ~= "table" then return end
   Merchant.tooltipHooked = pcall(env.hooksecurefunc, tip, "SetMerchantItem", function(self, index)
     local ok, name, link, price, bundle = pcall(itemAt, env, index)
-    if ok and name then ns.ItemGuard.Tooltip(self, "vendor", name, link, Merchant.Total(price, bundle, 1)) end
+    if ok and name then ns.ItemGuard.Tooltip(self, "vendor", name, link, Merchant.Total(price, bundle)) end
   end)
 end
 

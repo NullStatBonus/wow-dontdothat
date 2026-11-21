@@ -72,9 +72,9 @@ test("professions are read from C_SkillInfo when the legacy skill calls are gone
   eq(known[COOKING].max, 75)
 end)
 
-test("the first time: defer with a direct reason naming the profession and no cost", function()
+test("the first time: defer with a direct reason naming the profession and the trainer cost", function()
   local v = ns.Rules.Evaluate(profile(), learn(LEATHERWORKING, "Leatherworking"))
-  eq(v.tier, "defer"); eq(v.source, "professionLearn"); eq(v.profession, LEATHERWORKING); eq(v.cost, nil)
+  eq(v.tier, "defer"); eq(v.source, "professionLearn"); eq(v.profession, LEATHERWORKING); eq(v.cost, 1000)
   truthy(v.reason:find("Leatherworking", 1, true))
   truthy(ns.Rules.Evaluate(profile(), learn(LEATHERWORKING)).reason:find("Leatherworking", 1, true), "English name when the client gives none")
 end)

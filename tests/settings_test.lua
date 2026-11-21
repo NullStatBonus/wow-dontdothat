@@ -188,3 +188,28 @@ test("settings: reset all puts each cleared setting back to its default, as a co
   p.itemModes.armor = "off"
   eq(defaults.itemModes.armor, "both", "editing the profile leaves the defaults alone")
 end)
+
+test("family ID migration: switches move to the new ID, old trainer records are dropped", function()
+  local p = { ruleOff = { abilities = { PALADIN = { [25902] = true }, PRIEST = { ["401955"] = true, [1309595] = false } } } }
+  local c = { catalog = { ["25902#2"] = { familyId = 25902, rank = 2 }, ["635#1"] = { familyId = 635, rank = 1 } },
+    costCache = { ["25902:2"] = 900, ["635:1"] = 10 } }
+  ns.Settings.MigrateFamilyIds(p, c)
+  eq(p.ruleOff.abilities.PALADIN, { [20473] = true })
+  eq(p.ruleOff.abilities.PRIEST, { [1309595] = false }, "a switch saved under the new ID wins")
+  eq(c.catalog, { ["635#1"] = { familyId = 635, rank = 1 } })
+  eq(c.costCache, { ["635:1"] = 10 })
+  ns.Settings.MigrateFamilyIds(p, c)
+  eq(p.ruleOff.abilities.PALADIN, { [20473] = true }, "running again changes nothing")
+  ns.Settings.MigrateFamilyIds(nil, nil)
+end)
+
+test("family ID migration: every new ID is the family the bundled data uses", function()
+  for class, map in pairs(ns.Settings.RENAMED_FAMILIES) do
+    for old, new in pairs(map) do
+      local name = ns.SpellData.FamilyName(class, new)
+      truthy(name, class .. " " .. new .. " is a family")
+      eq(ns.SpellData.FamilyId(class, name), new)
+      falsy(ns.SpellData.FamilyName(class, old), class .. " " .. old .. " is no longer a family")
+    end
+  end
+end)

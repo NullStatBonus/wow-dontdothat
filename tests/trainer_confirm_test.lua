@@ -67,6 +67,29 @@ test("a flagged purchase alerts and asks; the original runs only on confirm", fu
   eq(rec.bought, { { "LeftButton" } }, "original runs with the same arguments")
 end)
 
+test("accepting buys the service the question was about, not the later selection", function()
+  local ns, env, button, rec = setup({ verdicts = { [5] = DEFER } })
+  local boughtIndex = {}
+  env.BuyTrainerService = function(i) boughtIndex[#boughtIndex + 1] = i end
+  ns.TrainerConfirm.Install(env)
+  button.script(button, "LeftButton")
+  env.ClassTrainerFrame.selectedService = 9
+  rec.asks[1].confirm()
+  eq(boughtIndex, { 5 })
+  eq(#rec.bought, 0, "Blizzard's handler, which reads the selection, is not run")
+end)
+
+test("accepting with the selection unchanged runs Blizzard's handler", function()
+  local ns, env, button, rec = setup({ verdicts = { [5] = DEFER } })
+  local boughtIndex = {}
+  env.BuyTrainerService = function(i) boughtIndex[#boughtIndex + 1] = i end
+  ns.TrainerConfirm.Install(env)
+  button.script(button, "LeftButton")
+  rec.asks[1].confirm()
+  eq(#rec.bought, 1, "the original handler ran")
+  eq(boughtIndex, {})
+end)
+
 test("declining never runs the original", function()
   local ns, env, button, rec = setup({ verdicts = { [5] = DEFER } })
   ns.TrainerConfirm.Install(env)

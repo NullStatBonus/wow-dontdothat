@@ -526,10 +526,15 @@ end
 function Capture.Enable(addon, env, saved)
   env = env or _G
   local failures = store(saved).eventFailures
+  -- Older saves repeated each rejected event at every login; keep one of each.
+  local seen = {}
+  for i = #failures, 1, -1 do
+    if seen[failures[i]] then table.remove(failures, i) else seen[failures[i]] = true end
+  end
   for event in pairs(handlers) do
     -- An event the client does not know can raise on registration; skip it and remember which.
     local ok = pcall(addon.RegisterEvent, addon, event, function(_, ...) Capture.OnEvent(env, saved, event, ...) end)
-    if not ok then failures[#failures + 1] = event end
+    if not ok and not seen[event] then seen[event] = true; failures[#failures + 1] = event end
   end
   pcall(Capture.InstallHooks, env, saved)
 end

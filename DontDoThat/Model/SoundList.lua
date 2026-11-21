@@ -12,9 +12,9 @@ local function soundkit(env)
   return type(env.SOUNDKIT) == "table" and env.SOUNDKIT or nil
 end
 
-local function sharedMedia()
-  if type(_G.LibStub) ~= "table" and type(_G.LibStub) ~= "function" then return nil end
-  local ok, lib = pcall(_G.LibStub, "LibSharedMedia-3.0", true)
+local function sharedMedia(env)
+  if type(env.LibStub) ~= "table" and type(env.LibStub) ~= "function" then return nil end
+  local ok, lib = pcall(env.LibStub, "LibSharedMedia-3.0", true)
   return ok and lib or nil
 end
 
@@ -37,7 +37,7 @@ function SoundList.Entries(env)
     end
   end
 
-  local lib = sharedMedia()
+  local lib = sharedMedia(env)
   if lib then
     local pool = {}
     local ok, hash = pcall(lib.HashTable, lib, "sound")
@@ -70,7 +70,7 @@ function SoundList.Resolve(key, env)
   end
 
   if key:sub(1, 4) == "lsm:" then
-    local lib = sharedMedia()
+    local lib = sharedMedia(env)
     if not lib then return nil end
     local ok, path = pcall(lib.Fetch, lib, "sound", key:sub(5), true)
     if ok and path then return "file", path end

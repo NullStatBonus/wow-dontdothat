@@ -9,9 +9,11 @@ local Guard = {}
 ns.ItemGuard = Guard
 
 local disabledReason
+local pending -- spend waiting for the money drop: { amount, before, counted, t }
+local buying = false -- true while our purchase call runs, so a blocked "UNKNOWN()" call is known to be ours
 local trace -- defined below
 
-function Guard.Reset() disabledReason = nil end
+function Guard.Reset() disabledReason = nil; pending = nil end
 function Guard.DisabledReason() return disabledReason end
 
 function Guard.Disable(reason)
@@ -22,19 +24,81 @@ function Guard.Disable(reason)
   ns.Prompt.Say(L["Don't Do That: this game version won't let it confirm item purchases, so it will only warn you."])
 end
 
+-- The client may name a wrapped call "UNKNOWN()" instead of the function.
+local BLOCKED_NAMES = { BuyMerchantItem = true, PlaceAuctionBid = true, UNKNOWN = true }
+
 function Guard.Watch(eventTarget)
   for _, event in ipairs({ "ADDON_ACTION_FORBIDDEN", "ADDON_ACTION_BLOCKED" }) do
     pcall(eventTarget.RegisterEvent, eventTarget, event, function(_, who, func)
-      if who == addonName and (func == "BuyMerchantItem" or func == "PlaceAuctionBid") then
+      local name = type(func) == "string" and func:gsub("%(%)$", "")
+      if who == addonName and BLOCKED_NAMES[name] and (name ~= "UNKNOWN" or buying) then
         Guard.Disable("blocked: " .. tostring(func))
       end
     end)
   end
+  pcall(eventTarget.RegisterEvent, eventTarget, "PLAYER_MONEY", function() Guard.OnMoney() end)
 end
 
 local function profile() return (ns.db and ns.db.profile) or {} end
 
 local function ledgerState() return ns.db and ns.db.char and ns.db.char.ledger end
+
+-- Real spend: a purchase is counted as spent only when the player's money drops soon after it runs, and by no
+-- more than its price. A bid never counts, because the gold comes back when someone outbids it.
+local SPEND_WINDOW = 5
+local function now() return ns.Adapter.ReadTime() or 0 end
+
+local function money() return ns.Adapter.ReadMoney() end
+
+function Guard.NoteSpend(amount, isBid, before)
+  if isBid then
+    if ns.Log then ns.Log.Add("items: bid of %s is not counted as spent", tostring(amount)) end
+    return
+  end
+  if not before or type(amount) ~= "number" then return end
+  -- Purchases close together share one slot: the server may not have taken the first price yet.
+  if pending and now() - pending.t <= SPEND_WINDOW then
+    pending.amount, pending.t = pending.amount + amount, now()
+  else
+    pending = { amount = amount, before = before, counted = 0, t = now() }
+  end
+  if ns.Log then ns.Log.Add("items: spend of %d pending (money %d)", amount, pending.before) end
+end
+
+function Guard.OnMoney()
+  local p = pending
+  if not p then return end
+  local current = money()
+  if now() - p.t > SPEND_WINDOW then
+    pending = nil
+    if ns.Log then ns.Log.Add("items: pending spend of %d expired, not counted", p.amount) end
+    return
+  end
+  local drop = current and (p.before - current) or 0
+  local spent = math.min(drop, p.amount) - p.counted
+  if spent <= 0 then return end
+  p.counted = p.counted + spent
+  if p.counted >= p.amount then pending = nil end
+  local state = ledgerState()
+  if state then ns.Ledger.RecordItemPerformed(state, spent) end
+  if ns.Log then ns.Log.Add("items: spent %d counted (money dropped %d, price %d)", spent, drop, p.amount) end
+end
+
+-- Runs the purchase, then notes it as a pending spend unless it was dropped (proceed returned false).
+local function guarded(proceed)
+  buying = true
+  local ok, result = pcall(proceed)
+  buying = false
+  if not ok then error(result, 0) end
+  return result
+end
+
+local function purchase(proceed, total, isBid)
+  local before = money()
+  local result = guarded(proceed)
+  if result ~= false then Guard.NoteSpend(total, isBid, before) end
+  return result
+end
 
 local TRACE_MAX = 40
 
@@ -134,16 +198,17 @@ local function record(info, name, outcome)
     minPrice = info.minPrice, why = info.why, outcome = outcome })
 end
 
--- surface: "vendor" | "ah". name: item name. link: item link. total: copper. proceed(): the real purchase.
-function Guard.Run(surface, name, link, total, proceed)
+-- surface: "vendor" | "ah". name: item name. link: item link. total: copper. proceed(): the real purchase; it
+-- returns false when it dropped the purchase. isBid: an auction bid below the buyout, never counted as spent.
+function Guard.Run(surface, name, link, total, proceed, isBid)
   local okInfo, info = pcall(Guard.Inspect, surface, link, total)
   if not okInfo then
     trace({ surface = surface, name = name, total = total, outcome = "passed through: decision failed: " .. tostring(info) })
-    return proceed()
+    return guarded(proceed)
   end
   if not info.flagged then
     record(info, name, "passed through: " .. tostring(info.why))
-    return proceed()
+    return guarded(proceed)
   end
 
   local category = info.category
@@ -159,7 +224,7 @@ function Guard.Run(surface, name, link, total, proceed)
     pcall(function() fired = ns.Alert.Trigger(verdict, key, settings) end)
     entry.outcome = "alert only (" .. (disabledReason and ("prompts off: " .. tostring(disabledReason)) or "Ask before buying is off")
       .. "), alert " .. (fired and "played" or "not played") .. ", bought"
-    return proceed()
+    return purchase(proceed, total, isBid)
   end
 
   -- The question says everything the banner would, so it gets the sound alone.
@@ -170,9 +235,7 @@ function Guard.Run(surface, name, link, total, proceed)
     shown = ns.ConfirmPopup.Ask(verdict,
       function()
         entry.outcome = "question shown, accepted, bought"
-        local state = ledgerState()
-        if state then ns.Ledger.RecordItemPerformed(state, total) end
-        proceed()
+        purchase(proceed, total, isBid)
       end,
       function()
         entry.outcome = "question shown, declined, not bought"
@@ -186,7 +249,7 @@ function Guard.Run(surface, name, link, total, proceed)
   end
   entry.outcome = "question could not be shown, bought with banner"
   ns.Prompt.BannerInstead(settings, verdict, verdict.name)
-  return proceed()
+  return purchase(proceed, total, isBid)
 end
 
 -- What /ddt export shows for item warnings.

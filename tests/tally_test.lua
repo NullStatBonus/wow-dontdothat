@@ -63,3 +63,14 @@ test("a spell outside the bundled tables is tracked by the spell ID the tooltip 
   eq(ns.db.char.catalog["2551#0"].state, "open", "the same spell under another name is still the same row")
   eq(ns.db.char.catalog["2552#0"].state, "learned", "the row that vanished is bought")
 end)
+
+test("a purchase that turns a row into used is seen even when the row count stays the same", function()
+  ns.Tally.Reset()
+  ns.db = { char = { catalog = {}, costCache = {} } }
+  local e = env("Creature-A", "Hunter Trainer")
+  local aimed = row("Aimed Shot", 19434, 1, 400)
+  ns.Tally.ObserveLive(e, trainer({ aimed }))
+  eq(ns.db.char.catalog["19434#1"].state, "open")
+  ns.Tally.ObserveLive(e, trainer({ { name = "Aimed Shot", familyId = 19434, rank = 1, level = 10, cost = 400, learned = true } }))
+  eq(ns.db.char.catalog["19434#1"].state, "learned")
+end)

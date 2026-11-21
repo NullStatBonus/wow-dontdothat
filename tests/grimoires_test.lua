@@ -40,9 +40,13 @@ test("a Warlock is asked before buying a secondary demon grimoire", function()
   ns.ItemGuard.Run("vendor", "Grimoire of Soothing Kiss (Rank 2)", link("Grimoire of Soothing Kiss (Rank 2)"), 5000, function() bought = true end)
   falsy(bought, "held until answered")
   truthy(shown.verdict.reason:find("demon", 1, true), shown.verdict.reason)
+  _G.GetMoney = function() return 100000 end
   shown.yes()
   truthy(bought)
-  eq(ns.db.char.ledger.spentAgainst, 5000)
+  _G.GetMoney = function() return 95000 end
+  ns.ItemGuard.OnMoney()
+  eq(ns.db.char.ledger.spentAgainst, 5000, "counted once the money drops")
+  _G.GetMoney = nil
   teardown()
 end)
 

@@ -206,19 +206,32 @@ function SpellData.Cost(classKey, row)
   return cost, true
 end
 
+-- A predicate for the rows a trainer can sell: class and pet spells only, and not the first rank of a talent
+-- (it comes with the talent). Shared by Savings and the ledger so both pages count the same spells.
+function SpellData.Buyable(classKey)
+  local data = ns.Rules and ns.Rules.GetClass(classKey)
+  local talent = {}
+  for _, id in ipairs(data and data.talentSpells or {}) do talent[id] = true end
+  return function(row)
+    if row.kind ~= "class" and row.kind ~= "pet" then return false end
+    return not (talent[SpellData.FamilyOfId(classKey, row.id)] and (row.rank or 1) <= 1)
+  end
+end
+
 -- Services for the ledger. known(row) -> true, false, or nil when the game cannot say.
 -- Only spells with a price (seen or estimated) can cost anything, so only those are listed.
 function SpellData.Services(classKey, known)
-  local out = {}
+  local out, buyable = {}, SpellData.Buyable(classKey)
   for _, rows in pairs(byName(classKey)) do
     for i, row in ipairs(rows) do
       local cost, isEstimate = SpellData.Cost(classKey, row)
-      if cost and (row.level or 0) > 1 then
+      if cost and (row.level or 0) > 1 and buyable(row) then
         out[#out + 1] = {
           familyId = familyIndex(classKey).byId[row.id], name = row.name, rank = row.rank, unlockLevel = row.level, cost = cost,
           costIsEstimate = isEstimate,
-          learned = known and known(row) or nil, id = row.id,
+          id = row.id,
         }
+        if known then out[#out].learned = known(row) end
       end
     end
   end

@@ -97,7 +97,7 @@ function Tally.Services(catalog, classKey, env)
 end
 
 function Tally.Compute(profile, catalog, state, costCache, env)
-  local result = ns.Ledger.Compute(profile, Tally.Services(catalog, profile.class, env), ns.Rules, costCache)
+  local result = ns.Ledger.Compute(profile, Tally.Services(catalog, profile.class, env), ns.Rules, costCache, state)
   return result, ns.Ledger.Totals(state, result)
 end
 
@@ -119,8 +119,13 @@ function Tally.ObserveLive(env, trainer)
   local npc = ns.Adapter.ReadNpcId(env)
   if not npc then return end
   local filters = ns.Adapter.ReadTrainerFilters(env)
-  local signature = table.concat({ #trainer.rows, tostring(filters.available), tostring(filters.unavailable),
-    tostring(filters.used) }, "|")
+  local parts = { tostring(filters.available), tostring(filters.unavailable), tostring(filters.used) }
+  for _, row in ipairs(trainer.rows) do
+    parts[#parts + 1] = row.header and ("h:" .. tostring(row.name) .. tostring(row.expanded))
+      or table.concat({ tostring(row.familyId or row.spellId or row.name), tostring(row.rank), tostring(row.cost),
+        tostring(row.learned), tostring(row.available) }, ":")
+  end
+  local signature = table.concat(parts, "|")
   if lastSignature[npc] == signature then return end
   lastSignature[npc] = signature
   Tally.Observe(db.catalog, npc, trainer, filters)

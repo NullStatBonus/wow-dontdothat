@@ -393,7 +393,7 @@ ns.SkipRevisions = {
         [25894] = {
           [2] = { { source = "computed", reason = { kind = "waitForMount" } } },
         },
-        [25902] = {
+        [20473] = {
           [3] = { { source = "computed", reason = { kind = "notWorthPrice", pct = 37 }, specs = { "HOLY" } }, { source = "computed", reason = { kind = "smallStep", pct = 37 }, specs = { "PROT", "RET" } } },
           [4] = { { source = "computed", reason = { kind = "notWorthPrice", pct = 78 }, specs = { "HOLY" } }, { source = "computed", reason = { kind = "smallStep", pct = 78 }, specs = { "PROT", "RET" } } },
         },

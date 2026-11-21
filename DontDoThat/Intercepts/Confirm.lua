@@ -131,12 +131,20 @@ end
 
 -- original(self, ...) is the Train button's own handler.
 function Confirm.Handle(env, original, button, ...)
-  local ok, verdict = pcall(Confirm.Decide, env)
+  local ok, verdict, index = pcall(Confirm.Decide, env)
   if not ok or not verdict then
     if not ok and ns.Log then ns.Log.Add("confirm: decision failed: %s", tostring(verdict)) end
     return original(button, ...)
   end
-  return run(env, verdict, function(...) return original(button, ...) end, ...)
+  -- Buy the service the question was about, not whatever is selected by the time the player accepts. While the
+  -- selection is unchanged, Blizzard's handler runs (it also shows the profession-slot dialog and refreshes the list).
+  return run(env, verdict, function(...)
+    if type(env.BuyTrainerService) == "function" and type(index) == "number" and selectedIndex(env) ~= index then
+      if ns.Log then ns.Log.Add("confirm: buying the service chosen when asked (%s)", tostring(index)) end
+      return env.BuyTrainerService(index)
+    end
+    return original(button, ...)
+  end, ...)
 end
 
 -- WoW Forever's trainer window (a ScrollBox list). Nothing of the game's is written there, because any write

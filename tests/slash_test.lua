@@ -7,6 +7,7 @@ local function fresh(profile)
   ns.addon = { Print = function(_, m) said[#said + 1] = m end, RegisterChatCommand = function() end, db = { profile = profile or {}, global = {}, char = {} } }
   H.load("DontDoThat/Model/Settings.lua", ns)
   H.load("DontDoThat/Core/Registry.lua", ns)
+  H.load("DontDoThat/Intercepts/Adapter.lua", ns)
   H.load("DontDoThat/Core/Slash.lua", ns)
   return ns, said, function(s) ns.addon:HandleSlash(s) end
 end

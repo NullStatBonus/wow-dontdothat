@@ -36,7 +36,7 @@ end
 
 -- The line shown on prompts, or nil when there is no cost to talk about.
 function EarnBack.Line(copper, level)
-  level = level or (type(_G.UnitLevel) == "function" and _G.UnitLevel("player")) or nil
+  level = level or (ns.Adapter and ns.Adapter.ReadPlayer().level) or nil
   if not level or level < 1 then return nil end
   local text, under = EarnBack.Describe(copper, level)
   if not text then return nil end

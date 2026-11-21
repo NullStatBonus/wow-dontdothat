@@ -350,3 +350,16 @@ test("a missing Menu API is recorded without error", function()
   clicked()
   eq(saved.captures.filterDropdown.tags, {})
 end)
+
+test("a rejected event is stored once, and old repeats in the saved list are dropped on load", function()
+  local ns, saved = setup(true)
+  saved.captures = { eventFailures = { "CRAFT_SHOW", "CRAFT_UPDATE", "CRAFT_SHOW", "CRAFT_UPDATE", "CRAFT_SHOW" } }
+  local addon = { RegisterEvent = function(_, event)
+    if event == "CRAFT_SHOW" or event == "CRAFT_UPDATE" then error("unknown event") end
+  end }
+  ns.Capture.Enable(addon, fakeEnv(), saved)
+  ns.Capture.Enable(addon, fakeEnv(), saved)
+  local list = saved.captures.eventFailures
+  table.sort(list)
+  eq(list, { "CRAFT_SHOW", "CRAFT_UPDATE" })
+end)
