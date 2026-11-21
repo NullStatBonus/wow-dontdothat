@@ -449,7 +449,14 @@ test("reset all lives on Home, and no other settings page has a reset", function
     milestoneOverride = { [40] = true }, debug = true, traceItems = true })
   local reset = ns.Options.Home().args.resetAll
   eq(reset.type, "execute"); truthy(reset.confirm)
+  local rebuilt, rebuild = 0, ns.Options.Rebuild
+  ns.Options.Rebuild = function() rebuilt = rebuilt + 1; return rebuild() end
+  local toast, repositioned = ns.Toast, 0
+  ns.Toast = { ResetPosition = function() repositioned = repositioned + 1 end }
   reset.func()
+  ns.Options.Rebuild, ns.Toast = rebuild, toast
+  eq(rebuilt, 1, "the pages are built again, so Classes follows the default revision")
+  eq(repositioned, 1, "a Move in progress ends and the warning goes back to its default place")
   eq(ns.db.profile.enabled, nil); eq(ns.db.profile.alert, nil); eq(ns.db.profile.tuning, nil)
   eq(ns.db.profile.debug, nil); eq(ns.db.profile.traceItems, nil)
   eq(ns.db.profile.professionAsked, { [4036] = true }, "what you have already done is kept")

@@ -199,7 +199,9 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] WoW Forever, the same character: pick another profile, `/reload`. The profile you picked stays.
 - [ ] Classic Era: savings and profile are unchanged after the update.
 - [ ] WoW Forever, a character with savings and a non-default profile: turn off every addon that ships the newer library (Closest Vendor, KeepThat), `/reload`. Progress and the profile are unchanged. Turn them on again, `/reload`: still unchanged.
-- [ ] WoW Forever, update from 0.13.0 or earlier without the newer library: turn off Closest Vendor and KeepThat, play a character on Don't Do That 0.13.0 until Progress shows savings, and pick a profile other than Default. Log out, install this version, log in. Progress shows the same savings and the same profile is in use. (Forever has no realm name, so 0.13.0 saved the character as `Name - `, with nothing after the dash.)
+
+## 22. Reset all settings takes effect at once
+- [ ] Reset all settings, then (no `/reload`) buy a piece of armor over 1 silver at a vendor and answer No. Send saved variables: the character's `itemsAvoided` went up by one, and the profile holds no `itemModes` or `minPrice`.
 
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.

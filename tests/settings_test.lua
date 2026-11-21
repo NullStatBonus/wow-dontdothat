@@ -178,3 +178,13 @@ test("settings: reset all clears every setting except what the player has alread
   eq(p, { professionAsked = { [2575] = true }, milestoneOverride = { [60] = true } })
   ns.Settings.ResetAll(nil)
 end)
+
+test("settings: reset all puts each cleared setting back to its default, as a copy", function()
+  local defaults = { enabled = true, minPrice = 100, itemModes = { armor = "both" }, professionAsked = {} }
+  local p = { enabled = false, minPrice = 5, itemModes = { armor = "off" }, professionAsked = { [2575] = true }, styleMarked = true }
+  ns.Settings.ResetAll(p, defaults)
+  eq(p, { enabled = true, minPrice = 100, itemModes = { armor = "both" }, professionAsked = { [2575] = true }, styleMarked = true })
+  truthy(p.itemModes ~= defaults.itemModes, "a copy, not the defaults table")
+  p.itemModes.armor = "off"
+  eq(defaults.itemModes.armor, "both", "editing the profile leaves the defaults alone")
+end)

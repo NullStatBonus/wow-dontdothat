@@ -89,6 +89,31 @@ test("warning style: Reset all settings goes back to Toast and stays Toast after
   cleanup()
 end)
 
+test("reset all: warnings work at once, AceDB still saves only changed values, and a relog reads the defaults", function()
+  _G.DontDoThatDB = nil
+  local full = { profile = { alerts = true, minPrice = 100, alert = { style = "toast", cooldown = 3 },
+    itemModes = { armor = "both", bags = "ah" } } }
+  local saved = defaults
+  defaults = full
+  local ns = login()
+  H.load("DontDoThat/Model/ItemWarning.lua", ns)
+  ns.defaults = full
+  local p = ns.db.profile
+  p.itemModes.armor = "off"; p.minPrice = 5000; p.professionAsked = { [2575] = true }
+  ns.Settings.ResetAll(p)
+  eq(p.itemModes.armor, "both"); eq(p.itemModes.bags, "ah"); eq(p.minPrice, 100); eq(p.alert.cooldown, 3)
+  truthy(ns.ItemWarning.Flagged(p.itemModes, "armor", "vendor", 200, p.minPrice), "2s of armor at a vendor is warned about")
+  truthy(p.styleMarked); eq(p.professionAsked, { [2575] = true })
+  logout(nil, "PLAYER_LOGOUT")
+  local disk = _G.DontDoThatDB.profiles.Default
+  eq(disk.itemModes, nil); eq(disk.minPrice, nil)
+  eq(disk.professionAsked, { [2575] = true })
+  ns = login()
+  eq(ns.db.profile.itemModes.armor, "both"); eq(ns.db.profile.minPrice, 100)
+  defaults = saved
+  cleanup()
+end)
+
 test("warning style: an invalid saved style on an old profile becomes Warning; classify is idempotent", function()
   local ns = {}
   H.load("DontDoThat/Model/Settings.lua", ns)

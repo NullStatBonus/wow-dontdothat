@@ -21,6 +21,13 @@ Update the supporting docs in the same change as any user-visible addon behavior
 - Issue text describes the gap, the code involved and a possible approach; no personal names.
 - Check open issues (`gh issue list`) before proposing new work.
 
+## Testing
+
+- Keep in-game checks simple and few: the fewest steps that show the change works, with no special setup (old versions, other addons turned off, staged characters or items).
+- Prefer checks the player only has to play through: verify from debug logs and saved variables, not from what the player watches on screen. When a change needs evidence, have the addon write it to the log or saved data.
+- The player copies saved variables to `../shared-addon-resources/saved` (`Account/<account>/SavedVariables/`). Read them there to confirm a fix before asking for more in-game steps.
+- When a case cannot be reproduced simply, cover it with automated tests (`make test`, real bundled libraries where it matters) and say so, rather than asking for an elaborate in-game check.
+
 ## Git and PRs
 
 - **Archive before git.** Before any commit, push or PR for a change, run `/opsx:archive` first (sync specs, bump the version, write the CHANGELOG section), so the archive and the code ship in the same commit/PR. Commit nothing for a change that is still active in `openspec/changes/`.

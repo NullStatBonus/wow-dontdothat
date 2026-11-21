@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.4
+
+- **Fixed: After you reset all settings, the addon warns about purchases again at once.** Before, vendor and auction house warnings stopped until you reloaded the game.
+- Fixed: After a reset, the Classes page shows the skips of the newest revision.
+- Fixed: A reset during Move puts the warning back in its default place.
+
 ## 0.13.3
 
 - **Fixed: On WoW Forever, the addon now finds your savings and profile from version 0.13.0 and earlier.** WoW Forever has no realm names, so older versions saved your character under your name only. Versions 0.13.1 and 0.13.2 did not find that data if no other addon brought the newer settings library. The addon now moves it at login.
