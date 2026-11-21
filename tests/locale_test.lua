@@ -2,7 +2,11 @@ package.path = "./tests/?.lua;" .. package.path
 local H = require("harness")
 local C = require("locale_check")
 
-local used = C.usedKeys("DontDoThat")
+local used, dynamicKeys = C.usedKeys("DontDoThat")
+
+test("player-facing localization keys are plain string literals", function()
+  eq(dynamicKeys, {})
+end)
 
 test("the enUS file gives English-as-key: a sentence with no translation shows as written", function()
   local ns = {}

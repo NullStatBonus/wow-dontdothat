@@ -177,7 +177,14 @@ end
 -- Settings that record what the player has already done rather than how they like things.
 local KEEP_ON_RESET = { professionAsked = true, milestoneOverride = true, revisionNotice = true, styleMarked = true }
 
--- Puts every setting back to its default. With AceDB, removing a saved key lets the default show through again.
+-- A copy of a default value, so a later edit of the profile never changes the defaults table.
+local function copy(value)
+  if type(value) ~= "table" then return value end
+  local out = {}
+  for k, v in pairs(value) do out[k] = copy(v) end
+  return out
+end
+
 -- Newer settings-library versions file a WoW Forever character as "Name Surname" instead of "Name - Realm". Moves
 -- this character's saved data and profile choice from oldKey to the key the loaded library uses, once: the old
 -- entries are removed, so a later run finds nothing. Data already under the new key is never overwritten.
@@ -212,11 +219,20 @@ function Settings.MigrateCharKeys(sv, db, keys)
   return moved
 end
 
-function Settings.ResetAll(p)
+-- Puts every setting back to its default. AceDB copies defaults into the profile only when it loads, so each cleared
+-- setting gets its default back here (defaults: the profile defaults, ns.defaults.profile when not given); otherwise
+-- it would stay empty until the next reload. The defaults have no "*" keys, which AceDB would treat specially.
+function Settings.ResetAll(p, defaults)
   p = p or saved()
   if not p then return end
   for key in pairs(p) do
     if not KEEP_ON_RESET[key] then p[key] = nil end
+  end
+  defaults = defaults or (ns.defaults and ns.defaults.profile)
+  if type(defaults) == "table" then
+    for key, value in pairs(defaults) do
+      if p[key] == nil then p[key] = copy(value) end
+    end
   end
   if ns.Log and ns.Log.SetEnabled then ns.Log.SetEnabled(false) end
 end

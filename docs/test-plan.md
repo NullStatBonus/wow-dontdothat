@@ -199,7 +199,18 @@ Levels needed: most steps work at **level 10**. Steps marked (L12) need level 12
 - [ ] WoW Forever, the same character: pick another profile, `/reload`. The profile you picked stays.
 - [ ] Classic Era: savings and profile are unchanged after the update.
 - [ ] WoW Forever, a character with savings and a non-default profile: turn off every addon that ships the newer library (Closest Vendor, KeepThat), `/reload`. Progress and the profile are unchanged. Turn them on again, `/reload`: still unchanged.
-- [ ] WoW Forever, update from 0.13.0 or earlier without the newer library: turn off Closest Vendor and KeepThat, play a character on Don't Do That 0.13.0 until Progress shows savings, and pick a profile other than Default. Log out, install this version, log in. Progress shows the same savings and the same profile is in use. (Forever has no realm name, so 0.13.0 saved the character as `Name - `, with nothing after the dash.)
+
+## 22. Reset all settings takes effect at once
+Each check starts with Home > **Reset all settings** and no `/reload` before the action. After each check, `/reload` and send saved variables.
+- [ ] At a vendor that sells armor over 1 silver, reset, then buy one piece and answer No.
+  Check: the "Buy anyway?" question shows, and you keep the item's price.
+  Log: the character's ledger `itemsAvoided` is one higher, and the profile has no `itemModes` or `minPrice`.
+- [ ] Type `/ddt revision 1`, reset, then open Advanced > Classes > your class.
+  Check: the "Ranks to skip follow skip list revision" line shows the same number that `/ddt revision` prints, not 1.
+  Log: the profile has no `tuning.skipRevision`.
+- [ ] Appearance > Warnings > **Move**, drag the toast away, then reset and type `/ddt preview toast`.
+  Check: the Move box closes, and the sample toast shows at the top center of the screen.
+  Log: the profile has no `toast.point`.
 
 ## Not covered yet
 - Profession trainer rows are recognised by the client's name for the apprentice spell. Section 11 checks this on a real trainer; until it is ticked the row shape is unverified. With debug on, open each trainer and `/ddt log`.

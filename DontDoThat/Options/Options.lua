@@ -339,8 +339,9 @@ function Options.Home(asRoot)
     confirm = true, confirmText = L["Put every setting back to its default? Your tally and progress are kept."],
     func = function()
       if ns.Settings then ns.Settings.ResetAll() end
+      if ns.Toast and ns.Toast.ResetPosition then pcall(ns.Toast.ResetPosition) end -- ends a Move in progress, so Done cannot save the old position again
       applyNow()
-      Options.Refresh()
+      Options.Rebuild() -- built again: Classes lists the skips of the default revision, not the one picked before
     end,
   })
 
