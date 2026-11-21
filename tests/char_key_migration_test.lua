@@ -82,6 +82,9 @@ test("adapter: the legacy key is Name - Realm, or nil when a part is missing", f
   eq(A.ReadLegacyCharKey({ UnitName = function() return "Hero" end }), nil)
   eq(A.ReadLegacyCharKey({ UnitName = function() return nil end, GetRealmName = function() return "Realm" end }), nil)
   eq(A.ReadLegacyCharKey({ UnitName = function() error("x") end, GetRealmName = function() return "Realm" end }), nil)
+  eq(A.ReadLegacyCharKey({ UnitName = function() return "Hero" end, GetRealmName = function() return "" end }), "Hero - ",
+    "WoW Forever has no realm name")
+  eq(A.ReadLegacyCharKey({ UnitName = function() return "" end, GetRealmName = function() return "" end }), nil)
 end)
 
 -- End to end with the real bundled AceDB on a Forever-shaped or Era-shaped client.
@@ -93,10 +96,12 @@ local function cleanup() for _, k in ipairs(GLOBALS) do _G[k] = nil end end
 local logout
 -- mode "forever": AceDB 40 on Forever. "era": Classic Era. "older": WoW Forever with a library that ignores regional
 -- names (AceDB 33): AceDB loads with RegionalUniqueNamesEnabled missing, so its key is "Name - Realm".
-local function login(mode)
+-- realm: what GetRealmName returns ("Realm" unless given; WoW Forever gives "").
+local function login(mode, realm)
   local forever = mode == "forever" or mode == "older"
   _G.LibStub = nil
-  _G.GetRealmName = function() return "Realm" end
+  realm = realm or "Realm"
+  _G.GetRealmName = function() return realm end
   _G.UnitName = function() return "Hero" end
   _G.UnitNameUnmodified = function() if forever then return "Hero", "Surname" end return "Hero" end
   _G.RegionalUniqueNamesEnabled = mode ~= "older" and function() return forever end or nil
@@ -125,10 +130,11 @@ local function login(mode)
   return db
 end
 
-local function savedUnderOldKey()
+local function savedUnderOldKey(key)
+  key = key or OLD
   return {
-    char = { [OLD] = { ledger = { saved = 1234 }, costCache = { ["spell:1"] = 100 } } },
-    profileKeys = { [OLD] = "Alt" },
+    char = { [key] = { ledger = { saved = 1234 }, costCache = { ["spell:1"] = 100 } } },
+    profileKeys = { [key] = "Alt" },
     profiles = { Alt = { alerts = false } },
   }
 end
@@ -210,6 +216,46 @@ test("older library on Forever: with data under both keys, both stay as they are
   local db = login("older")
   eq(db.char.ledger.saved, 1234)
   eq(_G.DontDoThatDB.char[NEW].ledger.saved, 7)
+  cleanup()
+end)
+
+-- WoW Forever gives no realm name, so AceDB 33 (bundled up to 0.13.0) filed the character as "Hero - ".
+local EMPTY = "Hero - "
+
+test("adapter: on Forever with no realm name, the candidates are Name - and Name Surname", function()
+  local ns = {}
+  H.load("DontDoThat/Intercepts/Adapter.lua", ns)
+  eq(ns.Adapter.ReadCharKeys({ UnitName = function() return "Hero" end, GetRealmName = function() return "" end,
+    RegionalUniqueNamesEnabled = function() return true end,
+    UnitNameUnmodified = function() return "Hero", "Surname" end }), { EMPTY, NEW })
+end)
+
+test("AceDB 40 on Forever with no realm name: data saved by 0.13.0 under Name - survives; a second login changes nothing", function()
+  _G.DontDoThatDB = savedUnderOldKey(EMPTY)
+  local db = login("forever", "")
+  eq(db.keys.char, NEW)
+  eq(db.char.ledger.saved, 1234); eq(db.char.costCache["spell:1"], 100)
+  eq(db:GetCurrentProfile(), "Alt"); eq(db.profile.alerts, false)
+  eq(_G.DontDoThatDB.char[EMPTY], nil); eq(_G.DontDoThatDB.profileKeys[EMPTY], nil)
+  logout(nil, "PLAYER_LOGOUT")
+  db = login("forever", "")
+  eq(db.char.ledger.saved, 1234); eq(db:GetCurrentProfile(), "Alt")
+  cleanup()
+end)
+
+test("older library on Forever with no realm name: data goes back to Name - and forward again", function()
+  _G.DontDoThatDB = savedUnderOldKey(EMPTY)
+  local db = login("forever", "")
+  eq(db.char.ledger.saved, 1234)
+  logout(nil, "PLAYER_LOGOUT")
+  db = login("older", "")
+  eq(db.keys.char, EMPTY)
+  eq(db.char.ledger.saved, 1234); eq(db:GetCurrentProfile(), "Alt")
+  eq(_G.DontDoThatDB.char[NEW], nil)
+  logout(nil, "PLAYER_LOGOUT")
+  db = login("forever", "")
+  eq(db.char.ledger.saved, 1234); eq(db:GetCurrentProfile(), "Alt")
+  eq(_G.DontDoThatDB.char[EMPTY], nil)
   cleanup()
 end)
 

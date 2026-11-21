@@ -358,10 +358,14 @@ The system SHALL show on the Rules page the revision in use and, for every rank 
 - **THEN** Ranks to skip lists revision 1's ranks with the reason revision 1 records for each
 
 ### Requirement: Character data survives a character-key change
-When the settings library files this character under a different key than one used before (`Name - Realm`, or on WoW Forever `Name Surname`), the system SHALL move the character's saved data (savings ledger, observed prices, mount marks, profession answers) and profile choice to the key in use at login, before anything reads them. It SHALL act at most once per key change, SHALL NOT overwrite data saved under the key in use, and SHALL change nothing when the keys are equal.
+When the settings library files this character under a different key than one used before (`Name - Realm`, where the realm part is empty on a client that gives no realm name, or on WoW Forever `Name Surname`), the system SHALL move the character's saved data (savings ledger, observed prices, mount marks, profession answers) and profile choice to the key in use at login, before anything reads them. It SHALL act at most once per key change, SHALL NOT overwrite data saved under the key in use, and SHALL change nothing when the keys are equal.
 
 #### Scenario: WoW Forever character after the library update
 - **WHEN** a WoW Forever character with savings and a chosen profile saved under `Name - Realm` logs in and the loaded library uses `Name Surname`
+- **THEN** Progress shows the same savings and observed prices, and the character uses the same profile as before
+
+#### Scenario: WoW Forever with no realm name
+- **WHEN** a WoW Forever client gives an empty realm name, the character's savings and chosen profile are saved under `Name - ` (the name, a dash and nothing after it), and the loaded library uses `Name Surname`
 - **THEN** Progress shows the same savings and observed prices, and the character uses the same profile as before
 
 #### Scenario: Back to the older library

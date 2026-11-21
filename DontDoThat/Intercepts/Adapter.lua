@@ -146,12 +146,13 @@ function Adapter.ReadTrainer(env)
 end
 
 -- Returns { class = "HUNTER", level = 10 } with nil fields when unreadable.
--- The character key older settings-library versions used: "Name - Realm". Nil when either part can't be read.
+-- The character key older settings-library versions used: "Name - Realm", built as AceDB 33 does. WoW Forever has no
+-- realm name (GetRealmName() is ""), so there the key is "Name - ". Nil when the name or realm can't be read.
 function Adapter.ReadLegacyCharKey(env)
   env = env or _G
   local name = call(env, "UnitName", "player")
   local realm = call(env, "GetRealmName")
-  if type(name) ~= "string" or name == "" or type(realm) ~= "string" or realm == "" then return nil end
+  if type(name) ~= "string" or name == "" or type(realm) ~= "string" then return nil end
   return name .. " - " .. realm
 end
 
