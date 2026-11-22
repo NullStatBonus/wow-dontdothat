@@ -108,6 +108,10 @@ The system SHALL count each declined item purchase, with its total price, as avo
 - **WHEN** the player accepts the question
 - **THEN** nothing is added to avoided, and the price is added to the spent-against total
 
+#### Scenario: Item allowed
+- **WHEN** the player chooses Always Allow for an item, or buys an item already allowed
+- **THEN** nothing is added to avoided or to the spent-against total
+
 #### Scenario: Separate from savings
 - **WHEN** the player views Tally
 - **THEN** avoided purchases are shown as their own figure and are not added to verified or projected totals

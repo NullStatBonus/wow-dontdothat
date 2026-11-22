@@ -8,6 +8,9 @@ if type(GetLocale) ~= "function" or GetLocale() ~= "xxXX" then return end
 
 local L = ns.L
 -- L["Buy anyway?"] = "..."
+-- L["Always Allow"] = "..."
+-- L["Always allowed on this character"] = "..."
+-- L["Remove"] = "..."
 -- L["Costs about %s"] = "..."
 -- L["After this you'll have %s of the %s for your level %d mount."] = "..."
 

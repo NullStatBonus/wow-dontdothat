@@ -39,6 +39,9 @@ These are the item kinds: armor, weapons, vanity items, bags, recipes, potions, 
 For each kind, you choose where the addon asks: at vendors, at the auction house, at both, or nowhere.
 By default, armor, weapons and vanity items are watched at both. The other kinds are watched at the auction house only. Mounts are not watched.
 The addon does not ask about purchases that cost less than **1 silver**. You can change this price.
+If you always buy an item, choose **Always Allow** when the addon asks about it. The addon buys the item and stops asking about that item on this character, at vendors and at the auction house. Other items of the same kind are still watched.
+A purchase of an allowed item does not count as spent or as turned down in your savings.
+To be asked again, remove the item on the What to watch page, under Shopping.
 
 ### Other ways to lose gold
 
@@ -107,8 +110,8 @@ Type `/ddt` to open the settings at Home. You can also find them under Options >
 The "Don't Do That" entry there shows the Home controls at once, with the other pages under it.
 The settings have these pages:
 
-- **Home:** turn the addon on or off, choose how strongly it warns you, choose when to stop warning you, turn the on-screen message on or off, and reset all settings.
-- **What to watch:** choose Spells, Professions and Shopping, and which purchases the addon watches.
+- **Home:** turn the addon on or off, choose how strongly it warns you, choose when to stop warning you, turn the on-screen message on or off, and reset all settings. A reset also removes the items that this character always allows.
+- **What to watch:** choose Spells, Professions and Shopping, and which purchases the addon watches. Under Shopping, **Always allowed on this character** lists the items you chose Always Allow for, each with a **Remove** button.
 - **Progress:** the gold you saved, and how close you are to your mounts. **Start the count over** forgets what the addon recorded (trainer prices, purchases you turned down or made, and reset counts). Spell totals come from your spellbook, so they come back. The "I've already bought my mount" checkboxes are kept for each character, so marking a mount on one character does not change your other characters.
 - **Appearance:** three tabs.
   - **Warnings:** choose Toast or Warning, preview it, set the toast's background opacity, text and icon opacity and scale, move it (Done saves, Cancel or Escape puts it back, and Escape does not close the settings window; it keeps its place when you change its scale), reset its position, and turn the chat line on or off.
@@ -159,7 +162,7 @@ Switches take `on` or `off`. Opacity is 0 to 100, scale is 50 to 200 and `alert.
 
 ### Your characters
 
-- Settings are shared by all your characters. Your savings, the mounts you marked as bought, and the professions the addon already asked about are kept for each character.
+- Settings are shared by all your characters. Your savings, the mounts you marked as bought, the professions the addon already asked about, and the items you always allow are kept for each character.
 - After updating from an older version, a mount you marked as bought is kept only on characters that are at least that level. Each character may be asked once about a profession that another character was asked about.
 
 ### Warnings
@@ -172,6 +175,9 @@ Switches take `on` or `off`. Opacity is 0 to 100, scale is 50 to 200 and `alert.
 - If the auction list changes while a question is open (you sort, search or turn the page), Buy anyway buys nothing. Open the question again for the auction you want.
 - On Classic Era, Buy anyway at a trainer buys the spell the question named, even if you click another row while it is open.
 - If the game has no free dialog for a question, the purchase goes ahead and does not count as turned down.
+- The addon never asks about an allowed item again, at any price. An item you allowed at a vendor is also allowed at the auction house.
+- The addon knows an item by its item ID. Gear with a random suffix, such as "of the Bear", shares one ID, so if you allow one suffix you allow all of them.
+- You can allow an item only from the question. If "Ask before buying" is off, there is no question, so you cannot add items. You can still remove them.
 
 ### WoW Forever
 

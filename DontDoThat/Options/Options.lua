@@ -343,6 +343,9 @@ function Options.Home(asRoot)
     confirm = true, confirmText = L["Put every setting back to its default? Your tally and progress are kept."],
     func = function()
       if ns.Settings then ns.Settings.ResetAll() end
+      -- This character's Always Allow items go too; emptied in place, other characters keep theirs.
+      local allowed = ns.db and ns.db.char and ns.db.char.allowedItems
+      if type(allowed) == "table" then for id in pairs(allowed) do allowed[id] = nil end end
       if ns.Toast and ns.Toast.ResetPosition then pcall(ns.Toast.ResetPosition) end -- ends a Move in progress, so Done cannot save the old position again
       applyNow()
       Options.Rebuild() -- built again: Classes lists the skips of the default revision, not the one picked before
@@ -1225,6 +1228,23 @@ function Options.Watch()
   end
   page:add("categories", { type = "group", inline = true, name = L["Warn me when I buy"], args = categories,
     hidden = function() return not categoriesOpen end })
+
+  -- Items this character chose Always Allow for, from the purchase question. Built with the page: adding or
+  -- removing one rebuilds the pages.
+  page:section("allowedHeader", L["Always allowed on this character"])
+  local allowed = ns.ItemGuard and ns.ItemGuard.AllowedList() or {}
+  if #allowed == 0 then
+    page:note("allowedNone", L["Choose Always Allow when the addon asks about an item, and it won't ask about that item again."])
+  end
+  for _, entry in ipairs(allowed) do
+    page:add("allowed_" .. entry.id, { type = "description", fontSize = "medium", width = 1.5, name = entry.name,
+      image = function() return entry.icon, ICON_SIZE, ICON_SIZE end })
+    page:add("allowedRemove_" .. entry.id, { type = "execute", width = 0.6, name = L["Remove"],
+      func = function()
+        ns.ItemGuard.Disallow(entry.id)
+        Options.Rebuild()
+      end })
+  end
 
   page:section("otherHeader", L["Other"])
   local function guardToggle(key, name, desc, hunterOnly)

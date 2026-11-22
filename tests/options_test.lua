@@ -639,3 +639,46 @@ test("classes page and price boxes take their text from the translation table", 
   truthy(ns.Options.Watch().args.minGold.name:find("<Gold>", 1, true))
   truthy(ns.Options.Sound().args.channel.values.Music == "<Music>")
 end)
+
+local function withGuard(ns, allowed)
+  H.load("DontDoThat/Intercepts/ItemGuard.lua", ns)
+  ns.db.char = { allowedItems = allowed or {} }
+  return ns
+end
+
+test("shopping: allowed items are listed by name with a Remove button that warns again", function()
+  local ns = withGuard(fresh({}), { [10050] = { name = "Mageweave Bag", icon = 133 }, [2589] = { name = "Linen Cloth" } })
+  local watch = ns.Options.Watch().args
+  truthy(watch.allowedHeader)
+  eq(watch.allowedNone, nil)
+  eq(text(watch.allowed_2589), "Linen Cloth")
+  truthy(watch.allowed_2589.order < watch.allowed_10050.order, "sorted by name")
+  eq(select(1, watch.allowed_10050.image()), 133)
+  local rebuilt, rebuild = 0, ns.Options.Rebuild
+  ns.Options.Rebuild = function() rebuilt = rebuilt + 1 end
+  watch.allowedRemove_10050.func()
+  ns.Options.Rebuild = rebuild
+  eq(rebuilt, 1)
+  falsy(ns.ItemGuard.Allowed(10050), "removed, so the item is warned about again")
+  local after = ns.Options.Watch().args
+  eq(after.allowed_10050, nil)
+  truthy(after.allowed_2589)
+  truthy(watch.allowedHeader.order < watch.otherHeader.order, "the list comes before Other")
+end)
+
+test("shopping: with no allowed items the list says how to add one", function()
+  local ns = withGuard(fresh({}))
+  local watch = ns.Options.Watch().args
+  truthy(text(watch.allowedNone):find("Choose Always Allow", 1, true))
+end)
+
+test("reset all empties this character's allowed items in place", function()
+  local ns = withGuard(fresh({}), { [10050] = { name = "Mageweave Bag" } })
+  local list = ns.db.char.allowedItems
+  local rebuild, toast = ns.Options.Rebuild, ns.Toast
+  ns.Options.Rebuild, ns.Toast = function() end, nil
+  ns.Options.Home().args.resetAll.func()
+  ns.Options.Rebuild, ns.Toast = rebuild, toast
+  truthy(ns.db.char.allowedItems == list, "the same table")
+  eq(next(list), nil)
+end)
