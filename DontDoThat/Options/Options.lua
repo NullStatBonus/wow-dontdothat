@@ -855,6 +855,12 @@ end
 local function category(order, title, hex, entries, empty, classKey)
   local page = { args = {}, n = 0 }
   if #entries == 0 then page.args.none = { type = "description", fontSize = "medium", width = "full", order = 0, name = MUTED .. (empty or L["Nothing here."]) .. "|r" } end
+  if classKey and #entries > 0 then
+    -- The switch is saved for the spell (ruleOff.abilities is keyed by spell), so a row that lists some ranks still
+    -- switches every rank. Said once above the rows, because the row text names ranks.
+    page.args.scopeNote = { type = "description", fontSize = "medium", width = "full", order = 0,
+      name = MUTED .. L["Each switch covers every rank of the spell, not only the ranks listed here."] .. "|r" }
+  end
   for i, entry in ipairs(entries) do
     page.args["item" .. i] = classKey and abilityToggle(entry, classKey) or item(entry)
     page.args["item" .. i].order = i * 2 - 1

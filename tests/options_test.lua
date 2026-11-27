@@ -682,3 +682,26 @@ test("reset all empties this character's allowed items in place", function()
   truthy(ns.db.char.allowedItems == list, "the same table")
   eq(next(list), nil)
 end)
+
+test("rules page: each group of switches says that a switch covers every rank of the spell, once, and only when it has rows", function()
+  local ns = loadSettings({})
+  local page = ns.Options.Rules().args.HUNTER
+  local NOTE = "Each switch covers every rank of the spell, not only the ranks listed here."
+  local withNote, boxes = 0, 0
+  -- Worth buying and Optional are read-only lists; the other three have the switches.
+  for _, key in ipairs({ "keep", "optional", "wait", "low", "skipped" }) do
+    local switches = key == "wait" or key == "low" or key == "skipped"
+    for _, group in pairs(page.args[key].args) do
+      if group.type == "group" then
+        boxes = boxes + 1
+        local n = 0
+        for _, w in pairs(group.args) do if w.name and tostring(w.name):find(NOTE, 1, true) then n = n + 1 end end
+        local rows = 0
+        for k in pairs(group.args) do if k:find("^item") then rows = rows + 1 end end
+        eq(n, (switches and rows > 0) and 1 or 0, key .. " box with " .. rows .. " rows")
+        withNote = withNote + n
+      end
+    end
+  end
+  truthy(boxes > 0 and withNote > 0, "some box has rows and shows the note")
+end)
