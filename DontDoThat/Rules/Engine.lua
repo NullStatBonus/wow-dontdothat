@@ -70,13 +70,14 @@ local REASON_TEXT = {
   guideSkipEntirely = L["The leveling guide says this spell is not worth buying while leveling."],
   guideUpToRank = L["The leveling guide says to buy this spell only up to rank %d."],
   guideNotTrained = L["The leveling guide does not buy this rank while leveling."],
+  guideUselessAfter = L["The leveling guide says this spell is not worth upgrading after level %d."],
   noGain = L["Adds nothing over the rank before it."],
   smallStep = L["Only %d%% stronger than the rank before it, for a spell you only use now and then."],
   notWorthPrice = L["Only %d%% stronger than the rank before it, which does not repay its price."],
   waitForMount = L["This rank can wait until you have your level 60 mount."],
   legacy = L["An earlier version of this list judged this rank a small upgrade."],
 }
-local REASON_NUMBER = { guideUpToRank = "n", smallStep = "pct", notWorthPrice = "pct" }
+local REASON_NUMBER = { guideUpToRank = "n", guideUselessAfter = "n", smallStep = "pct", notWorthPrice = "pct" }
 
 function Rules.SkipReason(reason)
   local text = REASON_TEXT[reason.kind]
@@ -87,6 +88,8 @@ end
 -- Where a skip came from, for the Rules page.
 local SOURCE_TEXT = {
   guide = L["From the Wowhead leveling guide."],
+  guideForever = L["From the Wowhead leveling guide for WoW Forever."],
+  guideMethod = L["From the Method leveling guide for WoW Forever."],
   computed = L["Computed from the game data."],
   legacy = L["From the earlier skip list."],
 }

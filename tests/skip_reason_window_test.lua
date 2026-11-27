@@ -44,6 +44,13 @@ test("training window: a skipped rank's tooltip says why, in the words of the gu
   eq(c.verdicts[2].source, "skipRank"); eq(c.verdicts[2].tier, "defer")
   eq(c.verdicts[2].reason, "The leveling guide says to buy this spell only up to rank 4.")
   eq(c.verdicts[3].source ~= "skipRank", true, "rank 4 is within the guide's limit")
+  eq(c.verdicts[4].reason, "The leveling guide says to buy only the first rank of this spell.", "the Arms guide calls Thunder Clap optional")
+  eq(c.verdicts[5].reason, "The leveling guide says to buy only the first rank of this spell.")
+end)
+
+test("training window: on revision 2 each rank states what revision 2 records for it", function()
+  local c = compute({ tuning = { skipRevision = 2 } })
+  eq(c.verdicts[2].reason, "The leveling guide says to buy this spell only up to rank 4.")
   eq(c.verdicts[4].reason, "The leveling guide says to buy only the first rank of this spell.")
   eq(c.verdicts[5].reason, "The leveling guide says to buy only the first rank of this spell.")
 end)

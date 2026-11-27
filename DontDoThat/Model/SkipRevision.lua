@@ -10,6 +10,7 @@ ns.SkipRevision = SkipRevision
 local DESCRIPTIONS = {
   [1] = L["Original using Expert Advice"],
   [2] = L["Revised with Rules + Expert Advice"],
+  [3] = L["Updated with WoW Forever Expert Advice"],
 }
 
 function SkipRevision.Describe(revision) return DESCRIPTIONS[revision] or "" end
@@ -66,11 +67,11 @@ function SkipRevision.Notice(p)
   local lines = {}
   if inUse == newest then
     lines[1] = (L["Skip list revision %d is in use."]):format(inUse)
-    lines[2] = (L["Revision %d changes the rules significantly: many more ranks are skipped, decided for your spec, and every skip now says why."]):format(newest)
-    lines[3] = L["To go back to the earlier list, type /ddt revision 1 or open Advanced > Tuning."]
+    lines[2] = (L["Revision %d updates the skip list from the newest WoW Forever leveling guides. Some ranks are now skipped, some are not, and every skip says why."]):format(newest)
+    lines[3] = L["To go back to an earlier list, type /ddt revision followed by its number, or open Advanced > Tuning."]
   else
     lines[1] = (L["Skip list revision %d is in use."]):format(inUse)
-    lines[2] = (L["A newer revision exists, revision %d. It changes the rules significantly: many more ranks are skipped, decided for your spec, and every skip says why."]):format(newest)
+    lines[2] = (L["A newer revision exists, revision %d. It updates the skip list from the newest WoW Forever leveling guides. Some ranks are now skipped, some are not, and every skip says why."]):format(newest)
     lines[3] = (L["To try it, type /ddt revision %d or open Advanced > Tuning."]):format(newest)
   end
   ns.Settings.MarkRevisionNotice(newest, p)

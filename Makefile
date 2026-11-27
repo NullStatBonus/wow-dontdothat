@@ -3,6 +3,7 @@
 # luajit tests/run.lua [pattern] runs a subset, e.g. luajit tests/run.lua trainer
 test:
 	@luajit tests/run.lua
+	@python3 -I tools/skip-revision/test_revision3.py
 
 # The in-game test plans, checked with the installed CheckThat tools (AGENTS.md, Testing). make test and make check
 # never need them. A plan's replay hooks are plans/<name>.hooks.lua when that file exists; its offline block runs

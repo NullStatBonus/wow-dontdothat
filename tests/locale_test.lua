@@ -58,9 +58,10 @@ test("the example locale file lists every skip reason, source line, and sentence
   for _, k in ipairs({
     "The leveling guide says to buy only the first rank of this spell.", "The leveling guide says this spell is not worth buying while leveling.",
     "The leveling guide says to buy this spell only up to rank %d.", "The leveling guide does not buy this rank while leveling.",
+    "The leveling guide says this spell is not worth upgrading after level %d.",
     "Adds nothing over the rank before it.", "Only %d%% stronger than the rank before it, for a spell you only use now and then.",
     "Only %d%% stronger than the rank before it, which does not repay its price.", "This rank can wait until you have your level 60 mount.",
-    "An earlier version of this list judged this rank a small upgrade.", "From the Wowhead leveling guide.", "Computed from the game data.",
+    "An earlier version of this list judged this rank a small upgrade.", "From the Wowhead leveling guide.", "From the Wowhead leveling guide for WoW Forever.", "From the Method leveling guide for WoW Forever.", "Computed from the game data.",
     "From the earlier skip list." }) do keys[k] = true end
   local count = 0
   for key in pairs(keys) do

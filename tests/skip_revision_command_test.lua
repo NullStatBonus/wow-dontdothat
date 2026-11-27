@@ -32,15 +32,16 @@ test("settings: RulesFor carries the pick, and the engine uses it", function()
   eq(ns.Settings.RulesFor("WARRIOR", {}).skipRevision, nil)
   eq(ns.Settings.RulesFor("WARRIOR", { tuning = { skipRevision = 1 } }).skipRevision, 1)
   eq(ns.Rules.ResolveRevision(ns.Settings.RulesFor("WARRIOR", { tuning = { skipRevision = 1 } }).skipRevision), 1)
-  eq(ns.Rules.ResolveRevision(ns.Settings.RulesFor("WARRIOR", {}).skipRevision), 2)
-  eq(ns.Rules.ResolveRevision(ns.Settings.RulesFor("WARRIOR", { tuning = { skipRevision = 7 } }).skipRevision), 2)
+  eq(ns.Rules.ResolveRevision(ns.Settings.RulesFor("WARRIOR", {}).skipRevision), 3)
+  eq(ns.Rules.ResolveRevision(ns.Settings.RulesFor("WARRIOR", { tuning = { skipRevision = 7 } }).skipRevision), 3)
 end)
 
 test("/ddt revision: shows what is in use and what exists", function()
   local lines = ns.SkipRevision.Command("", {})
-  truthy(has(lines, "Skip list revision 2 is in use (the default)."))
+  truthy(has(lines, "Skip list revision 3 is in use (the default)."))
   truthy(has(lines, "Revision 1: Original using Expert Advice"))
   truthy(has(lines, "Revision 2: Revised with Rules + Expert Advice"))
+  truthy(has(lines, "Revision 3: Updated with WoW Forever Expert Advice"))
   truthy(has(lines, "/ddt revision"))
   local picked = ns.SkipRevision.Command("", { tuning = { skipRevision = 1 } })
   truthy(has(picked, "Skip list revision 1 is in use."))
@@ -54,13 +55,15 @@ test("/ddt revision: a number that is a revision switches to it", function()
   eq(ns.SkipRevision.InUse(p), 1)
   eq(ns.SkipRevision.Command(" 2 ", p), { "Now using skip list revision 2." })
   eq(ns.SkipRevision.InUse(p), 2)
+  eq(ns.SkipRevision.Command("3", p), { "Now using skip list revision 3." })
+  eq(ns.SkipRevision.InUse(p), 3)
 end)
 
 test("/ddt revision: a number that is not a revision changes nothing and lists the valid ones", function()
   local p = { tuning = { skipRevision = 1 } }
   for _, bad in ipairs({ "9", "0", "two", "1.5" }) do
     local lines = ns.SkipRevision.Command(bad, p)
-    truthy(lines[1]:find("is not a skip list revision. The revisions are: 1, 2.", 1, true), bad)
+    truthy(lines[1]:find("is not a skip list revision. The revisions are: 1, 2, 3.", 1, true), bad)
     eq(ns.Settings.SkipRevision(p), 1, "unchanged after " .. bad)
   end
 end)
@@ -73,7 +76,7 @@ test("/ddt revision: the slash command prints those lines", function()
   ns.addon = addon
   H.load("DontDoThat/Core/Slash.lua", ns)
   addon:HandleSlash("revision")
-  truthy(has(said, "Skip list revision 2 is in use"))
+  truthy(has(said, "Skip list revision 3 is in use"))
   said = {}
   addon:HandleSlash("revision 1")
   eq(said, { "Now using skip list revision 1." })
@@ -88,12 +91,12 @@ test("load notice: a new install is told which revision, that it changed a lot, 
   local p = {}
   local lines = ns.SkipRevision.Notice(p)
   truthy(lines, "a notice")
-  truthy(has(lines, "Skip list revision 2 is in use."))
-  truthy(has(lines, "Revision 2 changes the rules significantly"))
-  truthy(has(lines, "many more ranks are skipped, decided for your spec"))
-  truthy(has(lines, "/ddt revision 1"))
+  truthy(has(lines, "Skip list revision 3 is in use."))
+  truthy(has(lines, "Revision 3 updates the skip list from the newest WoW Forever leveling guides"))
+  truthy(has(lines, "every skip says why"))
+  truthy(has(lines, "/ddt revision followed by its number"))
   truthy(has(lines, "Advanced > Tuning"))
-  eq(p.revisionNotice, 2, "the profile is marked as told")
+  eq(p.revisionNotice, 3, "the profile is marked as told")
 end)
 
 test("load notice: it is printed once", function()
@@ -113,8 +116,8 @@ test("load notice: a profile on an earlier revision hears that a newer one exist
   local p = { tuning = { skipRevision = 1 } }
   local lines = ns.SkipRevision.Notice(p)
   truthy(has(lines, "Skip list revision 1 is in use."))
-  truthy(has(lines, "A newer revision exists, revision 2."))
-  truthy(has(lines, "/ddt revision 2"))
+  truthy(has(lines, "A newer revision exists, revision 3."))
+  truthy(has(lines, "/ddt revision 3"))
   eq(ns.SkipRevision.Notice(p), nil)
 end)
 
@@ -122,13 +125,13 @@ test("load notice: resetting settings does not print it again, and the pick goes
   local p = { tuning = { skipRevision = 1 } }
   ns.SkipRevision.Notice(p)
   ns.Settings.ResetAll(p)
-  eq(p.revisionNotice, 2)
+  eq(p.revisionNotice, 3)
   eq(ns.Settings.SkipRevision(p), nil)
   eq(ns.SkipRevision.Notice(p), nil)
 end)
 
 test("load notice: a revision newer than the one a profile was told about is announced again", function()
-  local p = { revisionNotice = 1 }
+  local p = { revisionNotice = 2 }
   truthy(ns.SkipRevision.Notice(p))
-  eq(p.revisionNotice, 2)
+  eq(p.revisionNotice, 3)
 end)

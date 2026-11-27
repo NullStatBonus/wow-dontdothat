@@ -571,30 +571,32 @@ test("class summary: with no revision given it follows the one in use", function
   ns.db = { profile = { tuning = { skipRevision = 1 } } }
   eq(ns.Options.ClassSummary(ns.Rules.GetClass("HUNTER")).revision, 1)
   ns.db = { profile = {} }
-  eq(ns.Options.ClassSummary(ns.Rules.GetClass("HUNTER")).revision, 2)
+  eq(ns.Options.ClassSummary(ns.Rules.GetClass("HUNTER")).revision, 3)
 end)
 
 test("tuning: the skip list choice lists each revision, marks the newest as the default, and saves the pick", function()
   local ns = fresh({})
   local widget = ns.Options.Tuning().args.skipRevision
   truthy(widget, "a skip list choice")
-  eq(widget.get(), 2, "never chosen: the newest")
-  eq(widget.values[2], "Revision 2 (default): Revised with Rules + Expert Advice")
+  eq(widget.get(), 3, "never chosen: the newest")
+  eq(widget.values[3], "Revision 3 (default): Updated with WoW Forever Expert Advice")
+  eq(widget.values[2], "Revision 2: Revised with Rules + Expert Advice")
   eq(widget.values[1], "Revision 1: Original using Expert Advice")
   falsy(widget.values[1]:find("default", 1, true))
-  eq(widget.sorting, { 1, 2 })
+  falsy(widget.values[2]:find("default", 1, true))
+  eq(widget.sorting, { 1, 2, 3 })
   widget.set(nil, 1)
   eq(ns.db.profile.tuning.skipRevision, 1)
   eq(widget.get(), 1)
-  widget.set(nil, 2)
-  eq(ns.db.profile.tuning.skipRevision, 2, "choosing the newest is remembered as a choice")
+  widget.set(nil, 3)
+  eq(ns.db.profile.tuning.skipRevision, 3, "choosing the newest is remembered as a choice")
 end)
 
 test("rules page: each class page names the revision its ranks to skip follow", function()
   local ns = fresh({})
   local rules = ns.Options.Rules()
   local line = rules.args.WARRIOR.args.revisionLine
-  truthy(line and line.name:find("skip list revision 2", 1, true))
+  truthy(line and line.name:find("skip list revision 3", 1, true))
   ns.db.profile.tuning = { skipRevision = 1 }
   local again = ns.Options.Rules()
   truthy(again.args.WARRIOR.args.revisionLine.name:find("skip list revision 1", 1, true))
