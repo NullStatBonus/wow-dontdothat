@@ -131,7 +131,7 @@ The system SHALL provide `/ddt` and `/dontdothat` to open Home and run the commo
 - **THEN** the addon's settings open
 
 ### Requirement: Purchases page
-The system SHALL provide a Shopping area on the What to watch page with a minimum price control made of gold, silver, and copper boxes labeled with their coin icons, and a collapsed "Choose categories" section with one dropdown per item category offering Off, Vendor, AH, and Both.
+The system SHALL provide a Shopping area on the What to watch page with a minimum price control made of gold, silver, and copper boxes labeled with their coin icons, and a collapsed "Choose categories" section with one dropdown per item category offering Off, Vendor, AH, and Both, followed by a list of the items allowed on this character, each with its icon, name and a Remove button.
 
 #### Scenario: Every category listed
 - **WHEN** the player opens Choose categories
@@ -164,6 +164,18 @@ The system SHALL provide a Shopping area on the What to watch page with a minimu
 #### Scenario: Reset to defaults
 - **WHEN** the player confirms Reset all settings on Home
 - **THEN** all category modes and the minimum price return to their defaults
+
+#### Scenario: Allowed items listed
+- **WHEN** the player chose Always Allow for Mageweave Bag and opens What to watch
+- **THEN** the Shopping area lists Mageweave Bag with a Remove button
+
+#### Scenario: Removing an allowed item
+- **WHEN** the player clicks Remove next to an allowed item and then buys that item
+- **THEN** the item is gone from the list and the purchase is warned about as before
+
+#### Scenario: No allowed items
+- **WHEN** the character has no allowed items
+- **THEN** the Shopping area says how to allow an item from the question
 
 ### Requirement: Slot and COD switches
 The system SHALL provide three switches in the Other area of the What to watch page, one each for bank slots, stable slots, and COD mail, all on by default, taking effect without a reload.
@@ -279,7 +291,7 @@ The system SHALL keep the deeper controls on an Advanced page and out of the way
 - **THEN** the addon behaves with its default tuning, sound and rule switches
 
 ### Requirement: Reset all settings
-The system SHALL provide one control, on Home, that puts every setting back to its default after the player confirms, and SHALL NOT provide any other full or per-feature settings reset. Appearance’s position-only Reset position is the sole exception and SHALL NOT reset any non-position value. It SHALL keep the tally and what the addon already knows the player has done (professions asked about and milestones marked complete), and SHALL turn debug recording off. The defaults SHALL take effect at once, without a reload.
+The system SHALL provide one control, on Home, that puts every setting back to its default after the player confirms, and SHALL NOT provide any other full or per-feature settings reset. Appearance’s position-only Reset position is the sole exception and SHALL NOT reset any non-position value. It SHALL keep the tally and what the addon already knows the player has done (professions asked about and milestones marked complete), and SHALL turn debug recording off. It SHALL also clear the items allowed on the current character, and SHALL NOT change other characters' allowed items. The defaults SHALL take effect at once, without a reload.
 
 #### Scenario: Resetting
 - **WHEN** the player has changed settings on several pages and confirms Reset all settings
@@ -304,6 +316,10 @@ The system SHALL provide one control, on Home, that puts every setting back to i
 #### Scenario: No other reset controls
 - **WHEN** the player looks through Tuning, What to watch and Classes
 - **THEN** none has a settings-reset control; Appearance may reset position only
+
+#### Scenario: Allowed items after a reset
+- **WHEN** the player allowed an item on this character, confirms Reset all settings and buys that item
+- **THEN** the purchase is warned about and the Shopping list is empty
 
 ### Requirement: Projected savings
 The system SHALL show on the Progress page the projected savings for the player's character: the trainer gold kept by following the addon's advice up to the level of the mount the player is saving for (the stop-after setting), using the character's spec (detected or chosen) and every current setting, split into Save your gold, Not worth buying yet and Ranks to skip. It SHALL count every purchasable class and pet rank up to that level that the rules would warn about, SHALL NOT count Worth buying or Optional spells or the first rank of a talent, and SHALL price each rank with the price seen at the player's trainer, else the trainer price listed by Wowhead, else an estimate for the rank's level, saying which kinds of price it used.

@@ -14,7 +14,7 @@ local function setup(class, profile)
   NS = ns
   ns.Alert = { Trigger = function() return true end }
   local shown = {}
-  ns.ConfirmPopup = { Ask = function(verdict, yes, no) shown.verdict, shown.yes, shown.no = verdict, yes, no; return true end }
+  ns.ConfirmPopup = { Ask = function(verdict, yes, no, allow) shown.verdict, shown.yes, shown.no, shown.allow = verdict, yes, no, allow; return true end }
   _G.UnitClass = function() return class:sub(1, 1) .. class:sub(2):lower(), class, 1 end
   _G.UnitLevel = function() return 20 end
   -- A grimoire is an item of class 9 (Recipe), subclass 0 (Book).
@@ -124,5 +124,25 @@ test("a grimoire is recognised by its item ID alone, and an unknown item is not 
   ns.ItemGuard.Run("vendor", "Grimoire of Soothing Kiss (Rank 2)", "|cff9d9d9d|Hitem:2589::::::::20:::::|h[Grimoire of Soothing Kiss (Rank 2)]|h|r", 5000, function() bought = true end)
   truthy(bought, "the English name on a non-grimoire item ID is not enough")
   eq(shown.verdict, nil)
+  teardown()
+end)
+
+test("an allowed grimoire is not asked about", function()
+  local ns, shown = setup("WARLOCK")
+  local l = link("Grimoire of Soothing Kiss (Rank 2)")
+  ns.ItemGuard.Allow(tonumber(l:match("|Hitem:(%d+)")), "Grimoire of Soothing Kiss (Rank 2)")
+  local bought = false
+  ns.ItemGuard.Run("vendor", "Grimoire of Soothing Kiss (Rank 2)", l, 5000, function() bought = true end)
+  truthy(bought)
+  falsy(shown.verdict)
+  teardown()
+end)
+
+test("Always Allow on a grimoire saves its icon", function()
+  local ns, shown = setup("WARLOCK")
+  _G.GetItemInfoInstant = function() return 1, "Recipe", "Book", "", 133738, 9, 0 end
+  ns.ItemGuard.Run("vendor", "Grimoire of Soothing Kiss (Rank 2)", link("Grimoire of Soothing Kiss (Rank 2)"), 5000, function() end)
+  shown.allow()
+  eq(ns.ItemGuard.AllowedList()[1].icon, 133738)
   teardown()
 end)

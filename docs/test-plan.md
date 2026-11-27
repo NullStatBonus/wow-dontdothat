@@ -4,7 +4,7 @@
 
 This plan keeps only what needs a live client: server timing and taint. Each check is one action, a `Check:` line with what you should see, and a `Log:` line for the reviewer.
 
-Setup: install the build, type `/ddt debug on`, then `/reload`. Afterwards, `/reload` once more and send the saved variables (`WTF/Account/<account>/SavedVariables/DontDoThat.lua`).
+Setup: install the build and `/reload`, then type `/ddt debug on`. (Loading the addon turns debug recording off, so turn it on after the reload.) Afterwards, `/reload` once more and send the saved variables (`WTF/Account/<account>/SavedVariables/DontDoThat.lua`).
 
 ## 1. Spend is counted when the gold leaves
 
@@ -17,3 +17,12 @@ Setup: install the build, type `/ddt debug on`, then `/reload`. Afterwards, `/re
 - [ ] At your class trainer, buy a marked spell with Buy anyway, then open Beast Training and train a pet ability.
   Check: both are learned, and no "blocked from an action" message shows.
   Log: `confirm: bought <spell> anyway` and no `confirm: prompts disabled` line.
+
+## 3. Always Allow (either client)
+
+- [ ] At a vendor, buy armor or a weapon that costs more than 1 silver and choose Always Allow.
+  Check: the question has three buttons, and the item is bought.
+  Log: `items: always allowed <item ID> <name>`.
+- [ ] Buy the same item again.
+  Check: the item is bought without a question.
+  Log: `items: vendor <name> ... -> passed through: allowed`.

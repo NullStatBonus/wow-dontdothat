@@ -49,6 +49,7 @@ ns.defaults = {
         catalog = {},
         milestoneOverride = {}, -- [40] / [60] = true: mounts this character marked as bought
         professionAsked = {},   -- profession ID -> true: asked once already on this character
+        allowedItems = {},      -- item ID -> { name, icon }: never asked about on this character (Always Allow)
     },
     global = {
         log = {},

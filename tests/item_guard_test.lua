@@ -13,7 +13,7 @@ local function guard()
     BannerInstead = function() end }
   ns.Alert = { Trigger = function() return true end }
   local shown = {}
-  ns.ConfirmPopup = { Ask = function(_, yes, no) shown.yes, shown.no = yes, no; return true end }
+  ns.ConfirmPopup = { Ask = function(_, yes, no, allow) shown.yes, shown.no, shown.allow = yes, no, allow; return true end }
   ns.db = { profile = { enabled = true, blockingConfirmations = true, minPrice = 100, itemModes = { armor = "both" } },
     char = { ledger = ns.Ledger.NewState() }, global = {} }
   _G.GetItemInfoInstant = function() return 1, "Armor", "Plate", "INVTYPE_CHEST", 0, 4, 4 end
@@ -188,5 +188,132 @@ test("each pending purchase keeps its own deadline", function()
   local found
   for _, l in ipairs(logs) do if l == "items: pending spend of 5000 expired, not counted" then found = true end end
   truthy(found)
+  cleanup()
+end)
+
+local CHEST = "|cffffffff|Hitem:2589::::::::20:::::|h[Zzz]|h|r"
+local OTHER = "|cffffffff|Hitem:2590::::::::20:::::|h[Zzz]|h|r"
+
+test("allowed items: add, query, remove and list by name", function()
+  local ns = guard()
+  falsy(ns.ItemGuard.Allowed(2589))
+  truthy(ns.ItemGuard.Allow(2589, "Plate Chest", 134))
+  truthy(ns.ItemGuard.Allow(10050, "Mageweave Bag", 135))
+  truthy(ns.ItemGuard.Allowed(2589))
+  falsy(ns.ItemGuard.Allow(nil, "No ID"), "an item without an ID is never saved")
+  local list = ns.ItemGuard.AllowedList()
+  eq(#list, 2)
+  eq(list[1].name, "Mageweave Bag")
+  eq(list[2].id, 2589)
+  eq(list[2].icon, 134)
+  ns.ItemGuard.Disallow(2589)
+  falsy(ns.ItemGuard.Allowed(2589))
+  ns.db.char = nil
+  falsy(ns.ItemGuard.Allowed(10050), "no character data means nothing is allowed")
+  eq(#ns.ItemGuard.AllowedList(), 0)
+  cleanup()
+end)
+
+test("an allowed item is not flagged, other items of its category still are", function()
+  local ns, shown, logs = guard()
+  ns.ItemGuard.Allow(2589, "Plate Chest")
+  local info = ns.ItemGuard.Inspect("vendor", CHEST, 5000)
+  falsy(info.flagged)
+  eq(info.why, "allowed")
+  truthy(ns.ItemGuard.Inspect("ah", OTHER, 5000).flagged)
+  local bought = false
+  ns.ItemGuard.Run("ah", "Plate Chest", CHEST, 5000, function() bought = true end)
+  truthy(bought, "bought without a question")
+  falsy(shown.yes)
+  local found
+  for _, l in ipairs(logs) do if l:find("-> passed through: allowed", 1, true) then found = true end end
+  truthy(found)
+  cleanup()
+end)
+
+test("an allowed item gets no tooltip line", function()
+  local ns = guard()
+  local lines = 0
+  ns.TooltipAugment = { Augment = function() lines = lines + 1 end }
+  ns.ItemGuard.Tooltip({}, "vendor", "Plate Chest", CHEST, 5000)
+  eq(lines, 1, "flagged before it is allowed")
+  ns.ItemGuard.Allow(2589, "Plate Chest")
+  ns.ItemGuard.Tooltip({}, "vendor", "Plate Chest", CHEST, 5000)
+  eq(lines, 1)
+  cleanup()
+end)
+
+test("Always Allow buys, saves the item and counts nothing", function()
+  local ns, shown, logs, env = guard()
+  local bought, rebuilt = 0, 0
+  ns.Options = { Rebuild = function() rebuilt = rebuilt + 1 end }
+  ns.ItemGuard.Run("vendor", "Plate Chest", CHEST, 5000, function() bought = bought + 1 end)
+  truthy(shown.allow, "the question offers Always Allow")
+  shown.allow()
+  eq(bought, 1)
+  eq(rebuilt, 1)
+  truthy(ns.ItemGuard.Allowed(2589))
+  env.setMoney(95000)
+  ns.ItemGuard.OnMoney()
+  eq(ns.db.char.ledger.spentAgainst, 0, "not spent against the rules")
+  eq(ns.db.char.ledger.itemsAvoided or 0, 0, "not avoided")
+  local found
+  for _, l in ipairs(logs) do if l == "items: always allowed 2589 Plate Chest" then found = true end end
+  truthy(found)
+  eq(ns.db.global.itemTrace, nil, "no saved trace while recording is off")
+  shown.allow = nil
+  ns.ItemGuard.Run("vendor", "Plate Chest", CHEST, 5000, function() bought = bought + 1 end)
+  eq(bought, 2, "the next purchase is not asked about")
+  falsy(shown.allow)
+  cleanup()
+end)
+
+test("an item without an ID in its link gets no Always Allow", function()
+  local ns, shown = guard()
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() end)
+  truthy(shown.yes)
+  falsy(shown.allow)
+  cleanup()
+end)
+
+test("an allowed purchase never settles an earlier purchase that failed", function()
+  local ns, shown, logs, env = guard()
+  ns.ItemGuard.Run("vendor", "Plate Chest", OTHER, 5000, function() end)
+  shown.yes() -- accepted, but no money leaves yet (it may have failed)
+  ns.ItemGuard.Run("vendor", "Plate Chest", CHEST, 1000, function() end)
+  shown.allow()
+  env.setMoney(99000) -- only the allowed purchase took gold
+  ns.ItemGuard.OnMoney()
+  eq(ns.db.char.ledger.spentAgainst, 0)
+  ns.ItemGuard.Run("vendor", "Plate Chest", OTHER, 5000, function() end)
+  shown.yes()
+  ns.ItemGuard.Run("vendor", "Plate Chest", CHEST, 1000, function() end) -- already allowed: no question
+  env.setMoney(98000)
+  ns.ItemGuard.OnMoney()
+  eq(ns.db.char.ledger.spentAgainst, 0, "a repeat purchase is not counted either")
+  local found
+  for _, l in ipairs(logs) do if l == "items: allowed purchase of 1000 is not counted as spent" then found = true end end
+  truthy(found)
+  cleanup()
+end)
+
+test("Always Allow on a purchase that is dropped keeps the allow and says dropped", function()
+  local ns, shown = guard()
+  ns.db.profile.traceItems = true
+  ns.ItemGuard.Run("ah", nil, "|cffffffff|Hitem:2589::::::::20:::::|h[Chest From Link]|h|r", 5000, function() return false end)
+  shown.allow()
+  truthy(ns.ItemGuard.Allowed(2589))
+  eq(ns.ItemGuard.AllowedList()[1].name, "Chest From Link", "a missing name comes from the link")
+  local trace = ns.db.global.itemTrace
+  eq(trace[#trace].outcome, "question shown, always allowed, dropped")
+  cleanup()
+end)
+
+test("no Always Allow when the character data is missing", function()
+  local ns, shown = guard()
+  ns.db.char = nil
+  ns.ItemGuard.Run("vendor", "Plate Chest", CHEST, 5000, function() end)
+  truthy(shown.yes)
+  falsy(shown.allow)
   cleanup()
 end)

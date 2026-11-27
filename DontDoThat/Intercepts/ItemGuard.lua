@@ -54,17 +54,19 @@ local function money() return ns.Adapter.ReadMoney() end
 -- Each purchase waits in its own entry with its own deadline. The money level last seen is the baseline for the
 -- next drop. A known bid raises a debit allowance that is taken off a drop before purchases settle, so the
 -- gold a bid takes never settles an earlier purchase that failed.
-function Guard.NoteSpend(amount, isBid, before)
+-- label names an uncounted debit in the log ("bid" by default; "allowed purchase" for an Always Allow item).
+function Guard.NoteSpend(amount, isBid, before, label)
   if type(amount) ~= "number" then return end
+  label = label or "bid"
   if not before then
-    if isBid and ns.Log then ns.Log.Add("items: bid of %s is not counted as spent", tostring(amount)) end
+    if isBid and ns.Log then ns.Log.Add("items: %s of %s is not counted as spent", label, tostring(amount)) end
     return
   end
   if not pending then pending = {} end
   if #pending == 0 and not (bidDebit and bidDebit.amount > 0) then lastMoney = before end
   if isBid then
     bidDebit = { amount = (bidDebit and bidDebit.amount or 0) + amount, expires = now() + SPEND_WINDOW }
-    if ns.Log then ns.Log.Add("items: bid of %s is not counted as spent", tostring(amount)) end
+    if ns.Log then ns.Log.Add("items: %s of %s is not counted as spent", label, tostring(amount)) end
     return
   end
   pending[#pending + 1] = { amount = amount, before = before, counted = 0, expires = now() + SPEND_WINDOW }
@@ -126,6 +128,14 @@ local function purchase(proceed, total, isBid)
   return result
 end
 
+-- An allowed item's purchase: its money drop is taken off like a bid's, so it never settles an earlier purchase.
+local function uncounted(proceed, total)
+  local before = money()
+  local result = guarded(proceed)
+  if result ~= false then Guard.NoteSpend(total, true, before, "allowed purchase") end
+  return result
+end
+
 local TRACE_MAX = 40
 
 -- A saved record of every guarded purchase and what was decided, so a later /ddt export shows what happened.
@@ -145,6 +155,52 @@ trace = function(entry)
   return entry
 end
 Guard.Trace = trace
+
+-- Items the player chose Always Allow for on this character: item ID -> { name = ..., icon = ... }. Name and icon
+-- are saved with the ID so the settings list and the report never wait for the item cache.
+local function allowedItems(create)
+  local c = ns.db and ns.db.char
+  if not c then return nil end
+  if create and type(c.allowedItems) ~= "table" then c.allowedItems = {} end
+  return type(c.allowedItems) == "table" and c.allowedItems or nil
+end
+
+function Guard.Allowed(id)
+  local list = allowedItems()
+  return id ~= nil and list ~= nil and list[id] ~= nil
+end
+
+function Guard.Allow(id, name, icon)
+  local list = type(id) == "number" and allowedItems(true)
+  if not list then return false end
+  list[id] = { name = name, icon = icon }
+  return true
+end
+
+function Guard.Disallow(id)
+  local list = allowedItems()
+  if list then list[id] = nil end
+end
+
+-- The allowed items, sorted by name: { { id = ..., name = ..., icon = ... }, ... }.
+function Guard.AllowedList()
+  local out = {}
+  for id, e in pairs(allowedItems() or {}) do
+    out[#out + 1] = { id = id, name = type(e) == "table" and e.name or tostring(id), icon = type(e) == "table" and e.icon or nil }
+  end
+  table.sort(out, function(a, b)
+    if a.name ~= b.name then return tostring(a.name) < tostring(b.name) end
+    return a.id < b.id
+  end)
+  return out
+end
+
+-- For /ddt export: "<item ID> <name>" per allowed item, or "none".
+function Guard.AllowedReport()
+  local lines = {}
+  for _, e in ipairs(Guard.AllowedList()) do lines[#lines + 1] = ("%d %s"):format(e.id, tostring(e.name)) end
+  return #lines > 0 and lines or "none"
+end
 
 -- Items some classes are warned about by family: a Warlock's demon grimoires, for example. The class's rule data
 -- lists the item families to keep; every other grimoire is flagged at a vendor. An item is recognised by the item
@@ -187,6 +243,8 @@ function Guard.Inspect(surface, link, total)
   if p.enabled == false then info.why = "addon off"; return info end
   if p.watch and p.watch.shopping == false then info.why = "Shopping is off"; return info end
   if ns.Context and not ns.Context.Saving(_G) then info.why = "mount bought"; return info end
+  info.itemId = itemId(link)
+  if Guard.Allowed(info.itemId) then info.why = "allowed"; return info end
   if surface == "vendor" then
     local family, reason = flaggedGrimoire(link)
     if family then
@@ -234,6 +292,7 @@ function Guard.Run(surface, name, link, total, proceed, isBid)
   end
   if not info.flagged then
     record(info, name, "passed through: " .. tostring(info.why))
+    if info.why == "allowed" then return uncounted(proceed, total) end
     return guarded(proceed)
   end
 
@@ -267,7 +326,23 @@ function Guard.Run(surface, name, link, total, proceed, isBid)
         entry.outcome = "question shown, declined, not bought"
         local state = ledgerState()
         if state then ns.Ledger.RecordItemAvoided(state, total) end
-      end)
+      end,
+      -- Always Allow: saved before the purchase runs, and never counted as spent or avoided.
+      info.itemId and allowedItems(true) and function()
+        local label = name or (type(link) == "string" and link:match("%[(.-)%]")) or nil
+        local icon = info.icon
+        local instant = not icon and link and instantInfo(_G)
+        if instant then
+          local ok, _, _, _, _, found = pcall(instant, link)
+          icon = ok and found or nil
+        end
+        if Guard.Allow(info.itemId, label, icon) and ns.Log then
+          ns.Log.Add("items: always allowed %s %s", tostring(info.itemId), tostring(label))
+        end
+        local result = uncounted(proceed, total)
+        entry.outcome = "question shown, always allowed, " .. (result == false and "dropped" or "bought")
+        if ns.Options and ns.Options.Rebuild then pcall(ns.Options.Rebuild) end
+      end or nil)
   end)
   if shown then
     entry.outcome = "question shown, waiting for an answer"
@@ -293,6 +368,7 @@ function Guard.Report(env)
     guardedDialogs = ns.Resets and ns.Resets.Status() or "module missing",
     minPrice = ns.UIHelpers.FormatMoney(p.minPrice or 0),
     modes = p.itemModes,
+    allowedItems = Guard.AllowedReport(),
     earnBackRateCopperPerHour = rate or "unknown",
     recentPurchases = (ns.db and ns.db.global and ns.db.global.itemTrace) or {},
   }

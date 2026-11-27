@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.0
+
+- **New: Always Allow on the purchase question.** The addon buys the item and stops asking about it on this character.
+- New: What to watch lists the items you always allow. Remove an item to be asked again.
+- Changed: Reset all settings also removes the items this character always allows.
+
 ## 0.14.0
 
 - **Changed: "Spent on things the addon marked" counts a purchase only when your gold goes down.** Bids do not count.

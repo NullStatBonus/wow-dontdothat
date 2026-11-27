@@ -30,3 +30,45 @@ test("popup: a real cancel after the dialog showed still declines, once", functi
   eq(cancelled, 1)
   restore()
 end)
+
+test("popup: the item question has Always Allow, which runs only its own step, once", function()
+  local data, which
+  local ns = fresh(function(w, _, _, d) which, data = w, d return {} end)
+  local runs = { yes = 0, no = 0, allow = 0 }
+  truthy(ns.ConfirmPopup.Show("q", function() runs.yes = runs.yes + 1 end, function() runs.no = runs.no + 1 end,
+    function() runs.allow = runs.allow + 1 end))
+  eq(which, "DONTDOTHAT_CONFIRM_ITEM")
+  local dialog = _G.StaticPopupDialogs.DONTDOTHAT_CONFIRM_ITEM
+  eq(dialog.button3, "Always Allow")
+  dialog.OnAlt(nil, data, "clicked")
+  dialog.OnAlt(nil, data, "clicked")
+  dialog.OnCancel(nil, data)
+  eq(runs.allow, 1)
+  eq(runs.yes, 0)
+  eq(runs.no, 0)
+  restore()
+end)
+
+test("popup: a question without Always Allow uses the two-button dialog", function()
+  local which
+  local ns = fresh(function(w) which = w return {} end)
+  truthy(ns.ConfirmPopup.Show("q", function() end, function() end))
+  eq(which, "DONTDOTHAT_CONFIRM")
+  eq(_G.StaticPopupDialogs.DONTDOTHAT_CONFIRM.button3, nil)
+  eq(_G.StaticPopupDialogs.DONTDOTHAT_CONFIRM.OnAlt, nil)
+  restore()
+end)
+
+test("popup: a question under the other key hides the unanswered one", function()
+  local hidden = {}
+  local ns = fresh(function() return {} end)
+  stub("StaticPopup_Hide", function(which) hidden[#hidden + 1] = which end)
+  local declined = 0
+  truthy(ns.ConfirmPopup.Show("trainer", function() end, function() declined = declined + 1 end))
+  truthy(ns.ConfirmPopup.Show("item", function() end, function() end, function() end))
+  eq(declined, 1, "the trainer question counts as declined")
+  eq(hidden, { "DONTDOTHAT_CONFIRM" })
+  truthy(ns.ConfirmPopup.Show("item again", function() end, function() end, function() end))
+  eq(#hidden, 1, "the same key reuses its frame and is not hidden")
+  restore()
+end)
