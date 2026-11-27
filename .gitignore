@@ -2,6 +2,9 @@
 .release/
 *.zip
 
+# Compiled CheckThat plans
+build/
+
 # Local notes and captures
 .claude/
 tools/.cache/
