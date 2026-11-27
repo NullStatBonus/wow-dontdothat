@@ -58,7 +58,7 @@ The system SHALL NOT warn about a purchase whose total price is below the player
 - **THEN** every purchase in an active category is warned about
 
 ### Requirement: Vendor purchase prompt
-The system SHALL, when the player buys a flagged item from a vendor, play the warning sound and show an Accept / Always Allow / Cancel question naming the item, its total price, the reason, and the earn-back estimate, and SHALL complete the purchase only if the player accepts or chooses Always Allow.
+The system SHALL, when the player buys a flagged item from a vendor, play the warning sound and show an Accept / Always Allow / Cancel question naming the item, its total price, the reason, and the earn-back estimate, and SHALL complete the purchase only if the player accepts or chooses Always Allow, and only if the vendor's row still holds the item and price the question named.
 
 #### Scenario: Player declines
 - **WHEN** the player cancels the question
@@ -75,6 +75,10 @@ The system SHALL, when the player buys a flagged item from a vendor, play the wa
 #### Scenario: Quantity purchases
 - **WHEN** the player buys a stack or several units at once
 - **THEN** one question covers the whole quantity and its total price
+
+#### Scenario: The vendor changed while the question was open
+- **WHEN** the player accepts after the vendor's list changed, the price changed, or the vendor window closed
+- **THEN** nothing is bought, the debug log records `items: vendor row <n> changed while the question was open, purchase dropped`, and the question's choice is not applied to another item
 
 ### Requirement: Auction house purchase prompt
 The system SHALL, when the player places a bid or buyout on a flagged auction, show the same kind of question with the bid or buyout amount, and SHALL place it only if the player accepts.
