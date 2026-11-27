@@ -64,6 +64,27 @@ function addon:OnInitialize()
     local before = ns.Settings and ns.Settings.StyleBefore(_G.DontDoThatDB)
     self.db = AceDB:New("DontDoThatDB", ns.defaults, true)
     ns.db = self.db
+    self.styleBefore = before
+    if ns.TestSettings then
+        -- Before the game saves: the profile key names the player's own profile, never the temporary one.
+        self.db.RegisterCallback(self, "OnDatabaseShutdown", function() ns.TestSettings.Shutdown(self.db) end)
+        -- A profile switch made elsewhere (the Profiles page): one chat line, the pages redrawn, debug carried over.
+        self.db.RegisterCallback(self, "OnProfileShutdown", function() self.debugFlags = { debug = self.db.profile.debug, traceItems = self.db.profile.traceItems } end)
+        self.db.RegisterCallback(self, "OnProfileChanged", function()
+            local deps = self:TestSettingsDeps()
+            if not deps.busy then
+                local p = self.db.profile
+                -- A profile first used now is not an old one: mark it, so a later load keeps its alert style.
+                if ns.Settings then ns.Settings.ClassifyStyle(p, nil, self.db:GetCurrentProfile()) end
+                if self.debugFlags then p.debug, p.traceItems = self.debugFlags.debug, self.debugFlags.traceItems end
+            end
+            ns.TestSettings.ProfileChanged(self.db, deps)
+        end)
+        -- A reset profile is not an old one either (Reset clears the marks).
+        self.db.RegisterCallback(self, "OnProfileReset", function()
+            if ns.Settings then ns.Settings.ClassifyStyle(self.db.profile, nil, self.db:GetCurrentProfile()) end
+        end)
+    end
     -- Before anything reads db.char or classifies the profile: follow a change of the character key.
     if ns.Settings and ns.Adapter then
         local okKeys, keys = pcall(ns.Adapter.ReadCharKeys, _G)
@@ -91,6 +112,8 @@ function addon:OnInitialize()
                     local ok, name = pcall(self.db.GetCurrentProfile, self.db)
                     return ok and name or nil
                 end)(),
+                testSettings = ns.TestSettings and ns.TestSettings.IsOn(self.db) and ns.TestSettings.OwnProfile(self.db) or nil,
+                checkThat = ns.CheckThat and ns.CheckThat.Status() or nil,
                 ledger = self.db.char.ledger,
                 log = ns.Log and ns.Log.Entries() or {},
                 items = function() return ns.ItemGuard and ns.ItemGuard.Report(_G) or nil end,
@@ -113,7 +136,42 @@ function addon:OnInitialize()
     end
 end
 
+-- What the test-settings logic needs from the game and the addon (Model/TestSettings.lua).
+function addon:TestSettingsDeps()
+    if self.testDeps then return self.testDeps end
+    self.testDeps = {
+        say = function(msg) self:Print(msg) end,
+        log = function(msg) if ns.Log then ns.Log.Add("%s", msg) end end,
+        -- The temporary profile is marked as migrated, so the next load sets no alert style and prints no notice.
+        mark = function(p)
+            p.styleMarked = true
+            local newest = ns.SkipRevision and ns.SkipRevision.Newest()
+            if newest and ns.Settings then ns.Settings.MarkRevisionNotice(newest, p) end
+        end,
+        closeUi = function()
+            if ns.ConfirmPopup and ns.ConfirmPopup.Close then ns.ConfirmPopup.Close() end
+            if ns.Demo and ns.Demo.End then ns.Demo.End() end
+        end,
+        refresh = function() if ns.Options then ns.Options.Refresh() end end,
+        syncDebug = function() if ns.Log then ns.Log.SetEnabled(self.db.profile.debug) end end,
+    }
+    return self.testDeps
+end
+
 function addon:OnEnable()
+    -- Test settings left on by an earlier session end here, before anything reads the profile: the player's own
+    -- profile comes back unless a CheckThat run is open. CheckThat loads after this addon, so it is asked now.
+    if ns.TestSettings then
+        local runOpen = ns.CheckThat and ns.CheckThat.RunOpen() or false
+        local result = ns.TestSettings.LoginAnnounce(self.db, self:TestSettingsDeps(), runOpen)
+        if (result == "removed" or result == "restored") and ns.Settings then
+            -- The profile now in use was not the one classified at load.
+            local p = self.db.profile
+            ns.Settings.ClassifyStyle(p, self.styleBefore, self.db:GetCurrentProfile())
+            ns.Settings.ClearDebug(p)
+            if ns.Log then ns.Log.SetEnabled(false) end
+        end
+    end
     if ns.Settings then
         ns.Settings.MigrateCharMarks(self.db.char, self.db.profile, ns.Adapter.ReadPlayer(_G).level)
         ns.Settings.MigrateFamilyIds(self.db.profile, self.db.char)
@@ -130,6 +188,32 @@ function addon:OnEnable()
     end
     if ns.Capture then
         ns.Capture.Enable(self, _G, self.db.global.probe)
+    end
+    if ns.CheckThat then
+        local TS = ns.TestSettings
+        ns.CheckThat.Start({
+            version = function() return ns.Adapter.readVersion(_G) end,
+            testSettings = function() return TS.IsOn(self.db) end,
+            setting = function(key)
+                local v = ns.Registry.Get(key, self.db.profile)
+                return v
+            end,
+            char = function(key)
+                if key == "allowed" then
+                    local n = 0
+                    for _ in pairs(self.db.char.allowedItems or {}) do n = n + 1 end
+                    return n
+                end
+                local o, t = self.db.char.milestoneOverride or {}, {}
+                if o[40] then t[#t + 1] = "40" end
+                if o[60] then t[#t + 1] = "60" end
+                return #t > 0 and table.concat(t, ", ") or "none"
+            end,
+            log = function(msg) if ns.Log then ns.Log.Add("%s", msg) end end,
+            runStarted = function(runId) TS.OnRunStarted(self.db, self:TestSettingsDeps(), runId) end,
+            runEnded = function(reason) TS.OnRunEnded(self.db, self:TestSettingsDeps(), reason) end,
+            runGone = function() TS.OnRunGone(self.db, self:TestSettingsDeps()) end,
+        })
     end
     -- Once per profile: which skip list is in use, that the newest one changed the rules, and how to change it.
     if ns.SkipRevision then

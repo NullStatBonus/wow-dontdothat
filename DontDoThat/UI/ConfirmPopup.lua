@@ -94,6 +94,16 @@ function Popup.Show(text, onConfirm, onCancel, onAllow)
   return true
 end
 
+-- Closes the question on screen, counted as the player declining it. Used before the profile changes, so no answer
+-- reaches a purchase decided under other settings.
+function Popup.Close()
+  local previous = current
+  if not previous then return false end
+  answer("cancel", previous)
+  if type(_G.StaticPopup_Hide) == "function" then pcall(_G.StaticPopup_Hide, previous.key) end
+  return true
+end
+
 -- "After this you'll have 61g of the 100g for your level 40 mount.", or nil when the player still has enough
 -- after paying, or when the price, gold or goal is unknown.
 function Popup.FundLine(cost, env)

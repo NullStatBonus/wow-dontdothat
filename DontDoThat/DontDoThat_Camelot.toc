@@ -53,6 +53,7 @@ Model\Tally.lua
 Model\EarnBack.lua
 Model\ItemCategory.lua
 Model\ItemWarning.lua
+Model\TestSettings.lua
 
 Data\Sounds.lua
 Data\GoldRates.lua
@@ -86,6 +87,8 @@ Debug\Export.lua
 Debug\Capture.lua
 
 Options\Options.lua
+
+CheckThat.lua
 
 Core\Registry.lua
 Core\Slash.lua

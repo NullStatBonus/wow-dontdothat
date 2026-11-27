@@ -317,3 +317,27 @@ test("no Always Allow when the character data is missing", function()
   falsy(shown.allow)
   cleanup()
 end)
+
+test("every purchase call writes one line: made for a pass-through and an accepted purchase, dropped when the call dropped it", function()
+  local ns, shown, logs = guard()
+  ns.ItemGuard.Run("vendor", "Cheap", "link", 5, function() end) -- below the minimum price, passes through
+  eq(logs[#logs], "items: purchase call made")
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() end)
+  shown.yes()
+  eq(logs[#logs - 1] == "items: purchase call made" or logs[#logs] == "items: purchase call made", true)
+  local before = #logs
+  ns.ItemGuard.Run("ah", "Plate Chest", "link", 5000, function() return false end)
+  shown.yes()
+  local dropped
+  for i = before + 1, #logs do if logs[i] == "items: purchase call dropped" then dropped = true end end
+  truthy(dropped, "a dropped purchase is logged as dropped")
+  cleanup()
+end)
+
+test("a declined question writes no purchase-call line", function()
+  local ns, shown, logs = guard()
+  ns.ItemGuard.Run("vendor", "Plate Chest", "link", 5000, function() end)
+  shown.no()
+  for _, l in ipairs(logs) do falsy(l:find("purchase call", 1, true), l) end
+  cleanup()
+end)

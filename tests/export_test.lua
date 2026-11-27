@@ -172,3 +172,17 @@ test("report lists this character's allowed items by ID and name, or none", func
   truthy(text:find("10050 Mageweave Bag", 1, true), text)
   truthy(text:find("allowed items per character", 1, true))
 end)
+
+test("report shows the test-settings state, the profile in use and the CheckThat status", function()
+  local ns = { version = "0.1.0", L = setmetatable({}, { __index = function(_, k) return k end }) }
+  for _, f in ipairs({ "UI/Helpers.lua", "Model/Settings.lua", "Core/Registry.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
+  ns.db = { profile = {}, char = {}, global = {} }
+  local off = ns.Export.Build({ settings = {}, env = {}, profileName = "Raid", checkThat = "not detected" })
+  truthy(off:find("active profile: Raid", 1, true), off)
+  truthy(off:find("test settings: off", 1, true))
+  truthy(off:find("CheckThat: not detected", 1, true))
+  local on = ns.Export.Build({ settings = {}, env = {}, profileName = "DDT test", testSettings = "Raid", checkThat = "working" })
+  truthy(on:find("active profile: DDT test", 1, true), on)
+  truthy(on:find("test settings: on (temporary profile in use; own profile Raid)", 1, true), on)
+  truthy(on:find("CheckThat: working", 1, true))
+end)

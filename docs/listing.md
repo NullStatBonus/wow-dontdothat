@@ -41,6 +41,7 @@ Don't Do That is the leveling addon that keeps your gold for your **level 40** a
 - **Advice for your class and spec.** It follows the Wowhead leveling guides and the game's spell data.
 - **See your savings grow.** The Progress page shows the gold you kept and how close you are to your mount. It counts only spells you can buy, and only gold that really leaves your bags.
 - **A trainer filter.** Hide every spell that the addon marks as skippable.
+- **Profiles.** Share one set of settings between characters, or give each character its own, on the Profiles page.
 
 It only asks. It never stops a purchase. It turns off when you buy your mount, and you can turn off each part before that.
 

@@ -51,6 +51,20 @@ function Log.SetEnabled(on)
   return store.enabled
 end
 
+-- The player turned debug recording on or off (/ddt debug, the settings page, Reset all settings). The switch is
+-- the log's own first or last line, so a report shows when recording started and stopped.
+function Log.Switch(on)
+  if not store then Log.Init() end
+  if on then
+    store.enabled = true
+    Log.Add("debug log turned on")
+  else
+    Log.Add("debug log turned off")
+    store.enabled = false
+  end
+  return store.enabled
+end
+
 function Log.SetMax(n)
   if not store then Log.Init() end
   if type(n) == "number" and n >= 1 then store.max = math.floor(n) end

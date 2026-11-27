@@ -283,7 +283,7 @@ function Settings.ResetAll(p, defaults)
       if p[key] == nil then p[key] = copy(value) end
     end
   end
-  if ns.Log and ns.Log.SetEnabled then ns.Log.SetEnabled(false) end
+  if ns.Log and ns.Log.Switch then ns.Log.Switch(false) elseif ns.Log and ns.Log.SetEnabled then ns.Log.SetEnabled(false) end
 end
 
 local STYLES = { toast = true, warning = true }

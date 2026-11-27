@@ -1,0 +1,452 @@
+ct: 1
+kind: plan
+purpose: foundation
+addon: DontDoThat
+title: Don't Do That foundation (release gate)
+version: 0.15.0
+preamble: |-
+  Release gate for WoW Forever. Run it before each release with one ordinary character: any class, any level, no profession, in a capital city that has your class trainer, a vendor that sells armor or weapons, and the auction house. The character must still be saving for its first mount, must have no mount marked as bought, and must have no Always Allow items. Steps 2 and 3 check this. Install the build under test and type |cff99ccff/reload|r first. Test settings turn on by themselves when the run starts, so your own settings do not matter, and they turn off at the end.
+  Pillars: the addon loads and reports its version; test settings never strand your profile across /reload; the addon wires its purchase calls at login; the settings window draws; the trainer window is read on this client; a vendor question appears from a real click; the warning draws and plays; no Lua error.
+  No step buys anything. Choose a vendor item that costs more than the gold you carry, so the game cannot sell it. Choosing Cancel on the question counts as an avoided purchase in this character's Progress tally, because test settings never change a character's own tally.
+  Left out of the gate: buying from a trainer, a vendor or the auction house, the auction question, training a spell the addon does not mark, guarded dialogs (talent, pet, bank, stable, cash on delivery), class rank rules and Always Allow. Run the purchase plan (plans/dontdothat.purchases.yaml) when you change the purchase code, and the Always Allow plan (plans/dontdothat-pr72.yaml) when you change that.
+handoff: Type |cff99ccff/ct export|r, then |cff99ccff/reload|r. Send CheckThat.lua and DontDoThat.lua from SavedVariables.
+logs:
+  debug:
+    global: DontDoThatDB
+    path: global.log.entries
+    format: entries
+    cap: 500
+  facts:
+    global: CheckThatDB
+    path: global.facts
+    format: strings
+    cap: 300
+  errors:
+    global: CheckThatDB
+    path: global.errors
+    format: strings
+    quiet: true
+    cap: 100
+sections:
+- id: g1
+  title: Load and version
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.1
+    title: Check the version
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: the addon is loaded and is the build under test.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: version
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.version
+      op: ge
+      value: 1500
+      label: "The addon reports the version under test"
+    - kind: state
+      probe: addon-loaded
+      name: DontDoThat
+      op: eq
+      value: true
+      label: "The addon is loaded"
+- id: g2
+  title: Test settings and saved data
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.2
+    title: No mount marked as bought
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: this character has no mount marked as bought.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: setting
+      args: [marks]
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.setting
+      op: eq
+      value: none
+      label: "No mount is marked as bought"
+  - id: ddt.f.12
+    title: No allowed items
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: this character has no Always Allow items.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: setting
+      args: [allowed]
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.setting
+      op: eq
+      value: 0
+      label: "No item is allowed"
+  - id: ddt.f.3
+    title: Test settings are on
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: test settings are on, so your own settings are put aside.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: testsettings
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.testsettings
+      op: eq
+      value: 'on'
+      label: "Test settings are on for the run"
+  - id: ddt.f.4
+    title: Turn debug recording on
+    auto: true
+    timeout: 30
+    action:
+      kind: manual
+      text: Press Run to turn debug recording on.
+      commands:
+      - /ddt debug on
+    expect: chat says debug is on.
+    verify:
+    - assertions
+    assertions:
+    - kind: state
+      probe: global-value
+      name: DontDoThatDB
+      path: global.log.enabled
+      op: eq
+      value: true
+      label: "Debug recording is on"
+    - kind: log
+      source: debug
+      contains: "debug log turned on"
+      scope: attempt
+      label: "The log records that debug turned on"
+  - id: ddt.f.5
+    title: Reload keeps test settings and wires the addon
+    auto: true
+    reload: after_action
+    timeout: 120
+    action:
+      kind: manual
+      text: Press Run to reload the game.
+      commands:
+      - /reload
+    expect: after the reload, chat says which profile is in use and that test settings are still on.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      contains: "test settings: on at login"
+      scope: attempt
+      label: "Test settings are still on after the reload"
+    - kind: log
+      source: debug
+      contains: "test settings: restored at login"
+      absent: true
+      scope: attempt
+      label: "Your settings were not restored mid-run"
+    - kind: log
+      source: debug
+      contains: "checkthat: run hook registered"
+      scope: attempt
+      label: "The addon registered with CheckThat again"
+    - kind: log
+      source: debug
+      contains: "checkthat: entries registered: 3"
+      scope: attempt
+      label: "The addon registered its entries again"
+    - kind: log
+      source: debug
+      contains: "items: BuyMerchantItem wrapped"
+      scope: attempt
+      label: "The vendor purchase call is wrapped"
+    - kind: log
+      source: debug
+      contains: "items: C_AuctionHouse purchases wrapped"
+      scope: attempt
+      label: "The auction purchase calls are wrapped"
+    - kind: log
+      source: debug
+      contains: "BuyMerchantItem is"
+      absent: true
+      scope: attempt
+      label: "The vendor wrapper found its game call"
+    - kind: log
+      source: debug
+      contains: "auction functions missing"
+      absent: true
+      scope: attempt
+      label: "No auction function is missing"
+    - kind: state
+      probe: global-value
+      name: DontDoThatDB
+      path: global.log.enabled
+      op: eq
+      value: true
+      label: "Debug recording is still on"
+- id: g3
+  title: Settings window
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.6
+    title: Settings window and Profiles page
+    action:
+      kind: manual
+      text: Press Run to open the Profiles page.
+      commands:
+      - /ddt settings profiles
+    expect:
+    - the settings window opens on Profiles, the page at the bottom of the list.
+    - an amber banner at the top says test settings are on.
+    - the profile choices are greyed out. Press Pass.
+    verify:
+    - player
+    notes: No log line, because the window is drawn. The banner and the locked page are what the player checks.
+- id: g4
+  title: Trainer window
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.7
+    title: Trainer window is read
+    auto: true
+    timeout: 120
+    action:
+      kind: manual
+      text: Open your class trainer. Do not buy anything.
+    expect: the trainer window opens and lists spells with a Filter menu.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^filter: [1-9]%d* rows"
+      scope: attempt
+      label: "The addon counted the trainer rows"
+    - kind: log
+      source: debug
+      contains: "overlay: ClassTrainerFrame_Update hooked"
+      scope: attempt
+      label: "The trainer list is hooked"
+    - kind: log
+      source: debug
+      contains: "confirm: Forever window: Train button hooked, question asked from the addon's own button"
+      scope: attempt
+      label: "The Train button question is wired"
+    - kind: log
+      source: debug
+      contains: "filter failed"
+      absent: true
+      scope: attempt
+      label: "The trainer filter raised no error"
+    - kind: log
+      source: debug
+      contains: "trainer overlay failed"
+      absent: true
+      scope: attempt
+      label: "The trainer overlay raised no error"
+    - kind: log
+      source: debug
+      contains: "NOT hooked"
+      absent: true
+      scope: attempt
+      label: "Every trainer hook installed"
+    - kind: log
+      source: debug
+      contains: "filter: turned off"
+      absent: true
+      scope: attempt
+      label: "The trainer filter stayed on"
+- id: g5
+  title: Vendor question
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.8
+    title: Vendor question appears
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text:
+      - At a vendor, right-click armor or a weapon that costs more than 1 silver and more than the gold you carry.
+      - When the question appears, choose Cancel. Never choose Always Allow.
+    expect: a question names the item and offers Accept, Always Allow and Cancel, and the game buys nothing.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^items: vendor .* %-> flagged$"
+      scope: attempt
+      label: "The addon flagged the item"
+    - kind: log
+      source: debug
+      pattern: "^popup: shown$"
+      scope: attempt
+      label: "The question appeared"
+    - kind: log
+      source: debug
+      pattern: "^popup: cancel$"
+      scope: attempt
+      label: "You chose Cancel"
+    - kind: log
+      source: debug
+      contains: "items: spend of"
+      absent: true
+      scope: attempt
+      label: "Nothing was bought"
+    - kind: log
+      source: debug
+      contains: "items: always allowed"
+      absent: true
+      scope: attempt
+      label: "No item was allowed"
+    - kind: log
+      source: debug
+      pattern: "^popup: allow$"
+      absent: true
+      scope: attempt
+      label: "You did not choose Always Allow"
+- id: g6
+  title: Warning draws and plays
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.9
+    title: Sample warning and sound
+    action:
+      kind: manual
+      text: Press Run to show a sample warning.
+      commands:
+      - /ddt preview toast
+    expect:
+    - a small warning message appears on screen.
+    - you hear the warning sound. Press Pass.
+    verify:
+    - player
+    notes: Drawing and sound have no log line.
+- id: g7
+  title: Restore your settings
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.10
+    title: Turn test settings off
+    auto: true
+    timeout: 60
+    action:
+      kind: manual
+      text: Press Run to turn test settings off.
+      commands:
+      - /ddt testsettings off
+    expect: chat says test settings are off and names your own profile.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      contains: "test settings: off (own settings restored)"
+      scope: attempt
+      label: "Your own settings are back"
+- id: g8
+  title: No Lua error
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.f.11
+    title: No error in the run
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat checks the whole run for errors.
+    expect: the addon raised no Lua error and hid no failure during the run.
+    verify:
+    - assertions
+    reviewer: "In the handed-off DontDoThat.lua, the profile keys name your own profile and there is no profile named DDT test. That proves the saved file never names the temporary profile."
+    assertions:
+    - kind: log
+      source: errors
+      pattern: "%[DontDoThat%]"
+      absent: true
+      scope: run
+      label: "The addon raised no Lua error"
+    - kind: log
+      source: debug
+      contains: "checkthat: FAILED"
+      absent: true
+      scope: run
+      label: "No hidden failure: checkthat: FAILED"
+    - kind: log
+      source: debug
+      contains: "test settings: FAILED"
+      absent: true
+      scope: run
+      label: "No hidden failure: test settings: FAILED"
+    - kind: log
+      source: debug
+      contains: "decision failed"
+      absent: true
+      scope: run
+      label: "No hidden failure: decision failed"
+    - kind: log
+      source: debug
+      contains: "overlay failed"
+      absent: true
+      scope: run
+      label: "No hidden failure: overlay failed"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: run
+      label: "No hidden failure: prompts switched off"
+    - kind: log
+      source: debug
+      contains: "prompts disabled"
+      absent: true
+      scope: run
+      label: "No hidden failure: prompts disabled"
+    - kind: log
+      source: debug
+      contains: "popup: could not be shown"
+      absent: true
+      scope: run
+      label: "No hidden failure: popup: could not be shown"
