@@ -443,3 +443,29 @@ test("when no prompt can be shown, the banner stands in only if banners and aler
     eq(rec.alertSettings[1].alertBanner, false, "the sound is still sound-only")
   end
 end)
+
+-- The Forever overlay: every click that reaches the purchase writes one line, asked about or not.
+test("overlay click: a purchase that goes through writes the training-call line, a declined one does not", function()
+  local ns, env, _, rec = setup({ verdicts = {} })
+  local logs = {}
+  ns.Log = { Add = function(fmt, ...) logs[#logs + 1] = fmt:format(...) end }
+  local called = {}
+  env.BuyTrainerService = function(i) called[#called + 1] = i end
+  env.IsTradeskillTrainer = function() return false end
+  -- no verdict: straight through
+  ns.TrainerConfirm.OverlayClick(env)
+  eq(called, { 5 })
+  eq(logs[#logs], "confirm: training call made for row 5")
+  -- a flagged row asks; Cancel buys nothing and writes no line
+  local n = #logs
+  ns.TrainerConfirm.Decide = function() return DEFER, 5 end
+  ns.TrainerConfirm.OverlayClick(env)
+  rec.asks[1].cancel()
+  eq(#called, 1)
+  for i = n + 1, #logs do falsy(logs[i]:find("training call", 1, true), logs[i]) end
+  -- Accept writes the line after the question
+  ns.TrainerConfirm.OverlayClick(env)
+  rec.asks[2].confirm()
+  eq(#called, 2)
+  eq(logs[#logs], "confirm: training call made for row 5")
+end)

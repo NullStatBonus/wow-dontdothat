@@ -88,3 +88,24 @@ SpellData.DisplayName(class, familyId, env) -> the client's name for the family,
 ```
 
 The game gives a trainer row's spell ID through its tooltip (`SetTrainerService(i)` then `GetSpell()`); `Adapter.ReadTrainer` sets `row.spellId` and `row.familyId = FamilyOfId(class, spellId)`. Only when that gives nothing, resolve with `NameMap(class, env)[row.name]`. Take the rank from the digits of the rank text. Build the map once per class and session; it is the only place the client's spell names are read. Rules/** and Model/** stay free of WoW API calls: `env` is passed in, as `IconFor` does. A missing or erroring `GetSpellInfo` leaves the English names in the map, which is today's behavior. `Probe.SpellIdentity` records whether a client gives the trainer a direct spell ID.
+
+CheckThat integration (DontDoThat/CheckThat.lua, Model/TestSettings.lua)
+
+```
+Adapter.checkThat(env) -> the CheckThat global or nil;  Adapter.readVersion(env) -> "0.15.0" | nil
+ns.CheckThat.Start(ctx)            -- once, at the end of OnEnable. ctx = { version(), testSettings(), setting(key), char(key), log(msg),
+                                   --   runStarted(runId), runEnded(reason), runGone() }
+ns.CheckThat.Status() -> "working" | "not detected" | "too old" | "failed: <why>"
+ns.CheckThat.RunOpen() -> bool     -- CheckThat.ActiveRun("DontDoThat") ~= nil; false when CheckThat is missing, old or raising
+ns.TestSettings.On/Off(db, opts, runId)   -- opts = { log(msg), mark(profile), sync() }
+ns.TestSettings.Login(db, opts, runOpen) -> "kept" | "restored" | "removed" | nil
+ns.TestSettings.Shutdown(db)       -- AceDB OnDatabaseShutdown: sv.profileKeys[charKey] = the own profile
+db.char.testSettings = { profile = <own profile>, runId = <run id> | nil }   -- exists only while the mode is on; older versions ignore it
+```
+
+- Profile names: the temporary profile is `DDT test`; the fallback when a record names nothing usable is `Default`. Never save the temporary name to the profile key.
+- Entries (read only, no log line, scalars of at most 100 characters, registered at login, never at file scope): `version` = major*10000 + minor*100 + patch (0.15.0 is 1500, 1.0.0 is 10000; nothing when unreadable), `testsettings` = `on`|`off`, `setting <key>` = what `/ddt get <key>` prints, or `marks` (`none`, `40`, `60` or `40, 60`) or `allowed` (a count); nothing for an unknown key.
+- Run hook: `start` with a new run id turns the mode on (the same id changes nothing, a missing id is ignored), `end` turns it off. After a CheckThat error only `end` still restores.
+- Log lines (English, stable wording; a reworded line is a plan change): `debug log turned on`, `debug log turned off`, `test settings: on (own settings put aside)`, `test settings: reset to defaults`, `test settings: off (own settings restored)`, `test settings: on at login`, `test settings: restored at login`, `test settings: temporary profile removed at login`, `test settings: another run started`, `test settings: run already seen`, `test settings: run start without an id`, `test settings: run ended: <reason>`, `test settings: FAILED: <why>`, `checkthat: entries registered: <n>`, `checkthat: run hook registered`, `checkthat: run hook not available`, `checkthat: run hook refused`, `checkthat: FAILED: <why>`. Purchase lines: `items: purchase call made` and `items: purchase call dropped` (every vendor and auction purchase call, asked about or not; not written when the player declines), `confirm: training call made for row <n>` (every Forever trainer purchase through the addon's Train button) and `confirm: profession dialog opened for row <n>`. The login restore runs before debug is on again, so its line is not logged unless the mode was kept; the saved `profileKeys` value is the evidence for a restore.
+- The debug log keeps at most 500 entries (`DEFAULT_MAX` in Debug/Log.lua). A plan step that needs a line must not rely on one written earlier than that.
+- Chat lines name the profile in use: `Profile in use: <name> (your own|temporary).` at login, `Profile changed. Profile in use: <name> (your own|temporary).` at a switch the addon did not make; its own messages (on, reset, off, not on, restored, kept) say the same.

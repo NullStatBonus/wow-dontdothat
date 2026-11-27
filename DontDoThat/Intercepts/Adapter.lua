@@ -479,6 +479,22 @@ function Adapter.ReadMoney(env)
   return type(m) == "number" and m or nil
 end
 
+-- The addon's TOC version text ("0.15.0"), or nil. C_AddOns.GetAddOnMetadata where it exists, else the older global.
+function Adapter.readVersion(env)
+  env = env or _G
+  local fn = type(env.C_AddOns) == "table" and env.C_AddOns.GetAddOnMetadata
+  if type(fn) ~= "function" then fn = env.GetAddOnMetadata end
+  if type(fn) ~= "function" then return nil end
+  local ok, v = pcall(fn, "DontDoThat", "Version")
+  return ok and type(v) == "string" and v or nil
+end
+
+-- The CheckThat test runner's global table, or nil when it is not loaded. Only CheckThat.lua uses it.
+function Adapter.checkThat(env)
+  local t = (env or _G).CheckThat
+  if type(t) == "table" then return t end
+end
+
 -- Seconds of game time (GetTime), or nil without a clock.
 function Adapter.ReadTime(env)
   local now = call(env or _G, "GetTime")
