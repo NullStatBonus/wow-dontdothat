@@ -1,10 +1,16 @@
 # Changelog
 
-## 0.15.0
+## 1.0.0
 
 - **New: Always Allow on the purchase question.** The addon buys the item and stops asking about it on this character.
 - New: What to watch lists the items you always allow. Remove an item to be asked again.
+- New: The Profiles page lets you choose, create, copy, reset or delete a profile. Characters can share one or use their own.
+- New: Chat names the profile in use at login and each time you switch.
+- New: `/ddt testsettings` is for testers. It uses a temporary profile with default settings. Your own profile stays safe.
+- New: The debug report shows the profile in use, test settings and which version wrote your saved data.
 - Changed: Reset all settings also removes the items this character always allows.
+- Changed: Class pages say that each switch covers every rank of the spell.
+- Fixed: A vendor question buys nothing when the vendor's list changed. Before, Accept could buy a different item.
 
 ## 0.14.0
 

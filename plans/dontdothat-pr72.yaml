@@ -1,8 +1,8 @@
 ct: 1
 kind: plan
 addon: DontDoThat
-title: Don't Do That PR 72 - Always Allow (0.15.0)
-version: 0.15.0
+title: Don't Do That PR 72 - Always Allow (1.0.0)
+version: 1.0.0
 preamble: Play on WoW Forever with one character. Type |cff99ccff/reload|r first to load the build under test. Stand at a vendor that sells armor or a weapon above 1 silver. Keep the default settings, with Ask before buying on. Step 2 turns debug on.
 handoff: Type |cff99ccff/ct export|r, then |cff99ccff/reload|r. Send CheckThat.lua and DontDoThat.lua from SavedVariables.
 logs:
@@ -23,7 +23,7 @@ sections:
       text: Enter |cff99ccff/ddt version|r.
       commands:
       - /ddt version
-    expect: chat shows Don't Do That v0.15.0. Press Pass.
+    expect: chat shows Don't Do That v1.0.0. Press Pass.
     verify:
     - player
     notes: The addon keeps its version private and logs no version fact, so a player reads it.

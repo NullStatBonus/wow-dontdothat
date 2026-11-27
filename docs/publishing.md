@@ -22,6 +22,16 @@ Releases are built by [BigWigsMods/packager](https://github.com/BigWigsMods/pack
 2. Commit, then tag the commit `vX.Y.Z` (the version without the `v` must equal the TOC version) and push the tag.
 3. The workflow runs the tests and `tools/check-*.sh`, checks the tag against both TOC versions, then packages and uploads to CurseForge and Wago, then creates the GitHub release with the zip attached.
 
+## Release-day checks
+
+Do these before you tag. The tag starts the release workflow, which publishes to CurseForge and Wago.
+
+1. `make test`, `make check` and `make plan` pass, and the foundation plan (`plans/dontdothat.yaml`) passed on WoW Forever with the build you are releasing. Run the purchases plan when the purchase code changed.
+2. The `## Interface` numbers in both TOCs match the live clients (Classic Era 11509, Forever 16001 at 1.0.0). Check them in game with `/dump select(4, GetBuildInfo())`.
+3. `CHANGELOG.md` has a `## X.Y.Z` section for the TOC version, and `docs/listing.md` still matches `README.md`.
+4. Tag `vX.Y.Z` on the commit that holds the version bump, and push the tag. The tag must equal the TOC version, so a pre-release tag such as `v1.0.0-beta1` is refused by `tools/check-version.sh`. There is no beta step: every `v*` tag publishes as a release.
+5. After the workflow, open the zip: it holds `DontDoThat/` with both TOCs and no `plans`, `tests`, `Makefile` or `DESIGN.md`.
+
 ## How the package is laid out
 
 - The addon lives in `DontDoThat/` inside the repository, so `.pkgmeta` moves it to the top of the zip and ignores everything else (tests, tools, docs, openspec).
