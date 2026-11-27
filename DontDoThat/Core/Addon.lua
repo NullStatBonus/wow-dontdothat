@@ -95,6 +95,7 @@ function addon:OnInitialize()
         ns.Settings.ClassifyStyle(self.db.profile, before, ok and name or nil)
     end
     if ns.Settings then ns.Settings.ClearDebug(self.db.profile) end
+    if ns.Settings then ns.Settings.StampVersion(self.db.global, ns.version) end
     if ns.Tally then ns.Tally.Init(self.db) end
 
     if ns.Log then
@@ -112,6 +113,7 @@ function addon:OnInitialize()
                     local ok, name = pcall(self.db.GetCurrentProfile, self.db)
                     return ok and name or nil
                 end)(),
+                dataVersion = { current = self.db.global.version, previous = self.db.global.previousVersion },
                 testSettings = ns.TestSettings and ns.TestSettings.IsOn(self.db) and ns.TestSettings.OwnProfile(self.db) or nil,
                 checkThat = ns.CheckThat and ns.CheckThat.Status() or nil,
                 ledger = self.db.char.ledger,

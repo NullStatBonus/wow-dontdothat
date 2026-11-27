@@ -213,3 +213,28 @@ test("family ID migration: every new ID is the family the bundled data uses", fu
     end
   end
 end)
+
+test("stamp version: records the running version and keeps the one it replaced", function()
+  local ns = {}
+  H.load("DontDoThat/Model/Settings.lua", ns)
+  local g = {}
+  eq(ns.Settings.StampVersion(g, "0.15.0"), nil, "a first stamp has no earlier version")
+  eq(g, { version = "0.15.0" })
+  eq(ns.Settings.StampVersion(g, "0.15.0"), nil, "the same version changes nothing")
+  eq(g, { version = "0.15.0" })
+  eq(ns.Settings.StampVersion(g, "1.0.0"), "0.15.0")
+  eq(g, { version = "1.0.0", previousVersion = "0.15.0" })
+  eq(ns.Settings.StampVersion(g, "1.0.1"), "1.0.0")
+  eq(g, { version = "1.0.1", previousVersion = "1.0.0" })
+end)
+
+test("stamp version: an unknown or missing version never overwrites what was recorded", function()
+  local ns = {}
+  H.load("DontDoThat/Model/Settings.lua", ns)
+  local g = { version = "0.15.0" }
+  eq(ns.Settings.StampVersion(g, "unknown"), nil)
+  eq(ns.Settings.StampVersion(g, nil), nil)
+  eq(ns.Settings.StampVersion(g, ""), nil)
+  eq(ns.Settings.StampVersion(nil, "1.0.0"), nil)
+  eq(g, { version = "0.15.0" })
+end)

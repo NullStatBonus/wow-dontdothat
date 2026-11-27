@@ -44,7 +44,7 @@ local function login(opts)
   _G.GetCurrentRegionName = function() return "US" end
   _G.securecallfunction = function(f, ...) return f(...) end
   _G.SlashCmdList = {}
-  _G.GetAddOnMetadata = function(_, field) return field == "Version" and "0.15.0" or nil end
+  _G.GetAddOnMetadata = function(_, field) return field == "Version" and (opts.version or "0.15.0") or nil end
   _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, m) chat[#chat + 1] = (m:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) end }
   _G.CheckThat = nil
   for _, f in ipairs({ "LibStub/LibStub.lua", "CallbackHandler-1.0/CallbackHandler-1.0.lua", "AceAddon-3.0/AceAddon-3.0.lua",
@@ -280,4 +280,18 @@ test("boot: debug on writes its own line first", function() run(function()
   s.say("debug off")
   local e = s.ns.Log.Entries()
   eq(e[#e].msg, "debug log turned off")
+end) end)
+
+test("boot: each load stamps the version; an upgrade keeps the earlier one; a downgrade keeps the data", function() run(function()
+  local s = login({ version = "0.14.0" })
+  eq(s.db.global.version, "0.14.0"); eq(s.db.global.previousVersion, nil)
+  s.logout()
+  local s2 = login({ version = "1.0.0" })
+  eq(s2.db.global.version, "1.0.0"); eq(s2.db.global.previousVersion, "0.14.0")
+  local function build() local src = s2.ns.Export.sourceProvider(); src.env = {}; src.probe = nil; return s2.ns.Export.Build(src) end
+  truthy(build():find("saved data version: 1.0.0 (earlier: 0.14.0)", 1, true))
+  s2.logout()
+  -- a build that ignores the stamp reads the same data
+  local plain = _G.LibStub("AceDB-3.0"):New("DontDoThatDB", { profile = { minPrice = 100 } }, true)
+  eq(plain:GetCurrentProfile(), "Default")
 end) end)

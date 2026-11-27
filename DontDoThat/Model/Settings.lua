@@ -327,6 +327,19 @@ function Settings.ClassifyStyle(p, before, name)
   p.styleMarked = true
 end
 
+-- Records which addon version wrote the saved data: g is the database's global table. The running version goes to
+-- g.version and the one it replaces to g.previousVersion, so a later migration and a bug report know where the data
+-- came from. Plain strings with no default, so an older version ignores them. Returns the previous version, or nil
+-- when it did not change (or the version is unknown).
+function Settings.StampVersion(g, version)
+  if type(g) ~= "table" or type(version) ~= "string" or version == "" or version == "unknown" then return nil end
+  local previous = g.version
+  if previous == version then return nil end
+  if type(previous) == "string" then g.previousVersion = previous end
+  g.version = version
+  return previous
+end
+
 -- Debug recording is for one session: it is switched off whenever the addon loads.
 function Settings.ClearDebug(p)
   p = p or saved()
