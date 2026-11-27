@@ -430,6 +430,74 @@ sections:
       pattern: "^items: purchase call made$"
       scope: attempt
       label: "The addon made the purchase call"
+  - id: ddt.p.16
+    title: Cancel a stack and keep using the auction house
+    action:
+      kind: manual
+      text:
+      - Start a purchase of a stack of a commodity, such as cloth, that costs more than 1 silver in total.
+      - Accept the game's own confirmation. When the addon's question appears, choose Cancel.
+      - Then start the same purchase again.
+    expect:
+    - the first purchase is cancelled and nothing is bought.
+    - the auction house still takes the second purchase and does not wait on the first. Press Pass.
+    verify:
+    - assertions
+    - player
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^popup: cancel$"
+      scope: attempt
+      label: "You chose Cancel"
+    - kind: log
+      source: debug
+      contains: "items: spend of"
+      absent: true
+      scope: attempt
+      label: "Nothing was bought"
+    - kind: log
+      source: debug
+      contains: "purchase dropped"
+      absent: true
+      scope: attempt
+      label: "No purchase was dropped"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: attempt
+      label: "The question stayed on"
+    notes: The game's quote can expire while the addon's question is open. Whether the auction house is left waiting after Cancel is what the player checks.
+  - id: ddt.p.17
+    title: Accept a stack after a wait
+    auto: true
+    timeout: 240
+    action:
+      kind: manual
+      text:
+      - Start a purchase of a stack of a commodity that costs more than 1 silver in total, and accept the game's own confirmation.
+      - When the addon's question appears, wait 30 seconds, then choose Accept.
+    expect: the game completes the purchase or tells you the price changed, and the auction house keeps working.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^popup: accept$"
+      scope: attempt
+      label: "You accepted the question"
+    - kind: log
+      source: debug
+      pattern: "^items: purchase call made$"
+      scope: attempt
+      label: "The addon made the purchase call"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: attempt
+      label: "The question stayed on"
 - id: p5
   title: Restore and finish
   clients:
