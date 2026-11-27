@@ -67,7 +67,16 @@ function Merchant.Install(env)
     end
     local args = { ... }
     return ns.ItemGuard.Run("vendor", name, link, Merchant.Total(price, bundle, qty),
-      function() return original(index, qty, unpack(args)) end)
+      function()
+        -- The question may have stayed open while the vendor closed or its list changed: the row must still be
+        -- the item and price the question named, else nothing is bought (as the auction path does).
+        local okNow, nowName, nowLink, nowPrice = pcall(itemAt, env, index)
+        if not okNow or nowName ~= name or nowLink ~= link or nowPrice ~= price then
+          if ns.Log then ns.Log.Add("items: vendor row %s changed while the question was open, purchase dropped", tostring(index)) end
+          return false
+        end
+        return original(index, qty, unpack(args))
+      end)
   end
   env.BuyMerchantItem = wrapper
   installed = true

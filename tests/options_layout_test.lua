@@ -36,7 +36,8 @@ end
 
 local function sortedArgs(group)
   local list = {}
-  for key, w in pairs(group.args or {}) do list[#list + 1] = { key = key, w = w } end
+  -- The test-settings banner (an inline group at order 0, shown only while the mode is on) is not page content.
+  for key, w in pairs(group.args or {}) do if key ~= "testBanner" then list[#list + 1] = { key = key, w = w } end end
   table.sort(list, function(a, b) return a.w.order < b.w.order end)
   return list
 end
@@ -50,12 +51,12 @@ local function hasClassTree(group)
   return false
 end
 
-test("the six landmarks are in order, and Appearance has Warnings, Explanations and Sound tabs", function()
+test("the seven landmarks are in order, and Appearance has Warnings, Explanations and Sound tabs", function()
   local ns = fresh({})
   local root = ns.Options.Root()
   local order = {}
   for _, entry in ipairs(sortedArgs(root)) do if entry.w.type == "group" then order[#order + 1] = entry.key end end
-  eq(order, { "home", "watch", "progress", "appearance", "advanced", "about" })
+  eq(order, { "home", "watch", "progress", "appearance", "advanced", "about", "profiles" })
   local appearance = root.args.appearance
   eq(appearance.childGroups, "tab")
   local tabs = {}
@@ -75,7 +76,7 @@ test("every page and tab states its purpose first, with nonnegative orders", fun
     for _, entry in ipairs(list) do truthy(entry.w.order >= 0, path .. "." .. entry.key .. " has a negative order") end
     if group.args.intro then
       local first
-      for _, entry in ipairs(list) do if entry.key ~= "title" then first = entry.key; break end end
+      for _, entry in ipairs(list) do if entry.key ~= "title" and entry.key ~= "testBanner" then first = entry.key; break end end
       eq(first, "intro", path .. " starts with its introduction")
     end
     for key, child in pairs(group.args) do
@@ -174,11 +175,11 @@ test("registering again adds no categories, and rebuild refreshes the root and e
     truthy(ns.Options.Rebuild())
     local names = {}
     for _, n in ipairs(rec.registers) do names[n] = true end
-    for _, n in ipairs({ "DontDoThat", "DontDoThat_parent", "DontDoThat_watch", "DontDoThat_progress", "DontDoThat_appearance", "DontDoThat_advanced", "DontDoThat_about" }) do
+    for _, n in ipairs({ "DontDoThat", "DontDoThat_parent", "DontDoThat_watch", "DontDoThat_progress", "DontDoThat_appearance", "DontDoThat_advanced", "DontDoThat_profiles", "DontDoThat_about" }) do
       truthy(names[n], n .. " registered again")
     end
     truthy(rec.tables.DontDoThat_parent ~= oldRoot, "the root holds a fresh Home table")
-    eq(#rec.notified, 7, "every open page redraws")
+    eq(#rec.notified, 8, "every open page redraws")
   end)
   restore()
   truthy(ok, tostring(err))

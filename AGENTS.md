@@ -6,7 +6,7 @@ When player-visible behavior, a setting, or a command changes, update the suppor
 
 - Cover affected features, settings, commands, and “Good to know” limits in `README.md`.
 - Update the CurseForge/Wago text in `docs/listing.md`. Update its summary when the headline behavior changes.
-- Update `docs/test-plan.md` with the relevant manual checks. Keep section numbers unique and in order.
+- Update `docs/test-plan.md` with the relevant manual checks, or the CheckThat plan that covers them. Keep section numbers unique and in order.
 - Document every new setting in the README and include its value in the debug report.
 - Keep the report’s settings summary current in `DontDoThat/Debug/Export.lua` (`Export.Build`).
 
@@ -18,6 +18,7 @@ When player-visible behavior, a setting, or a command changes, update the suppor
 - Give only essential setup before the action, but name everything the check depends on: a profession, an installed addon, and turning on debug logging followed by `/reload`. Avoid old versions, disabled addons, and staged characters or items.
 - Verify the result from debug logs or saved variables wherever possible. Add missing evidence in the same change.
 - Keep raw saved variables and debug output out of Git. Anonymize any fixture derived from them.
+- In-game checks live in CheckThat plans under `plans/`; `docs/test-plan.md` points there. All CheckThat calls sit in `DontDoThat/CheckThat.lua`, which reaches CheckThat only through `Adapter.checkThat()` with each call guarded and in `pcall`, so the addon works with CheckThat missing or old. An entry reads state only and writes no log line. Log lines, entries and the test-settings record are listed in `docs/contracts.md`. When a CheckThat run needs the player's settings out of the way, it uses `/ddt testsettings` (a temporary AceDB profile that is never saved).
 - Prefer checks the player can complete through ordinary play.
 - Read the player’s copied saved variables in `../shared-addon-resources/saved` under `Account/<account>/SavedVariables/` before asking for more in-game steps.
 - When simple reproduction is impractical, cover the case with automated tests, use real bundled libraries where it matters, and say which case they cover.
@@ -39,7 +40,7 @@ When player-visible behavior, a setting, or a command changes, update the suppor
 ## OpenSpec, Git, and releases
 
 - Follow the matching workflow under `.claude/skills/`. The archive procedure is in `.claude/skills/openspec-archive-change/SKILL.md` (`/opsx:archive` in Claude Code).
-- Bump the version once per OpenSpec change when its specs are applied to `openspec/specs/` during sync or archive. If `/opsx:sync` already set the version, keep it at archive.
+- Bump the version once per OpenSpec change when its specs are applied to `openspec/specs/` during sync or archive. If `/opsx:sync` already set the version, keep it at archive. Exception: the changes of issue #73 (CheckThat integration, plans and Always Allow) and the fixes that ship with them leave the TOC at 0.15.0. They ship together as 1.0.0, and the user asks for that release.
 - Set the same `## Version:` in `DontDoThat/DontDoThat_Vanilla.toc` and `DontDoThat/DontDoThat_Camelot.toc`. These are the only files that hard-code the addon version.
 - Before 1.0, bump minor for a new capability or player-visible feature and patch for a fix or modification to existing behavior. From 1.0 onward, follow semantic versioning. Breaking saved settings or data requires a major bump from 1.0 onward.
 - Archive before committing, pushing, or opening a PR for the change. Keep the code, synced specs, archive, version bump, and matching `## X.Y.Z` changelog section in the same commit. Name the new version in the commit message. A change still active in `openspec/changes/` is ineligible for commit.

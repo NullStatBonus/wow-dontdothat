@@ -1,0 +1,582 @@
+ct: 1
+kind: plan
+purpose: feature
+addon: DontDoThat
+title: Don't Do That purchases (feature plan)
+version: 0.15.0
+preamble: |-
+  Feature plan for WoW Forever. Run it when you change the vendor, trainer or auction questions, or what the addon counts as spent. It spends real gold, so the character needs about 3 gold, level 10 or higher, and a class with at least one spell the addon marks Save your gold at its trainer. The character must still be saving for its first mount, must have no mount marked as bought, and must have no Always Allow items. Steps 2 and 3 check this. Stand in a capital city. Install the build under test and type |cff99ccff/reload|r first. Test settings turn on when the run starts, so your own settings do not matter.
+  The release gate (plans/dontdothat.yaml) buys nothing. This plan buys the cheapest item that qualifies each time. Always Allow has its own plan (plans/dontdothat-pr72.yaml). Keep this plan as a regression plan for purchases.
+handoff: Type |cff99ccff/ct export|r, then |cff99ccff/reload|r. Send CheckThat.lua and DontDoThat.lua from SavedVariables.
+logs:
+  debug:
+    global: DontDoThatDB
+    path: global.log.entries
+    format: entries
+    cap: 500
+  facts:
+    global: CheckThatDB
+    path: global.facts
+    format: strings
+    cap: 300
+  errors:
+    global: CheckThatDB
+    path: global.errors
+    format: strings
+    quiet: true
+    cap: 100
+sections:
+- id: p1
+  title: Start
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.p.1
+    title: Check the version
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: the addon is the build under test.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: version
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.version
+      op: ge
+      value: 1500
+      label: "The addon reports the version under test"
+  - id: ddt.p.2
+    title: No mount marked as bought
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: this character has no mount marked as bought.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: setting
+      args: [marks]
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.setting
+      op: eq
+      value: none
+      label: "No mount is marked as bought"
+  - id: ddt.p.3
+    title: No allowed items
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: this character has no Always Allow items.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: setting
+      args: [allowed]
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.setting
+      op: eq
+      value: 0
+      label: "No item is allowed"
+  - id: ddt.p.4
+    title: Test settings are on
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat asks the addon a question.
+    expect: test settings are on, so your own settings are put aside.
+    verify:
+    - assertions
+    call:
+      addon: DontDoThat
+      entry: testsettings
+    assertions:
+    - kind: fact
+      source: facts
+      addon: DontDoThat
+      key: entry.testsettings
+      op: eq
+      value: 'on'
+      label: "Test settings are on for the run"
+  - id: ddt.p.5
+    title: Turn debug recording on
+    auto: true
+    timeout: 30
+    action:
+      kind: manual
+      text: Press Run to turn debug recording on.
+      commands:
+      - /ddt debug on
+    expect: chat says debug is on.
+    verify:
+    - assertions
+    assertions:
+    - kind: state
+      probe: global-value
+      name: DontDoThatDB
+      path: global.log.enabled
+      op: eq
+      value: true
+      label: "Debug recording is on"
+- id: p2
+  title: Vendor purchases
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.p.6
+    title: Cheap item is not asked about
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text: At a vendor, right-click any item that costs less than 1 silver.
+    expect: the game buys the item with no question.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^items: vendor .* %-> passed through: below minimum price$"
+      scope: attempt
+      label: "The addon let the cheap item through"
+    - kind: log
+      source: debug
+      pattern: "^popup: shown$"
+      absent: true
+      scope: attempt
+      label: "No question appeared"
+    - kind: log
+      source: debug
+      contains: "items: spend of"
+      absent: true
+      scope: attempt
+      label: "The addon counted no spend"
+    - kind: log
+      source: debug
+      pattern: "^items: purchase call made$"
+      scope: attempt
+      label: "The addon made the purchase call"
+  - id: ddt.p.7
+    title: Accept at a vendor
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text:
+      - At a vendor, right-click armor or a weapon that costs more than 1 silver.
+      - When the question appears, choose Accept. Never choose Always Allow.
+    expect: the question names the item, and the game buys it.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^items: vendor .* %-> flagged$"
+      scope: attempt
+      label: "The addon flagged the item"
+    - kind: log
+      source: debug
+      pattern: "^popup: accept$"
+      scope: attempt
+      label: "You accepted the question"
+    - kind: log
+      source: debug
+      contains: "items: spend of"
+      scope: attempt
+      label: "The addon noted the pending spend"
+    - kind: log
+      source: debug
+      contains: "items: spent"
+      scope: attempt
+      label: "The addon counted the price as spent"
+    - kind: log
+      source: debug
+      contains: "popup: the accept step failed"
+      absent: true
+      scope: attempt
+      label: "No hidden failure: popup: the accept step failed"
+    - kind: log
+      source: debug
+      pattern: "^items: purchase call made$"
+      scope: attempt
+      label: "The addon made the purchase call"
+- id: p3
+  title: Trainer purchases
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.p.8
+    title: Cancel at the trainer
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text:
+      - At your class trainer, choose a spell the addon marks Save your gold and press Train.
+      - When the question appears, choose Cancel.
+    expect: the question names the spell, and you do not learn it.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^confirm: declined "
+      scope: attempt
+      label: "You declined the trainer question"
+    - kind: log
+      source: debug
+      pattern: "^confirm: bought .* anyway$"
+      absent: true
+      scope: attempt
+      label: "Nothing was bought"
+  - id: ddt.p.9
+    title: Accept at the trainer
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text:
+      - Press Train again on the same spell.
+      - When the question appears, choose Accept.
+    expect: the game teaches you the spell, and no message says the action was blocked.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^confirm: bought .* anyway$"
+      scope: attempt
+      label: "The addon passed the purchase after you accepted"
+    - kind: log
+      source: debug
+      contains: "prompts disabled"
+      absent: true
+      scope: attempt
+      label: "The question stayed on"
+    - kind: log
+      source: debug
+      contains: "popup: the accept step failed"
+      absent: true
+      scope: attempt
+      label: "No hidden failure: popup: the accept step failed"
+    - kind: log
+      source: debug
+      pattern: "^confirm: training call made for row %d+$"
+      scope: attempt
+      label: "The addon made the training call"
+  - id: ddt.p.15
+    title: Train a spell the addon does not mark
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text: Press Train on a spell that has no addon mark beside it.
+    expect: the game teaches you the spell with no question.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^confirm: training call made for row %d+$"
+      scope: attempt
+      label: "The addon made the training call"
+    - kind: log
+      source: debug
+      pattern: "^popup: shown$"
+      absent: true
+      scope: attempt
+      label: "No question appeared"
+    - kind: log
+      source: debug
+      contains: "prompts disabled"
+      absent: true
+      scope: attempt
+      label: "The question stayed on"
+- id: p4
+  title: Auction purchases
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.p.10
+    title: Cancel at the auction house
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text:
+      - At the auction house, start a buyout of an armor or weapon that costs more than 1 silver.
+      - Accept the game's own confirmation. When the addon's question appears, choose Cancel.
+    expect: the addon's question names the item, and the game buys nothing.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^items: ah .* %-> flagged$"
+      scope: attempt
+      label: "The addon flagged the auction"
+    - kind: log
+      source: debug
+      pattern: "^popup: shown$"
+      scope: attempt
+      label: "The question appeared"
+    - kind: log
+      source: debug
+      pattern: "^popup: cancel$"
+      scope: attempt
+      label: "You chose Cancel"
+    - kind: log
+      source: debug
+      contains: "items: spend of"
+      absent: true
+      scope: attempt
+      label: "Nothing was bought"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: attempt
+      label: "No hidden failure: prompts switched off"
+  - id: ddt.p.11
+    title: Accept at the auction house
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text:
+      - Start the same buyout again and accept the game's own confirmation.
+      - When the addon's question appears, choose Accept.
+    expect: the game completes the buyout, and the auction house does not wait on a pending purchase.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^popup: accept$"
+      scope: attempt
+      label: "You accepted the question"
+    - kind: log
+      source: debug
+      contains: "items: spent"
+      scope: attempt
+      label: "The addon counted the price as spent"
+    - kind: log
+      source: debug
+      contains: "purchase dropped"
+      absent: true
+      scope: attempt
+      label: "The purchase was not dropped"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: attempt
+      label: "No hidden failure: prompts switched off"
+    - kind: log
+      source: debug
+      pattern: "^items: purchase call made$"
+      scope: attempt
+      label: "The addon made the purchase call"
+  - id: ddt.p.12
+    title: Accept a stack at the auction house
+    auto: true
+    timeout: 180
+    action:
+      kind: manual
+      text:
+      - Buy a stack of a commodity, such as cloth, that costs more than 1 silver in total.
+      - Accept the game's own confirmation. When the addon's question appears, choose Accept.
+    expect: the game completes the purchase for the whole stack.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^items: ah .* %-> flagged$"
+      scope: attempt
+      label: "The addon flagged the stack"
+    - kind: log
+      source: debug
+      pattern: "^popup: accept$"
+      scope: attempt
+      label: "You accepted the question"
+    - kind: log
+      source: debug
+      contains: "purchase dropped"
+      absent: true
+      scope: attempt
+      label: "The purchase was not dropped"
+    - kind: log
+      source: debug
+      pattern: "^items: purchase call made$"
+      scope: attempt
+      label: "The addon made the purchase call"
+  - id: ddt.p.16
+    title: Cancel a stack and keep using the auction house
+    action:
+      kind: manual
+      text:
+      - Start a purchase of a stack of a commodity, such as cloth, that costs more than 1 silver in total.
+      - Accept the game's own confirmation. When the addon's question appears, choose Cancel.
+      - Then start the same purchase again.
+    expect:
+    - the first purchase is cancelled and nothing is bought.
+    - the auction house still takes the second purchase and does not wait on the first. Press Pass.
+    verify:
+    - assertions
+    - player
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^popup: cancel$"
+      scope: attempt
+      label: "You chose Cancel"
+    - kind: log
+      source: debug
+      contains: "items: spend of"
+      absent: true
+      scope: attempt
+      label: "Nothing was bought"
+    - kind: log
+      source: debug
+      contains: "purchase dropped"
+      absent: true
+      scope: attempt
+      label: "No purchase was dropped"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: attempt
+      label: "The question stayed on"
+    notes: The game's quote can expire while the addon's question is open. Whether the auction house is left waiting after Cancel is what the player checks.
+  - id: ddt.p.17
+    title: Accept a stack after a wait
+    auto: true
+    timeout: 240
+    action:
+      kind: manual
+      text:
+      - Start a purchase of a stack of a commodity that costs more than 1 silver in total, and accept the game's own confirmation.
+      - When the addon's question appears, wait 30 seconds, then choose Accept.
+    expect: the game completes the purchase or tells you the price changed, and the auction house keeps working.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      pattern: "^popup: accept$"
+      scope: attempt
+      label: "You accepted the question"
+    - kind: log
+      source: debug
+      pattern: "^items: purchase call made$"
+      scope: attempt
+      label: "The addon made the purchase call"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: attempt
+      label: "The question stayed on"
+- id: p5
+  title: Restore and finish
+  clients:
+  - forever-camelot
+  steps:
+  - id: ddt.p.13
+    title: Turn test settings off
+    auto: true
+    timeout: 60
+    action:
+      kind: manual
+      text: Press Run to turn test settings off.
+      commands:
+      - /ddt testsettings off
+    expect: chat says test settings are off and names your own profile.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: debug
+      contains: "test settings: off (own settings restored)"
+      scope: attempt
+      label: "Your own settings are back"
+  - id: ddt.p.14
+    title: No error in the run
+    auto: true
+    timeout: 30
+    action:
+      kind: wait-event
+      text: CheckThat checks the whole run for errors.
+    expect: the addon raised no Lua error and hid no failure during the run.
+    verify:
+    - assertions
+    assertions:
+    - kind: log
+      source: errors
+      pattern: "%[DontDoThat%]"
+      absent: true
+      scope: run
+      label: "The addon raised no Lua error"
+    - kind: log
+      source: debug
+      contains: "checkthat: FAILED"
+      absent: true
+      scope: run
+      label: "No hidden failure: checkthat: FAILED"
+    - kind: log
+      source: debug
+      contains: "test settings: FAILED"
+      absent: true
+      scope: run
+      label: "No hidden failure: test settings: FAILED"
+    - kind: log
+      source: debug
+      contains: "decision failed"
+      absent: true
+      scope: run
+      label: "No hidden failure: decision failed"
+    - kind: log
+      source: debug
+      contains: "overlay failed"
+      absent: true
+      scope: run
+      label: "No hidden failure: overlay failed"
+    - kind: log
+      source: debug
+      contains: "prompts switched off"
+      absent: true
+      scope: run
+      label: "No hidden failure: prompts switched off"
+    - kind: log
+      source: debug
+      contains: "prompts disabled"
+      absent: true
+      scope: run
+      label: "No hidden failure: prompts disabled"
+    - kind: log
+      source: debug
+      contains: "popup: could not be shown"
+      absent: true
+      scope: run
+      label: "No hidden failure: popup: could not be shown"

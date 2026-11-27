@@ -220,9 +220,14 @@ local function buy(env, skillIndex)
   local frame = env.ClassTrainerFrame
   local okT, tradeskill = pcall(env.IsTradeskillTrainer)
   if okT and tradeskill and type(frame) == "table" and frame.showDialog and type(env.StaticPopup_Show) == "function" then
+    if ns.Log then ns.Log.Add("confirm: profession dialog opened for row %s", tostring(skillIndex)) end
     return env.StaticPopup_Show("CONFIRM_PROFESSION")
   end
-  if type(env.BuyTrainerService) == "function" then return env.BuyTrainerService(skillIndex) end
+  if type(env.BuyTrainerService) == "function" then
+    -- One line for every purchase that goes through the overlay, asked about or not.
+    if ns.Log then ns.Log.Add("confirm: training call made for row %s", tostring(skillIndex)) end
+    return env.BuyTrainerService(skillIndex)
+  end
 end
 
 -- A click on the overlay: the question for a flagged service, the purchase for any other.

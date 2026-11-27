@@ -110,15 +110,16 @@ Type `/ddt` to open the settings at Home. You can also find them under Options >
 The "Don't Do That" entry there shows the Home controls at once, with the other pages under it.
 The settings have these pages:
 
-- **Home:** turn the addon on or off, choose how strongly it warns you, choose when to stop warning you, turn the on-screen message on or off, and reset all settings. A reset also removes the items that this character always allows.
+- **Home:** turn the addon on or off, choose how strongly it warns you, choose when to stop warning you, turn the on-screen message on or off, and reset all settings. A reset also removes the items that this character always allows (not while test settings are on).
 - **What to watch:** choose Spells, Professions and Shopping, and which purchases the addon watches. Under Shopping, **Always allowed on this character** lists the items you chose Always Allow for, each with a **Remove** button.
 - **Progress:** the gold you saved, and how close you are to your mounts. **Start the count over** forgets what the addon recorded (trainer prices, purchases you turned down or made, and reset counts). Spell totals come from your spellbook, so they come back. The "I've already bought my mount" checkboxes are kept for each character, so marking a mount on one character does not change your other characters.
 - **Appearance:** three tabs.
   - **Warnings:** choose Toast or Warning, preview it, set the toast's background opacity, text and icon opacity and scale, move it (Done saves, Cancel or Escape puts it back, and Escape does not close the settings window; it keeps its place when you change its scale), reset its position, and turn the chat line on or off.
   - **Explanations:** opacity and scale for the explanations you keep open, and a preview.
   - **Sound:** the warning sound, the volume channel, a Play sound button, and the seconds between warnings for the same thing. Turning the sound off also turns off the on-screen message. The chat line and the questions stay.
-- **Advanced:** fine controls (Tuning), the skip list revision, the spells and rules for each class (Classes), and Debug. In the game's Options window, Classes is an **Open classes** button that opens the list in the Don't Do That window.
+- **Advanced:** fine controls (Tuning), the skip list revision, the spells and rules for each class (Classes), and Debug. In the game's Options window, Classes is an **Open classes** button that opens the list in the Don't Do That window. On a class page, the switch beside a spell covers every rank of that spell, even when the row names only some ranks.
 - **About:** what the marks mean, how to use the addon, and the main commands.
+- **Profiles:** shows which profile this character uses. Choose another, create one, copy one, reset the current one or delete one. Characters can share a profile or use their own. Your tally, progress and Always Allow items stay with each character. The page is locked while test settings are on.
 
 The addon has its own icon in the AddOns list at the character screen.
 
@@ -127,7 +128,7 @@ The addon has its own icon in the AddOns list at the character screen.
 | Command | What it does |
 |---|---|
 | `/ddt` | Opens the settings at Home. |
-| `/ddt settings [page]` | Opens a page: `watch`, `progress`, `appearance`, `warnings`, `explanations`, `sound`, `advanced`, `classes`, `debug` or `about`. |
+| `/ddt settings [page]` | Opens a page: `watch`, `progress`, `appearance`, `warnings`, `explanations`, `sound`, `advanced`, `classes`, `debug`, `about` or `profiles`. |
 | `/ddt status [topic]` | Prints current settings. Topics: `nudge`, `warnings`, `explanations`, `sound`. |
 | `/ddt help [topic]` | Lists the commands. Topics: `appearance`, `rules`, `diagnostics`. |
 | `/ddt get` | Lists the setting keys. |
@@ -140,6 +141,7 @@ The addon has its own icon in the AddOns list at the character screen.
 | `/ddt revision <number>` | Changes the revision (1 or 2). |
 | `/ddt version` | Shows the addon version and the game build. |
 | `/ddt debug on` and `/ddt debug off` | Starts or stops the debug recording. |
+| `/ddt testsettings on` and `/ddt testsettings off` | For testers. Switches this character to a temporary profile with default settings, or back to its own profile. See Test settings below. |
 | `/ddt log` | Opens the debug report. Escape closes it. If the window cannot open, the report prints in chat. |
 | `/ddt log clear` | Asks in its own dialog, then clears the recording. It never touches an open "Buy anyway?" question. |
 
@@ -148,6 +150,19 @@ Two more commands are for developers: `/ddt probe` and `/ddt trainerids [hover]`
 
 The keys for `/ddt get` and `/ddt set` are `enabled`, `nudge` (`mark`, `ask` or `everything`), `watch.spells`, `watch.professions`, `watch.shopping`, `alerts`, `appearance.message`, `appearance.warning-style` (`toast` or `warning`), `appearance.chat`, `appearance.toast.background-opacity`, `appearance.toast.text-opacity`, `appearance.toast.scale`, `appearance.explanation.background-opacity`, `appearance.explanation.text-opacity`, `appearance.explanation.scale`, `alert.cooldown` and `alert.channel`.
 Switches take `on` or `off`. Opacity is 0 to 100, scale is 50 to 200 and `alert.cooldown` is 1 to 30.
+
+## Test settings
+
+Test settings are for people who run the CheckThat test plans. They are not needed to use the addon.
+
+- `/ddt testsettings on` puts your own profile aside and uses a temporary profile named `DDT test` with default settings. `/ddt testsettings off` brings your own profile back and deletes the temporary one. Your own profile is never changed.
+- The mode ends by itself. The saved file never names the temporary profile, so a crash, an older version or a missing CheckThat leaves you on your own profile. At the next login with no open CheckThat run, chat says test settings were left on and your own profile is back. `/reload` during a run keeps them on.
+- Every page of the settings shows an amber banner while they are on, with a **Restore my settings** button. The **Profiles** page is locked until then.
+- Chat always names the profile in use: at every login (`Profile in use: Default (your own).`), at every profile switch (`Profile changed. Profile in use: Raid (your own).`) and in every test-settings message.
+- While they are on, **Reset all settings** keeps this character's Always Allow items.
+- CheckThat starts and ends the mode on its own when it runs the Don't Do That plan. Its entries are `version` (0.15.0 is 1500), `testsettings` (`on` or `off`) and `setting` (a key of `/ddt get`, or `marks` or `allowed`). An entry only reads state and writes no log line.
+- With **Record debug information** on, the log has these lines: `debug log turned on`, `debug log turned off`, `test settings: on (own settings put aside)`, `test settings: reset to defaults`, `test settings: off (own settings restored)`, `test settings: on at login`, `test settings: restored at login`, `test settings: another run started`, `test settings: run already seen`, `test settings: run start without an id`, `test settings: run ended: <reason>`, `checkthat: entries registered: <n>`, `checkthat: run hook registered` and `checkthat: FAILED: <why>`. Each purchase call also writes a line: `items: purchase call made` (or `dropped`) at a vendor or the auction house, and `confirm: training call made for row <n>` at a trainer. A declined question writes none.
+- The debug report lists the profile in use, whether test settings are on, and the CheckThat status (`working`, `not detected`, `too old` or `failed: <why>`).
 
 ## Known limits
 
@@ -208,6 +223,7 @@ The report holds:
 - Your settings, including how warnings look, and your gold tally. The **Rules** part lists every setting with its value, also the ones you never changed: nudge level, prompt tiers, What to watch, stop point, skip revision, item kinds and the minimum price.
 - The items and the vendor and auction decisions that the addon saw.
 - A log of what the addon saw and decided.
+- The profile in use, whether test settings are on, and the CheckThat status.
 - The libraries that the game loaded, and the game functions that the addon uses.
 
 Read the report before you send it.

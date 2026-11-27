@@ -118,6 +118,8 @@ local function guarded(proceed)
   local ok, result = pcall(proceed)
   buying = false
   if not ok then error(result, 0) end
+  -- One line for every purchase call, asked about or not, so a step can tell that the call ran or was dropped.
+  if ns.Log then ns.Log.Add("items: purchase call %s", result == false and "dropped" or "made") end
   return result
 end
 

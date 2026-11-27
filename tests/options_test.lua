@@ -236,7 +236,7 @@ end)
 test("debug page toggles logging and runs the report and clear actions", function()
   local ns = fresh({})
   local logging, shown, cleared
-  ns.Log = { SetEnabled = function(v) logging = v end, ClearAll = function() cleared = true end }
+  ns.Log = { Switch = function(v) logging = v end, ClearAll = function() cleared = true end }
   ns.Export = { Show = function() shown = true end }
   local d = ns.Options.Debug().args
   falsy(d.logging.get())
@@ -254,11 +254,11 @@ test("about page explains the marks in plain words and shows the version", funct
   truthy(joined:find("/ddt", 1, true))
 end)
 
-test("there are six pages in order, and the root window holds all of them", function()
+test("there are seven pages in order, and the root window holds all of them", function()
   local ns = fresh()
   local keys = {}
   for i, page in ipairs(ns.Options.Pages()) do keys[#keys + 1] = page.key; eq(page.group.order, i, page.key) end
-  eq(keys, { "home", "watch", "progress", "appearance", "advanced", "about" })
+  eq(keys, { "home", "watch", "progress", "appearance", "advanced", "about", "profiles" })
   local root = ns.Options.Root()
   eq(root.childGroups, "tree")
   for _, key in ipairs(keys) do truthy(root.args[key], key) end
@@ -275,11 +275,11 @@ test("registration adds the pages to the game's options and defines OpenOptions"
   _G.LibStub = function(lib) return ({ ["AceConfig-3.0"] = config, ["AceConfigDialog-3.0"] = dialog })[lib] end
   local addon = {}
   truthy(ns.Options.Register(addon))
-  eq(#added, 6, "the root entry plus five pages")
+  eq(#added, 7, "the root entry plus six pages")
   eq(added[1].title, "Don't Do That"); eq(added[1].parent, nil)
   local titles = {}
   for i = 2, #added do eq(added[i].parent, "Don't Do That"); titles[#titles + 1] = added[i].title end
-  eq(titles, { "What to watch", "Progress", "Appearance", "Advanced", "About" })
+  eq(titles, { "What to watch", "Progress", "Appearance", "Advanced", "About", "Profiles" })
   addon:OpenOptions()
   eq(opened, "DontDoThat")
   _G.LibStub = nil
@@ -681,4 +681,27 @@ test("reset all empties this character's allowed items in place", function()
   ns.Options.Rebuild, ns.Toast = rebuild, toast
   truthy(ns.db.char.allowedItems == list, "the same table")
   eq(next(list), nil)
+end)
+
+test("rules page: each group of switches says that a switch covers every rank of the spell, once, and only when it has rows", function()
+  local ns = loadSettings({})
+  local page = ns.Options.Rules().args.HUNTER
+  local NOTE = "Each switch covers every rank of the spell, not only the ranks listed here."
+  local withNote, boxes = 0, 0
+  -- Worth buying and Optional are read-only lists; the other three have the switches.
+  for _, key in ipairs({ "keep", "optional", "wait", "low", "skipped" }) do
+    local switches = key == "wait" or key == "low" or key == "skipped"
+    for _, group in pairs(page.args[key].args) do
+      if group.type == "group" then
+        boxes = boxes + 1
+        local n = 0
+        for _, w in pairs(group.args) do if w.name and tostring(w.name):find(NOTE, 1, true) then n = n + 1 end end
+        local rows = 0
+        for k in pairs(group.args) do if k:find("^item") then rows = rows + 1 end end
+        eq(n, (switches and rows > 0) and 1 or 0, key .. " box with " .. rows .. " rows")
+        withNote = withNote + n
+      end
+    end
+  end
+  truthy(boxes > 0 and withNote > 0, "some box has rows and shows the note")
 end)

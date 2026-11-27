@@ -6,7 +6,7 @@ Retrieved: 2026-11-18
 License: Ace3's license, in LICENSE-Ace3.txt (same text as upstream LICENSE.txt; LibStub's public-domain notice is in its source)
 Local patches: none. Every file is copied from upstream unchanged.
 
-Closest Vendor and KeepThat embed the same commit. When two addons ship one library, the game loads the copy with
+AceDBOptions-3.0 was added for the Profiles page (retrieved 2026-11-27 from the same commit, unchanged). Closest Vendor and KeepThat embed the same commit. When two addons ship one library, the game loads the copy with
 the highest MINOR, so keeping all three on one commit means each runs on the files it was tested with.
 
 Modules (MAJOR, MINOR)
@@ -21,6 +21,7 @@ Modules (MAJOR, MINOR)
   AceConfigRegistry       AceConfigRegistry-3.0   22
   AceConfigCmd            AceConfigCmd-3.0        14
   AceConfigDialog         AceConfigDialog-3.0     93
+  AceDBOptions            AceDBOptions-3.0        17
   AceGUI                  AceGUI-3.0              41
 
 AceGUI widgets (type and version): BlizOptionsGroup 26, DropdownGroup 22, Frame 30, InlineGroup 22, ScrollFrame 26,

@@ -7,7 +7,7 @@ local function say(msg)
     addon:Print(msg)
 end
 
-local PAGES = { "home", "watch", "progress", "appearance", "warnings", "explanations", "sound", "advanced", "classes", "debug", "about" }
+local PAGES = { "home", "watch", "progress", "appearance", "warnings", "explanations", "sound", "advanced", "classes", "debug", "about", "profiles" }
 local STATUS_TOPICS = { "nudge", "warnings", "explanations", "sound" }
 local HELP_TOPICS = { "appearance", "rules", "diagnostics" }
 local PREVIEW_KINDS = { "toast", "warning", "mark", "tooltip", "explanation", "prompt" }
@@ -98,6 +98,7 @@ local function helpLines(topic)
             L["/ddt log  open the copyable report (/ddt export is the same, kept for compatibility)"],
             L["/ddt log clear  ask, then empty the diagnostic log; /ddt clear  legacy, empties it at once"],
             L["/ddt debug on|off; /ddt probe; /ddt trainerids [hover]; /ddt version"],
+            L["/ddt testsettings on|off  use a temporary profile with default settings, for testing"],
         }
     end
     return {
@@ -184,9 +185,16 @@ function addon:HandleSlash(input)
             p.debug = on
         end
         if ns.Log then
-            ns.Log.SetEnabled(on)
+            ns.Log.Switch(on)
         end
         say("debug " .. rest)
+    elseif cmd == "testsettings" then
+        if n ~= 1 or (rest ~= "on" and rest ~= "off") then
+            say(L["usage: /ddt testsettings on|off"])
+            return
+        end
+        if not (ns.TestSettings and self.db) then say(L["settings not available yet"]) return end
+        ns.TestSettings.Command(self.db, self:TestSettingsDeps(), rest)
     elseif cmd == "clear" then
         -- Legacy: empties the log at once. /ddt log clear asks first.
         if ns.Log and type(ns.Log.ClearAll) == "function" then

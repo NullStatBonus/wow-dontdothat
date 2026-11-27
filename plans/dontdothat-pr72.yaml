@@ -3,8 +3,8 @@ kind: plan
 addon: DontDoThat
 title: Don't Do That PR 72 - Always Allow (0.15.0)
 version: 0.15.0
-preamble: Play on WoW Forever. Open a vendor that sells armor or a weapon above 1 silver. Type |cff99ccff/ddt debug on|r after |cff99ccff/reload|r, because loading turns debug off.
-handoff: Type |cff99ccff/ddt export|r if you want the report, then |cff99ccff/reload|r. Send DontDoThat.lua from SavedVariables.
+preamble: Play on WoW Forever with one character. Type |cff99ccff/reload|r first to load the build under test. Stand at a vendor that sells armor or a weapon above 1 silver. Keep the default settings, with Ask before buying on. Step 2 turns debug on.
+handoff: Type |cff99ccff/ct export|r, then |cff99ccff/reload|r. Send CheckThat.lua and DontDoThat.lua from SavedVariables.
 logs:
   debug:
     global: DontDoThatDB
@@ -16,14 +16,46 @@ sections:
   clients:
   - forever-camelot
   steps:
+  - id: ddt.pr72.7
+    title: Check the version
+    action:
+      kind: manual
+      text: Enter |cff99ccff/ddt version|r.
+      commands:
+      - /ddt version
+    expect: chat shows Don't Do That v0.15.0. Press Pass.
+    verify:
+    - player
+    notes: The addon keeps its version private and logs no version fact, so a player reads it.
+  - id: ddt.pr72.8
+    title: Turn debug on
+    auto: true
+    timeout: 30
+    action:
+      kind: manual
+      text: Enter |cff99ccff/ddt debug on|r.
+      commands:
+      - /ddt debug on
+    expect: chat shows debug on.
+    verify:
+    - assertions
+    assertions:
+    - kind: state
+      probe: global-value
+      name: DontDoThatDB
+      path: global.log.enabled
+      op: eq
+      value: true
+      label: Debug recording is on
   - id: ddt.pr72.1
     title: Choose Always Allow
+    covers:
+    - Always Allowed items
+    - Vendor purchase prompt
     action:
       kind: manual
       text: Buy armor or a weapon above 1 silver. On the question, choose Always Allow.
-      commands:
-      - /ddt debug on
-    expect: the question has three buttons, and the game buys the item.
+    expect: the game buys the item. Press Pass.
     verify:
     - assertions
     - player
@@ -35,10 +67,12 @@ sections:
       label: The addon saved the item as allowed
   - id: ddt.pr72.2
     title: Buy the allowed item again
+    covers:
+    - Always Allowed items
     action:
       kind: manual
       text: Buy the same item again.
-    expect: the game buys it with no question.
+    expect: the game buys it with no question. Press Pass.
     verify:
     - assertions
     - player
@@ -48,21 +82,49 @@ sections:
       contains: 'passed through: allowed'
       scope: attempt
       label: The addon let the allowed item through
+    - kind: log
+      source: debug
+      contains: 'allowed purchase of'
+      scope: attempt
+      label: The addon marked the purchase as not counted
+    - kind: log
+      source: debug
+      contains: 'items: spent'
+      absent: true
+      scope: attempt
+      label: The addon counted no spend for the allowed item
   - id: ddt.pr72.3
     title: Other items still ask
+    covers:
+    - Vendor purchase prompt
+    - Avoided purchases
     action:
       kind: manual
       text: Buy a different armor or weapon item above 1 silver. Choose Accept.
-    expect: the question shows for this item, and Progress shows the price as spent.
+    expect: the question shows for this item, and the game buys it. Press Pass.
     verify:
     - assertions
     - player
     assertions:
     - kind: log
       source: debug
-      contains: 'question shown'
+      contains: '-> flagged'
       scope: attempt
-      label: The addon asked about the other item
+      label: The addon flagged the other item
+  - id: ddt.pr72.11
+    title: Accepted purchase counts as spent
+    covers:
+    - Vendor purchase prompt
+    action:
+      kind: manual
+      text: Open the Progress page.
+      commands:
+      - /ddt settings progress
+    expect: Spent on things the addon marked went up by the price of the item you accepted. Press Pass.
+    verify:
+    - assertions
+    - player
+    assertions:
     - kind: log
       source: debug
       contains: 'items: spent'
@@ -70,35 +132,72 @@ sections:
       label: The addon counted the price as spent
   - id: ddt.pr72.4
     title: Allowed list
+    covers:
+    - Purchases page
     action:
       kind: manual
-      text: Open the addon settings and go to What to watch.
-    expect: the Shopping area lists the allowed item with its icon, its name and a Remove button.
+      text: Open What to watch.
+      commands:
+      - /ddt settings watch
+    expect: the list under Always allowed on this character shows the allowed item with its icon, its name and a Remove button. Press Pass.
     verify:
     - player
     notes: No log line. Becomes a log assertion once DontDoThat logs the allowed list.
   - id: ddt.pr72.5
     title: Remove an allowed item
+    covers:
+    - Purchases page
     action:
       kind: manual
-      text: Click Remove next to the item. Then buy that item again.
-    expect: the item leaves the list, and the question shows again.
+      text: Click Remove next to the item.
+    expect: the item leaves the list. Press Pass.
+    verify:
+    - player
+    notes: No log line. Becomes a log assertion once DontDoThat logs Remove.
+  - id: ddt.pr72.9
+    title: Removed item asks again
+    covers:
+    - Always Allowed items
+    action:
+      kind: manual
+      text: Buy the removed item again. On the question, choose Always Allow.
+    expect: the question shows again, and the game buys the item. Press Pass.
     verify:
     - assertions
     - player
     assertions:
     - kind: log
       source: debug
-      contains: 'question shown'
+      contains: '-> flagged'
       scope: attempt
-      label: The addon asked again after Remove
-    cleanup: Choose Always Allow once more on the question.
+      label: The addon flagged the removed item again
+    - kind: log
+      source: debug
+      contains: 'items: always allowed'
+      scope: attempt
+      label: The addon saved the item as allowed again
   - id: ddt.pr72.6
-    title: Reset clears allowed items
+    title: Reset all settings
+    covers:
+    - Reset all settings
+    setup: Export the run first, because reset turns debug recording off. What to watch must list one allowed item. The step Removed item asks again provides it.
     action:
       kind: manual
-      text: On Home, choose Reset all settings and confirm. Then open What to watch.
-    expect: the allowed list is empty and shows how to allow an item.
+      text: On Home, choose Reset all settings and confirm.
+    expect: the game asks you to confirm, then Home shows Ask me first. Press Pass.
     verify:
     - player
     notes: Reset turns debug off, so no log line. Becomes a log assertion once DontDoThat logs the reset.
+  - id: ddt.pr72.10
+    title: Reset cleared the list
+    covers:
+    - Reset all settings
+    action:
+      kind: manual
+      text: Open What to watch.
+      commands:
+      - /ddt settings watch
+    expect: the list says Choose Always Allow when the addon asks about an item, and it won't ask about that item again. Press Pass.
+    verify:
+    - player
+    notes: Read-only follow-up to the reset step. No log line. Becomes a log assertion once DontDoThat logs the allowed list.

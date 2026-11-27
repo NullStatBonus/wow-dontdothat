@@ -14,6 +14,9 @@ local TITLE = "Don't Do That"
 
 local function profile() return ns.db and ns.db.profile end
 
+-- True while test settings are on (a temporary profile is in use).
+local function testOn() return ns.TestSettings ~= nil and ns.db ~= nil and ns.TestSettings.IsOn(ns.db) end
+
 local function isOn(key)
   local p = profile()
   return p == nil or p[key] ~= false
@@ -41,8 +44,34 @@ Page.__index = Page
 -- out there (set while the panel's pages are built). The /ddt tree window shows no heading of its own and keeps it.
 local panelBuild = false
 
+-- The amber notice at the top of every page while test settings are on, with the one-click way back.
+local AMBER = "|cffffb347"
+local function testBanner()
+  return {
+    type = "group", inline = true, order = 0, name = AMBER .. L["Test settings are on"] .. "|r",
+    hidden = function() return not testOn() end,
+    args = {
+      text = { type = "description", fontSize = "medium", width = "full", order = 1,
+        name = function()
+          if not ns.TestSettings then return " " end
+          return L["You are using a temporary profile with default settings. Anything you change here is thrown away when test settings end. Your own profile %s is safe and unchanged."]:format(
+            tostring(ns.TestSettings.OwnProfile(ns.db)))
+        end },
+      restore = { type = "execute", order = 2, name = L["Restore my settings"],
+        func = function()
+          if ns.addon and ns.addon.TestSettingsDeps and testOn() then
+            ns.TestSettings.Command(ns.db, ns.addon:TestSettingsDeps(), "off")
+          end
+        end },
+      note = { type = "description", fontSize = "medium", width = "full", order = 3,
+        name = "|cff9d9d9d" .. L["Also restores on its own at your next login unless a CheckThat run is open."] .. "|r" },
+    },
+  }
+end
+
 local function newPage(name, order, title, intro)
   local page = setmetatable({ args = {}, n = 0, name = name, order = order }, Page)
+  page.args.testBanner = testBanner()
   if not (panelBuild and title == name) then page:add("title", { type = "description", fontSize = "large", width = "full", name = ACCENT .. title .. "|r" }) end
   if intro then page:text("intro", intro) end
   page.lead = page.n -- items before the first section: the title and introduction
@@ -343,9 +372,10 @@ function Options.Home(asRoot)
     confirm = true, confirmText = L["Put every setting back to its default? Your tally and progress are kept."],
     func = function()
       if ns.Settings then ns.Settings.ResetAll() end
-      -- This character's Always Allow items go too; emptied in place, other characters keep theirs.
+      -- This character's Always Allow items go too; emptied in place, other characters keep theirs. While test settings
+      -- are on they stay: they belong to the player, not to the temporary profile.
       local allowed = ns.db and ns.db.char and ns.db.char.allowedItems
-      if type(allowed) == "table" then for id in pairs(allowed) do allowed[id] = nil end end
+      if type(allowed) == "table" and not testOn() then for id in pairs(allowed) do allowed[id] = nil end end
       if ns.Toast and ns.Toast.ResetPosition then pcall(ns.Toast.ResetPosition) end -- ends a Move in progress, so Done cannot save the old position again
       applyNow()
       Options.Rebuild() -- built again: Classes lists the skips of the default revision, not the one picked before
@@ -825,6 +855,12 @@ end
 local function category(order, title, hex, entries, empty, classKey)
   local page = { args = {}, n = 0 }
   if #entries == 0 then page.args.none = { type = "description", fontSize = "medium", width = "full", order = 0, name = MUTED .. (empty or L["Nothing here."]) .. "|r" } end
+  if classKey and #entries > 0 then
+    -- The switch is saved for the spell (ruleOff.abilities is keyed by spell), so a row that lists some ranks still
+    -- switches every rank. Said once above the rows, because the row text names ranks.
+    page.args.scopeNote = { type = "description", fontSize = "medium", width = "full", order = 0,
+      name = MUTED .. L["Each switch covers every rank of the spell, not only the ranks listed here."] .. "|r" }
+  end
   for i, entry in ipairs(entries) do
     page.args["item" .. i] = classKey and abilityToggle(entry, classKey) or item(entry)
     page.args["item" .. i].order = i * 2 - 1
@@ -1379,6 +1415,35 @@ function Options.Advanced(forPanel)
 end
 
 ---------------------------------------------------------------------------
+-- Profiles
+
+-- The standard AceDBOptions-3.0 control: choose, create, copy, reset and delete profiles. It is locked while test
+-- settings are on, because the temporary profile must be left through Restore my settings.
+function Options.Profiles()
+  local page = newPage(L["Profiles"], 7, L["Profiles"],
+    L["A profile holds your settings. Characters can share one profile or each use their own. Your tally, progress and Always Allow items are kept for each character, whatever the profile."])
+  page:add("current", { type = "description", fontSize = "medium", width = "full",
+    name = function()
+      return ns.TestSettings and ns.db and (ACCENT .. ns.TestSettings.Line("login", ns.db) .. "|r") or " "
+    end })
+  page:add("lockNote", { type = "description", fontSize = "medium", width = "full",
+    hidden = function() return not testOn() end,
+    name = "|cff9d9d9d" .. L["Locked while test settings are on. Use Restore my settings above."] .. "|r" })
+  local stub = _G.LibStub
+  local lib = stub and select(2, pcall(stub, "AceDBOptions-3.0", true))
+  if type(lib) == "table" and ns.db and type(lib.GetOptionsTable) == "function" then
+    local ok, manage = pcall(lib.GetOptionsTable, lib, ns.db)
+    if ok and type(manage) == "table" then
+      manage.inline, manage.order, manage.name = true, 20, L["Manage profiles"]
+      manage.childGroups, manage.desc = nil, nil
+      manage.disabled = testOn
+      page.args.manage = manage
+    end
+  end
+  return page:group()
+end
+
+---------------------------------------------------------------------------
 -- Debug
 
 function Options.Debug()
@@ -1390,7 +1455,7 @@ function Options.Debug()
     function() local p = profile(); return p ~= nil and p.debug == true end,
     function(_, value)
       local p = profile(); if p then p.debug = value end
-      if ns.Log then ns.Log.SetEnabled(value) end
+      if ns.Log then ns.Log.Switch(value) end
     end)
   page:toggle("traceItems", L["Record item purchases"],
     L["Keeps the last 40 vendor and auction decisions, even across logins, and includes them in the report. Off by default."],
@@ -1426,7 +1491,7 @@ local PURPOSE = L["Keeps you from spending gold on things you don't need yet, so
 function Options.AboutCommands()
   return {
     { "/ddt", L["Open these settings at Home."] },
-    { "/ddt settings <page>", L["Open a page: watch, progress, appearance, warnings, explanations, sound, advanced, classes, debug or about."] },
+    { "/ddt settings <page>", L["Open a page: watch, progress, appearance, warnings, explanations, sound, advanced, classes, debug, about or profiles."] },
     { "/ddt status", L["Check the nudge, warnings, explanations and sound settings."] },
     { "/ddt demo", L["Show sample warnings. Nothing is bought."] },
     { "/ddt preview <name>", L["Show one sample, such as toast, warning or explanation."] },
@@ -1507,6 +1572,7 @@ function Options.Pages(forPanel)
     { key = "appearance", group = Options.Appearance() },
     { key = "advanced", group = Options.Advanced(forPanel) },
     { key = "about", group = Options.About() },
+    { key = "profiles", group = Options.Profiles() },
   }
 end
 
@@ -1523,7 +1589,7 @@ local function panelApp(key) return APP .. "_" .. key end
 -- The pages listed beneath the root, in order, with the names the game's list shows.
 local PANEL_PAGES = {
   { "watch", L["What to watch"] }, { "progress", L["Progress"] }, { "appearance", L["Appearance"] },
-  { "advanced", L["Advanced"] }, { "about", L["About"] },
+  { "advanced", L["Advanced"] }, { "about", L["About"] }, { "profiles", L["Profiles"] },
 }
 
 -- { appName = table } for the game's Settings window, built with the panel's titles. Home is the root.
@@ -1612,7 +1678,7 @@ end
 Options.PATHS = {
   home = { "home" }, watch = { "watch" }, progress = { "progress" }, appearance = { "appearance" },
   warnings = { "appearance", "warnings" }, explanations = { "appearance", "explanations" }, sound = { "appearance", "sound" },
-  advanced = { "advanced" }, tuning = { "advanced", "tuning" }, classes = { "advanced", "classes" }, debug = { "advanced", "debug" },
+  advanced = { "advanced" }, profiles = { "profiles" }, tuning = { "advanced", "tuning" }, classes = { "advanced", "classes" }, debug = { "advanced", "debug" },
   about = { "about" },
 }
 
