@@ -90,7 +90,7 @@ The advice comes from three sources:
 - **Common leveling builds.** These decide which spells are useful for your spec.
 
 The list of ranks to skip has numbered revisions.
-Revision 1 is the original list. Revision 2 is the newer list, and it is the default.
+Revision 1 is the original list. Revision 2 is a newer list, built from the Wowhead Classic guides and a review of the game data. Revision 3 follows the WoW Forever leveling guides of Wowhead and Method, spec by spec, and it is the default.
 To see or change the revision, type `/ddt revision` or `/ddt revision 1`.
 The addon never changes a spell that you turned on or off yourself.
 
@@ -138,7 +138,7 @@ The addon has its own icon in the AddOns list at the character screen.
 | `/ddt preview [name]` | Shows one sample: `toast`, `warning`, `mark`, `tooltip`, `explanation` or `prompt`. Without a name it lists them. |
 | `/ddt test` | Shows a sample warning and question. It does not buy anything. If "Ask before buying" and the sound are both off, it says only the chat line would show (when the chat line is on). |
 | `/ddt revision` | Shows the revision of the skip list in use. |
-| `/ddt revision <number>` | Changes the revision (1 or 2). |
+| `/ddt revision <number>` | Changes the revision (1, 2 or 3). |
 | `/ddt version` | Shows the addon version and the game build. |
 | `/ddt debug on` and `/ddt debug off` | Starts or stops the debug recording. |
 | `/ddt testsettings on` and `/ddt testsettings off` | For testers. Switches this character to a temporary profile with default settings, or back to its own profile. See Test settings below. |

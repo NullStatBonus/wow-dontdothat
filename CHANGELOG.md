@@ -8,6 +8,9 @@
 - New: Chat names the profile in use at login and each time you switch.
 - New: `/ddt testsettings` is for testers. It uses a temporary profile with default settings. Your own profile stays safe.
 - New: The debug report shows the profile in use, test settings and which version wrote your saved data.
+- **New: Skip list revision 3 follows the WoW Forever leveling guides of Wowhead and Method.** It is the new default. Each spec follows its own guide.
+- Changed: Revision 3 skips some ranks that revision 2 did not, and buys some that revision 2 skipped. Each skip still says why.
+- Changed: The chat notice about the skip list shows once more, for revision 3. Type `/ddt revision 2` to go back.
 - Changed: Reset all settings also removes the items this character always allows.
 - Changed: Class pages say that each switch covers every rank of the spell.
 - Fixed: A vendor question buys nothing when the vendor's list changed. Before, Accept could buy a different item.

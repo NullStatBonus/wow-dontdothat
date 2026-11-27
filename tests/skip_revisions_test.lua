@@ -102,18 +102,19 @@ test("revision 1 flags exactly those ranks for every spec, with a reason that is
   end
 end)
 
-test("revision 2 builds on revision 1 and is the newest", function()
-  eq(ns.Rules.SkipRevisionNumbers(), { 1, 2 })
-  eq(ns.Rules.NewestRevision(), 2)
-  for class in pairs(CLASSES) do eq(ns.Rules.GetClass(class).skipRevisionNumbers, { 1, 2 }, class) end
+test("each revision builds on the one before it and revision 3 is the newest", function()
+  eq(ns.Rules.SkipRevisionNumbers(), { 1, 2, 3 })
+  eq(ns.Rules.NewestRevision(), 3)
+  for class in pairs(CLASSES) do eq(ns.Rules.GetClass(class).skipRevisionNumbers, { 1, 2, 3 }, class) end
 end)
 
 test("revision choice: the newest unless the player picked one that exists", function()
-  eq(ns.Rules.ResolveRevision(nil), 2)
+  eq(ns.Rules.ResolveRevision(nil), 3)
   eq(ns.Rules.ResolveRevision(1), 1)
   eq(ns.Rules.ResolveRevision(2), 2)
-  eq(ns.Rules.ResolveRevision(9), 2, "unknown revision falls back to the newest")
-  eq(ns.Rules.ResolveRevision("two"), 2)
+  eq(ns.Rules.ResolveRevision(3), 3)
+  eq(ns.Rules.ResolveRevision(9), 3, "unknown revision falls back to the newest")
+  eq(ns.Rules.ResolveRevision("two"), 3)
 end)
 
 test("the same rank is judged by the revision in use", function()
@@ -141,7 +142,7 @@ test("rank 1 is never skipped in any revision", function()
   end
 end)
 
-test("revision 2: every skipped rank is a real rank of a real family, with a known source and reason", function()
+test("every revision: every skipped rank is a real rank of a real family, with a known source and reason", function()
   for class in pairs(CLASSES) do
     local data = ns.Rules.GetClass(class)
     local have = {}
@@ -149,12 +150,14 @@ test("revision 2: every skipped rank is a real rank of a real family, with a kno
       local family = ns.SpellData.FamilyOfId(class, row.id)
       if row.rank then have[family] = have[family] or {}; have[family][row.rank] = true end
     end
-    for family, ranks in pairs(data.skipRevisions[2]) do
-      for rank, entries in pairs(ranks) do
-        for _, entry in ipairs(entries) do
-          truthy(have[family] and have[family][rank], class .. " family " .. family .. " has no rank " .. rank)
-          truthy(entry.source == "guide" or entry.source == "computed" or entry.source == "legacy")
-          truthy(ns.Rules.SkipReason(entry.reason), "a sentence for the reason")
+    for rev, flat in pairs(data.skipRevisions) do
+      for family, ranks in pairs(flat) do
+        for rank, entries in pairs(ranks) do
+          for _, entry in ipairs(entries) do
+            truthy(have[family] and have[family][rank], class .. " rev " .. rev .. " family " .. family .. " has no rank " .. rank)
+            truthy(ns.Rules.SkipSource(entry.source), "a sentence for the source " .. tostring(entry.source))
+            truthy(ns.Rules.SkipReason(entry.reason), "a sentence for the reason")
+          end
         end
       end
     end
@@ -166,6 +169,7 @@ test("every reason kind renders a plain sentence, with its numbers filled in", f
   eq(ns.Rules.SkipReason({ kind = "guideSkipEntirely" }), "The leveling guide says this spell is not worth buying while leveling.")
   eq(ns.Rules.SkipReason({ kind = "guideUpToRank", n = 4 }), "The leveling guide says to buy this spell only up to rank 4.")
   eq(ns.Rules.SkipReason({ kind = "guideNotTrained" }), "The leveling guide does not buy this rank while leveling.")
+  eq(ns.Rules.SkipReason({ kind = "guideUselessAfter", n = 10 }), "The leveling guide says this spell is not worth upgrading after level 10.")
   eq(ns.Rules.SkipReason({ kind = "noGain" }), "Adds nothing over the rank before it.")
   eq(ns.Rules.SkipReason({ kind = "smallStep", pct = 12 }), "Only 12% stronger than the rank before it, for a spell you only use now and then.")
   eq(ns.Rules.SkipReason({ kind = "notWorthPrice", pct = 8 }), "Only 8% stronger than the rank before it, which does not repay its price.")
@@ -176,6 +180,8 @@ test("every reason kind renders a plain sentence, with its numbers filled in", f
     truthy(not ns.Rules.SkipReason(reason):find("%%[ds]"), kind .. " has no unfilled placeholder")
   end
   eq(ns.Rules.SkipSource("guide"), "From the Wowhead leveling guide.")
+  eq(ns.Rules.SkipSource("guideForever"), "From the Wowhead leveling guide for WoW Forever.")
+  eq(ns.Rules.SkipSource("guideMethod"), "From the Method leveling guide for WoW Forever.")
   eq(ns.Rules.SkipSource("computed"), "Computed from the game data.")
   eq(ns.Rules.SkipSource("legacy"), "From the earlier skip list.")
 end)
@@ -196,7 +202,7 @@ test("skips are per spec: every plausible spec must skip the rank", function()
     local all = {}
     for key in pairs(data.specs) do all[#all + 1] = key end
     table.sort(all)
-    for family, ranks in pairs(data.skipRevisions[2]) do
+    for family, ranks in pairs(data.skipRevisions[ns.Rules.NewestRevision()]) do
       for rank, entries in pairs(ranks) do
         local covered = {}
         for _, e in ipairs(entries) do for _, key in ipairs(e.specs or all) do covered[key] = true end end
@@ -224,7 +230,7 @@ end)
 test("an undecided spec means every spec is plausible, so a rank only some specs skip is not flagged", function()
   local data = ns.Rules.GetClass("WARRIOR")
   local seen = false
-  for family, ranks in pairs(data.skipRevisions[2]) do
+  for family, ranks in pairs(data.skipRevisions[ns.Rules.NewestRevision()]) do
     for rank, entries in pairs(ranks) do
       for _, e in ipairs(entries) do
         if e.specs and #e.specs < 3 then
@@ -242,20 +248,22 @@ test("level 60 ranks: a first rank is bought, a utility later rank waits, and th
   local waits, firsts = 0, 0
   for class in pairs(CLASSES) do
     local data = ns.Rules.GetClass(class)
-    for family, ranks in pairs(data.skipRevisions[2]) do
+    for family, ranks in pairs(data.skipRevisions[ns.Rules.NewestRevision()]) do
       for rank, entries in pairs(ranks) do
         local level60
         for _, row in ipairs(ns.SpellData.Rows(class)) do
           if ns.SpellData.FamilyOfId(class, row.id) == family and row.rank == rank then level60 = row.level == 60 end
         end
         if level60 and #entries > 0 then
+          local allWait = true
+          for _, e in ipairs(entries) do if e.reason.kind ~= "waitForMount" then allWait = false end end
           for _, e in ipairs(entries) do
-            truthy(e.reason.kind == "waitForMount" or e.source == "guide" or e.source == "legacy", class .. " " .. family .. " r" .. rank .. " " .. e.reason.kind)
+            truthy(e.reason.kind == "waitForMount" or e.source == "guide" or e.source == "guideForever" or e.source == "guideMethod" or e.source == "legacy", class .. " " .. family .. " r" .. rank .. " " .. e.reason.kind)
             if e.reason.kind == "waitForMount" then
               waits = waits + 1
               local profile = { class = class, level = 60, plausibleSpecs = {}, rules = {}, milestone = { current = 60, state = "active" } }
               local v = ns.Rules.Evaluate(profile, { kind = "spell", name = "x", familyId = family, rank = rank })
-              if v.source == "skipRank" then
+              if v.source == "skipRank" and allWait then
                 eq(v.reason, "This rank can wait until you have your level 60 mount.")
                 profile.milestone = { current = nil, state = "finished" }
                 eq(ns.Rules.Evaluate(profile, { kind = "spell", name = "x", familyId = family, rank = rank }).tier, "keep", "no skip once the mount is bought")
@@ -308,4 +316,111 @@ test("a revision's own skips do not leak into another spell's ranks", function()
   eq(#entriesFor("WARRIOR", 2, "Rend", 4), 0, "rank 4 is within the guide's limit")
   eq(#entriesFor("WARRIOR", 2, "Rend", 5), 1)
   eq(verdict("WARRIOR", "ARMS", "Rend", 4, {}).source ~= "skipRank", true)
+end)
+
+-- Revision 3: the WoW Forever leveling guides of Wowhead and Method, decided per spec. It builds on revision 2, so a
+-- rank the guides do not mention keeps revision 2's skip. Rank 1 is never skipped (a test above covers every revision).
+
+test("revision 3: each spec follows its own Forever guide, so one spell can be skipped for one spec and bought for another", function()
+  -- Wowhead's Shadow Priest guide says the Holy school spells can be skipped; no guide says that for Holy or Discipline.
+  local shadow = verdict("PRIEST", "SHADOW", "Smite", 2)
+  eq(shadow.source, "skipRank")
+  eq(shadow.reason, "The leveling guide says to buy only the first rank of this spell.")
+  eq(verdict("PRIEST", "SHADOW", "Smite", 2, { skipRevision = 2 }).source ~= "skipRank", true, "revision 2 bought it")
+  truthy(verdict("PRIEST", "HOLY", "Smite", 2).source ~= "skipRank", "Holy keeps buying Smite")
+  -- revision 2 skipped Revenge for every warrior spec; Wowhead's Forever Protection guide trains all six ranks.
+  eq(verdict("WARRIOR", "PROT", "Revenge", 2, { skipRevision = 2 }).source, "skipRank")
+  truthy(verdict("WARRIOR", "PROT", "Revenge", 2).source ~= "skipRank", "revision 3 buys it for Protection")
+  eq(verdict("WARRIOR", "FURY", "Revenge", 2).source, "skipRank", "a spec the guide does not cover keeps revision 2")
+end)
+
+test("revision 3: a skip names the guide it came from", function()
+  local forever = entriesFor("PRIEST", 3, "Smite", 2)
+  eq(#forever, 1)
+  eq(forever[1].source, "guideForever")
+  eq(ns.Rules.SkipSource(forever[1].source), "From the Wowhead leveling guide for WoW Forever.")
+  local method = entriesFor("HUNTER", 3, "Raptor Strike", 3)
+  eq(#method, 1)
+  eq(method[1].source, "guideMethod")
+  eq(method[1].reason, { kind = "guideUselessAfter", n = 10 })
+  eq(method[1].specs, { "BM", "MM" }, "Method's guide is Beast Mastery, so Survival keeps revision 2")
+  eq(ns.Rules.SkipSource(method[1].source), "From the Method leveling guide for WoW Forever.")
+end)
+
+test("revision 3: a spell that stops being worth upgrading past a level is skipped from the first later rank", function()
+  local rows = ns.SpellData.Rows("HUNTER")
+  local levels = {}
+  for _, row in ipairs(rows) do
+    if ns.SpellData.FamilyOfId("HUNTER", row.id) == H.fid(ns, "HUNTER", "Raptor Strike") then levels[row.rank] = row.level end
+  end
+  for rank, level in pairs(levels) do
+    if rank >= 2 then
+      local v = verdict("HUNTER", "BM", "Raptor Strike", rank)
+      if level > 10 then
+        eq(v.source, "skipRank", "rank " .. rank .. " unlocks at " .. level)
+        eq(v.reason, "The leveling guide says this spell is not worth upgrading after level 10.")
+      end
+    end
+  end
+  truthy(verdict("HUNTER", "BM", "Raptor Strike", 2).source ~= "skipRank", "rank 2 comes before level 10")
+end)
+
+test("revision 3: ranks the guides do not mention keep revision 2's skip, and revision 2 itself is unchanged", function()
+  eq(verdict("MAGE", "FROST", "Frost Nova", 2).source, "skipRank", "carried over from revision 2")
+  eq(verdict("MAGE", "FROST", "Frost Nova", 2, { skipRevision = 2 }).source, "skipRank")
+  local two = entriesFor("WARRIOR", 2, "Revenge", 2)
+  eq(two[1].source, "guide", "revision 2 still names the Classic guide for the ranks it decided")
+  eq(two[1].reason.kind, "guideFirstRankOnly")
+end)
+
+-- Revisions 1 and 2 shipped. A fingerprint of each class's flattened entries makes any change to them fail here.
+local function fingerprint(class, rev)
+  local flat = ns.Rules.GetClass(class).skipRevisions[rev]
+  local lines = {}
+  for family, ranks in pairs(flat) do
+    for rank, entries in pairs(ranks) do
+      local parts = {}
+      for _, e in ipairs(entries) do
+        parts[#parts + 1] = table.concat({ e.source, e.reason.kind, tostring(e.reason.n or e.reason.pct or ""), e.specs and table.concat(e.specs, ",") or "*" }, ":")
+      end
+      table.sort(parts)
+      lines[#lines + 1] = family .. "/" .. rank .. "=" .. table.concat(parts, ";")
+    end
+  end
+  table.sort(lines)
+  local h = 0
+  for _, l in ipairs(lines) do
+    for i = 1, #l do h = (h * 31 + l:byte(i)) % 4294967296 end
+    h = (h * 31 + 10) % 4294967296
+  end
+  return #lines .. ":" .. h
+end
+
+local SHIPPED = {
+  ["DRUID1"] = "1:2473248944",
+  ["DRUID2"] = "51:3085958783",
+  ["HUNTER1"] = "16:1361573298",
+  ["HUNTER2"] = "31:3532029528",
+  ["MAGE1"] = "3:3264238552",
+  ["MAGE2"] = "42:460093006",
+  ["PALADIN1"] = "3:179478455",
+  ["PALADIN2"] = "42:1532385342",
+  ["PRIEST1"] = "6:4025238094",
+  ["PRIEST2"] = "24:279785861",
+  ["ROGUE1"] = "9:2410625752",
+  ["ROGUE2"] = "38:2646061423",
+  ["SHAMAN1"] = "8:3345725539",
+  ["SHAMAN2"] = "26:822157159",
+  ["WARLOCK1"] = "0:0",
+  ["WARLOCK2"] = "23:671323422",
+  ["WARRIOR1"] = "29:1640296187",
+  ["WARRIOR2"] = "44:3398056669",
+}
+
+test("revisions 1 and 2 are exactly what shipped", function()
+  for class in pairs(CLASSES) do
+    for _, rev in ipairs({ 1, 2 }) do
+      eq(fingerprint(class, rev), SHIPPED[class .. rev], class .. " revision " .. rev)
+    end
+  end
 end)

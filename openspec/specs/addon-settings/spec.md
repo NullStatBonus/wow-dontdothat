@@ -352,7 +352,7 @@ The system SHALL provide a choice of skip revision on the Tuning section, listin
 
 #### Scenario: Default shown
 - **WHEN** a player who never chose opens Tuning
-- **THEN** revision 2 is selected and marked as the default
+- **THEN** revision 3 is selected and marked as the default
 
 #### Scenario: Go back
 - **WHEN** the player selects revision 1
@@ -360,7 +360,7 @@ The system SHALL provide a choice of skip revision on the Tuning section, listin
 
 #### Scenario: Description
 - **WHEN** the player reads the choice
-- **THEN** revision 1 is described as "Original using Expert Advice" and revision 2 as "Revised with Rules + Expert Advice"
+- **THEN** revision 1 is described as "Original using Expert Advice", revision 2 as "Revised with Rules + Expert Advice" and revision 3 as "Updated with WoW Forever Expert Advice"
 
 ### Requirement: Rules page shows the revision, source and reason
 The system SHALL show on the Rules page the revision in use and, for every rank in Ranks to skip, the reason it is skipped. For skips whose decision was computed, the page SHALL also say that it was computed, and for skips that came from a Wowhead guide it SHALL say so. The list SHALL follow the chosen revision.

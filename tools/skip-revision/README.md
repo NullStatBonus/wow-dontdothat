@@ -56,10 +56,41 @@ Assumptions, all in `review.py`:
 Revision 2 inherits revision 1 and lists only what differs, per spec set, with a source (`guide`, `computed` or `legacy`)
 and a reason kind with its numbers. The reason sentences are in `Locales/enUS.lua`.
 
+## Revision 3 (`revision3.py`, `revision3.json`)
+
+Revision 3 inherits revision 2 and lists only the ranks whose decision changed for at least one spec. It is built from
+statements in `revision3.json`: one per class, spec and spell, each with the guide page (Wowhead or Method for WoW
+Forever) and the page's date. The guide text is read by hand, because the tables differ too much to parse. The saved
+pages are in `tools/.cache/wowhead-forever-guides` and `tools/.cache/method-guides` (not in Git).
+
+Operations: `all` (every rank is trained), `first` (only rank 1), `optfirst` (the guide calls the spell optional, so
+ranks above 1 are skipped), `skip` (the named ranks), `up` (train up to a rank), `top` (a table that gives only the highest
+rank to reach; it skips ranks above it and says nothing about the rest), `lv` (the levels to train at; `open` leaves ranks
+above the last listed level at revision 2's decision), `after` (no ranks that unlock after a level). A statement marked
+`optional` was read from an Optional table.
+
+How a statement meets revision 2:
+
+1. A Forever guide wins over a computed entry and over an entry from a Classic guide.
+2. Each spec follows its own guide. One spell can be skipped for one spec and bought for another.
+3. A rank missing from a "key spells" table is not a statement. Method's Priest table lists only key upgrades and says other ranks may be bought, so revision 3 takes from Method only explicit sentences (Raptor Strike loses its value after level 10).
+4. A level list counts only when every level in it is a real rank level in Forever. Otherwise revision 2 stays.
+5. An optional spell is skipped above rank 1. Rank 1 is never skipped.
+6. A statement read from an Optional table, with any operation, is held when the spell is in the spec's core rotation (reported as "held").
+7. Conditional advice about a core spell is held, not adopted.
+8. A statement decides only the ranks it speaks about. `skip` and `top` leave the other ranks at revision 2's decision, and `top` at the highest rank says nothing. `all`, `first`, `optfirst`, `up` and an aligned `lv` list decide every rank.
+9. A spell or spec with no statement keeps revision 2.
+10. A table whose level lists mostly fail rule 4 is not trusted for the rows that happen to match. The Arms Warrior tables are left out.
+
+`build-skip-revisions.py` reads revisions 1 and 2 from the shipped `Data/SkipRevisions.lua`, since they shipped and the
+rules data has moved since they were built, and splices revision 3 in. `test_revision3.py` tests the rules above (`make test` runs it). A rerun replaces revision 3 only. The report
+(`tools/.cache/skip-revision/revision3-report.json`) lists held statements, ignored level lists and spells without ranks.
+`--rebuild-old` runs the whole old pipeline instead; do not commit its output without checking revisions 1 and 2.
+
 ## Known gaps
 
 - Wowhead covers Priest, Mage, Druid, Shaman and Warrior only; the others have no guide check.
 - The Wowhead text for one Druid spell (Rejuvenation) lost its name; `guides.py` fills it in by hand.
 - Game data gaps: some spells lack a rank (Holy Light rank 5, Bane of Agony rank 2) and some prices look wrong.
 - About a quarter of ranks cannot be scored and are left as revision 1 had them.
-- The Forever-specific guides on Maxroll and Icy Veins give no rank advice; a later revision may use new ones.
+- Revision 3 has no statement for Balance Druid, Mage, Hunter and Restoration Shaman (Wowhead), or for any spec Method does not cover. The Icy Veins, Warcraft Tavern and Mobalytics guides were not read (issue #83).

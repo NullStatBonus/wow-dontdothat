@@ -167,10 +167,10 @@ end
 -- [familyId] = { [rank] = { entry, ... } } } }, with entry = { source, reason = { kind, numbers }, specs = { keys } | nil }.
 -- An empty list for a rank means "not skipped in this revision". reason kinds and the numbers each carries:
 ns.Rules.SKIP_REASON_KINDS = {
-  guideFirstRankOnly = {}, guideSkipEntirely = {}, guideUpToRank = { "n" }, guideNotTrained = {},
+  guideFirstRankOnly = {}, guideSkipEntirely = {}, guideUpToRank = { "n" }, guideNotTrained = {}, guideUselessAfter = { "n" },
   noGain = {}, smallStep = { "pct" }, notWorthPrice = { "pct" }, waitForMount = {}, legacy = {},
 }
-local SKIP_SOURCES = { guide = true, computed = true, legacy = true }
+local SKIP_SOURCES = { guide = true, guideForever = true, guideMethod = true, computed = true, legacy = true }
 
 -- Raises a clear error when a class's revisions are malformed. specs = the class's spec keys (a set);
 -- familyOk(id) -> bool, when given, says the family ID is a real family of the class.
@@ -194,7 +194,7 @@ function ns.Rules.ValidateSkipRevisions(class, revisions, specs, familyOk)
         if type(list) ~= "table" then fail(rw, "must be a list of entries") end
         for i, entry in ipairs(list) do
           local ew = rw .. "[" .. i .. "]"
-          if not SKIP_SOURCES[entry.source] then fail(ew .. ".source", "must be guide, computed or legacy") end
+          if not SKIP_SOURCES[entry.source] then fail(ew .. ".source", "must be guide, guideForever, guideMethod, computed or legacy") end
           local kind = type(entry.reason) == "table" and ns.Rules.SKIP_REASON_KINDS[entry.reason.kind]
           if not kind then fail(ew .. ".reason", "needs a known reason kind") end
           for _, field in ipairs(kind) do
