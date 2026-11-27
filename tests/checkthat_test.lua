@@ -57,18 +57,18 @@ end)
 test("checkthat: a CheckThat with Entry but no OnRun logs the missing hook", function()
   local t = current(); t.OnRun = nil
   local _, logs, n = boot(t)
-  eq(n, 3)
-  eq(logs, { "checkthat: run hook not available", "checkthat: entries registered: 3" })
+  eq(n, 4)
+  eq(logs, { "checkthat: run hook not available", "checkthat: entries registered: 4" })
 end)
 
-test("checkthat: current registers three entries and the run hook", function()
+test("checkthat: current registers four entries and the run hook", function()
   local t = current()
   local CT, logs, n = boot(t, { version = function() return "0.15.0" end })
-  eq(n, 3)
-  truthy(t.entries.version and t.entries.testsettings and t.entries.setting)
+  eq(n, 4)
+  truthy(t.entries.version and t.entries.testsettings and t.entries.setting and t.entries.trainer)
   truthy(t.hooks.DontDoThat)
   eq(CT.Status(), "working")
-  eq(logs, { "checkthat: run hook registered", "checkthat: entries registered: 3" })
+  eq(logs, { "checkthat: run hook registered", "checkthat: entries registered: 4" })
 end)
 
 test("checkthat: version entry encodes major*10000 + minor*100 + patch", function()
@@ -187,4 +187,15 @@ test("checkthat: RunOpen is true only with an open run; missing, old or raising 
   local CT = boot(t)
   eq(CT.RunOpen(), false)
   truthy(CT.Status():find("failed: ActiveRun:", 1, true))
+end)
+
+test("checkthat: the trainer entry gives the row count of the open trainer, and nothing when none is open", function()
+  local t = current()
+  local rows
+  boot(t, { trainer = function() return rows end })
+  eq(select("#", t.entries.trainer()), 0)
+  rows = 9
+  eq(t.entries.trainer(), "rows=9")
+  rows = "x"
+  eq(select("#", t.entries.trainer()), 0)
 end)

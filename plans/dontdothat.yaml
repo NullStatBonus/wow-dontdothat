@@ -27,6 +27,106 @@ logs:
     format: strings
     quiet: true
     cap: 100
+offline:
+  toc: wow-dontdothat/DontDoThat/DontDoThat_Camelot.toc
+  tocs:
+    era: wow-dontdothat/DontDoThat/DontDoThat_Vanilla.toc
+    forever: wow-dontdothat/DontDoThat/DontDoThat_Camelot.toc
+  level: 6
+  predicts:
+    ddt.f.1: [offline.1.1]
+    ddt.f.2: [offline.1.3]
+    ddt.f.12: [offline.1.4]
+    ddt.f.3: [offline.1.2]
+    ddt.f.7: [offline.2.3]
+  groups:
+  - label: Plain load
+    steps:
+    - label: The addon reports no version, because the fake client has no TOC metadata
+      call: { addon: DontDoThat, entry: version }
+      returns: []
+    - label: Test settings are off
+      call: { addon: DontDoThat, entry: testsettings }
+      returns: ['off']
+    - label: No mount is marked as bought
+      call: { addon: DontDoThat, entry: setting, args: [marks] }
+      returns: [none]
+    - label: No item is allowed
+      call: { addon: DontDoThat, entry: setting, args: [allowed] }
+      returns: [0]
+    - label: An unknown setting returns nothing
+      call: { addon: DontDoThat, entry: setting, args: [nonsense] }
+      returns: []
+    - label: No trainer is read before one opens
+      call: { addon: DontDoThat, entry: trainer }
+      returns: []
+  - label: Trainer window
+    mocks:
+      GetNumTrainerServices:
+      - { recording: "class:GetNumTrainerServices()" }
+      GetTrainerServiceInfo:
+      - { recording: "class:GetTrainerServiceInfo(10)" }
+      - { recording: "class:GetTrainerServiceInfo(2)" }
+      - { recording: "class:GetTrainerServiceInfo(3)" }
+      - { recording: "class:GetTrainerServiceInfo(4)" }
+      - { recording: "class:GetTrainerServiceInfo(5)" }
+      - { recording: "class:GetTrainerServiceInfo(6)" }
+      - { recording: "class:GetTrainerServiceInfo(7)" }
+      - { recording: "class:GetTrainerServiceInfo(8)" }
+      - { recording: "class:GetTrainerServiceInfo(9)" }
+      GetTrainerServiceCost:
+      - { recording: "class:GetTrainerServiceCost(10)" }
+      - { recording: "class:GetTrainerServiceCost(2)" }
+      - { recording: "class:GetTrainerServiceCost(3)" }
+      - { recording: "class:GetTrainerServiceCost(4)" }
+      - { recording: "class:GetTrainerServiceCost(5)" }
+      - { recording: "class:GetTrainerServiceCost(6)" }
+      - { recording: "class:GetTrainerServiceCost(7)" }
+      - { recording: "class:GetTrainerServiceCost(8)" }
+      - { recording: "class:GetTrainerServiceCost(9)" }
+      GetTrainerServiceLevelReq:
+      - { recording: "class:GetTrainerServiceLevelReq(10)" }
+      - { recording: "class:GetTrainerServiceLevelReq(2)" }
+      - { recording: "class:GetTrainerServiceLevelReq(3)" }
+      - { recording: "class:GetTrainerServiceLevelReq(4)" }
+      - { recording: "class:GetTrainerServiceLevelReq(5)" }
+      - { recording: "class:GetTrainerServiceLevelReq(6)" }
+      - { recording: "class:GetTrainerServiceLevelReq(7)" }
+      - { recording: "class:GetTrainerServiceLevelReq(8)" }
+      - { recording: "class:GetTrainerServiceLevelReq(9)" }
+      GetTrainerServiceSkillReq:
+      - { recording: "class:GetTrainerServiceSkillReq(10)" }
+      - { recording: "class:GetTrainerServiceSkillReq(2)" }
+      - { recording: "class:GetTrainerServiceSkillReq(3)" }
+      - { recording: "class:GetTrainerServiceSkillReq(4)" }
+      - { recording: "class:GetTrainerServiceSkillReq(5)" }
+      - { recording: "class:GetTrainerServiceSkillReq(6)" }
+      - { recording: "class:GetTrainerServiceSkillReq(7)" }
+      - { recording: "class:GetTrainerServiceSkillReq(8)" }
+      - { recording: "class:GetTrainerServiceSkillReq(9)" }
+      IsTradeskillTrainer:
+      - { recording: "class:IsTradeskillTrainer()" }
+      GetTrainerServiceTypeFilter:
+      - { recording: "class:GetTrainerServiceTypeFilter(available)" }
+      - { recording: "class:GetTrainerServiceTypeFilter(unavailable)" }
+      - { recording: "class:GetTrainerServiceTypeFilter(used)" }
+    steps:
+    - { event: { name: TRAINER_SHOW } }
+    - { event: { name: TRAINER_UPDATE } }
+    - label: The recorded trainer rows are read on this client
+      call: { addon: DontDoThat, entry: trainer }
+      returns: ['rows=9']
+  - label: Saved settings
+    savedVariables:
+      DontDoThatDB:
+        profileKeys: { }
+        profiles:
+          Default:
+            alert: { cooldown: 7 }
+    steps:
+    - label: A saved setting is read at load, in the game's load order
+      call: { addon: DontDoThat, entry: setting, args: [alert.cooldown] }
+      returns: ['7']
 sections:
 - id: g1
   title: Load and version
@@ -187,7 +287,7 @@ sections:
       label: "The addon registered with CheckThat again"
     - kind: log
       source: debug
-      contains: "checkthat: entries registered: 3"
+      contains: "checkthat: entries registered: 4"
       scope: attempt
       label: "The addon registered its entries again"
     - kind: log
