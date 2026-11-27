@@ -3,7 +3,7 @@ kind: plan
 purpose: foundation
 addon: DontDoThat
 title: Don't Do That foundation (release gate)
-version: 0.15.0
+version: 1.0.0
 preamble: |-
   Release gate for WoW Forever. Run it before each release with one ordinary character: any class, any level, no profession, in a capital city that has your class trainer, a vendor that sells armor or weapons, and the auction house. The character must still be saving for its first mount, must have no mount marked as bought, and must have no Always Allow items. Steps 2 and 3 check this. Install the build under test and type |cff99ccff/reload|r first. Test settings turn on by themselves when the run starts, so your own settings do not matter, and they turn off at the end.
   Pillars: the addon loads and reports its version; test settings never strand your profile across /reload; the addon wires its purchase calls at login; the settings window draws; the trainer window is read on this client; a vendor question appears from a real click; the warning draws and plays; no Lua error.
@@ -152,7 +152,7 @@ sections:
       addon: DontDoThat
       key: entry.version
       op: ge
-      value: 1500
+      value: 10000
       label: "The addon reports the version under test"
     - kind: state
       probe: addon-loaded

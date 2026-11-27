@@ -3,7 +3,7 @@ kind: plan
 purpose: feature
 addon: DontDoThat
 title: Don't Do That purchases (feature plan)
-version: 0.15.0
+version: 1.0.0
 preamble: |-
   Feature plan for WoW Forever. Run it when you change the vendor, trainer or auction questions, or what the addon counts as spent. It spends real gold, so the character needs about 3 gold, level 10 or higher, and a class with at least one spell the addon marks Save your gold at its trainer. The character must still be saving for its first mount, must have no mount marked as bought, and must have no Always Allow items. Steps 2 and 3 check this. Stand in a capital city. Install the build under test and type |cff99ccff/reload|r first. Test settings turn on when the run starts, so your own settings do not matter.
   The release gate (plans/dontdothat.yaml) buys nothing. This plan buys the cheapest item that qualifies each time. Always Allow has its own plan (plans/dontdothat-pr72.yaml). Keep this plan as a regression plan for purchases.
@@ -50,7 +50,7 @@ sections:
       addon: DontDoThat
       key: entry.version
       op: ge
-      value: 1500
+      value: 10000
       label: "The addon reports the version under test"
   - id: ddt.p.2
     title: No mount marked as bought
