@@ -116,6 +116,8 @@ function Export.Build(sources)
     local a, t, e = p.alert or {}, p.toast or {}, p.explanation or {}
     local lines = {
       "  active profile: " .. tostring(sources.profileName or "unknown"),
+      "  saved data version: " .. tostring(sources.dataVersion and sources.dataVersion.current or "unknown")
+        .. (sources.dataVersion and sources.dataVersion.previous and (" (earlier: " .. sources.dataVersion.previous .. ")") or ""),
       "  test settings: " .. (sources.testSettings and ("on (temporary profile in use; own profile " .. tostring(sources.testSettings) .. ")") or "off"),
       "  CheckThat: " .. tostring(sources.checkThat or "not detected"),
       "  scope: settings shared by the profile; savings, mount marks, profession answers and allowed items per character; debug account-wide",

@@ -224,6 +224,7 @@ The report holds:
 - The items and the vendor and auction decisions that the addon saw.
 - A log of what the addon saw and decided.
 - The profile in use, whether test settings are on, and the CheckThat status.
+- The addon version that wrote your saved data, and the one before it.
 - The libraries that the game loaded, and the game functions that the addon uses.
 
 Read the report before you send it.

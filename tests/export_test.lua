@@ -186,3 +186,12 @@ test("report shows the test-settings state, the profile in use and the CheckThat
   truthy(on:find("test settings: on (temporary profile in use; own profile Raid)", 1, true), on)
   truthy(on:find("CheckThat: working", 1, true))
 end)
+
+test("report shows the version that wrote the saved data and the one before it", function()
+  local ns = { version = "0.1.0", L = setmetatable({}, { __index = function(_, k) return k end }) }
+  for _, f in ipairs({ "UI/Helpers.lua", "Model/Settings.lua", "Core/Registry.lua", "Debug/Export.lua" }) do H.load("DontDoThat/" .. f, ns) end
+  ns.db = { profile = {}, char = {}, global = {} }
+  truthy(ns.Export.Build({ settings = {}, env = {}, dataVersion = { current = "1.0.0", previous = "0.14.0" } }):find("saved data version: 1.0.0 (earlier: 0.14.0)", 1, true))
+  truthy(ns.Export.Build({ settings = {}, env = {}, dataVersion = { current = "1.0.0" } }):find("saved data version: 1.0.0\n", 1, true))
+  truthy(ns.Export.Build({ settings = {}, env = {} }):find("saved data version: unknown", 1, true))
+end)
