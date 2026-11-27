@@ -211,6 +211,13 @@ function addon:OnEnable()
                 if o[60] then t[#t + 1] = "60" end
                 return #t > 0 and table.concat(t, ", ") or "none"
             end,
+            trainer = function()
+                local t = ns.Adapter.ReadTrainer(_G)
+                if not t.ok then return nil end
+                local n = 0
+                for _, row in ipairs(t.rows) do if not row.header then n = n + 1 end end
+                return n
+            end,
             log = function(msg) if ns.Log then ns.Log.Add("%s", msg) end end,
             runStarted = function(runId) TS.OnRunStarted(self.db, self:TestSettingsDeps(), runId) end,
             runEnded = function(reason) TS.OnRunEnded(self.db, self:TestSettingsDeps(), reason) end,

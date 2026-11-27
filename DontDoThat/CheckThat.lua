@@ -82,6 +82,13 @@ add("setting", function(key)
   if v ~= nil then return cut(v) end
 end)
 
+-- How many rows the open trainer window gives, read through the adapter: "rows=9", or nothing when no trainer is
+-- open. For the plans' offline block, which replays recorded trainer calls on each client's TOC.
+add("trainer", function()
+  local v = type(ctx.trainer) == "function" and ctx.trainer()
+  if type(v) == "number" then return "rows=" .. v end
+end)
+
 local function pack(...) return { n = select("#", ...), ... } end
 
 -- fn in pcall; the number of results is kept (zero stays zero: CheckThat shows "(none)"). An error is returned as a

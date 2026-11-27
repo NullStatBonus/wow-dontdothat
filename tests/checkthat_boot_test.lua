@@ -148,7 +148,7 @@ test("boot: an open run keeps test settings and debug across a reload, and the r
   local lines = {}
   for _, e in ipairs(s2.ns.Log.Entries()) do lines[#lines + 1] = e.msg end
   truthy(has(lines, "test settings: on at login"), table.concat(lines, "\n"))
-  truthy(has(lines, "checkthat: entries registered: 3"))
+  truthy(has(lines, "checkthat: entries registered: 4"))
   truthy(has(lines, "checkthat: run hook registered"))
   ct2.hook("start", { runId = "run-1" }) -- the catch-up start for the open run
   truthy(has((function() local l = {} for _, e in ipairs(s2.ns.Log.Entries()) do l[#l + 1] = e.msg end return l end)(), "test settings: run already seen"))
