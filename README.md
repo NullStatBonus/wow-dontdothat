@@ -117,7 +117,7 @@ The settings have these pages:
   - **Warnings:** choose Toast or Warning, preview it, set the toast's background opacity, text and icon opacity and scale, move it (Done saves, Cancel or Escape puts it back, and Escape does not close the settings window; it keeps its place when you change its scale), reset its position, and turn the chat line on or off.
   - **Explanations:** opacity and scale for the explanations you keep open, and a preview.
   - **Sound:** the warning sound, the volume channel, a Play sound button, and the seconds between warnings for the same thing. Turning the sound off also turns off the on-screen message. The chat line and the questions stay.
-- **Advanced:** fine controls (Tuning), the skip list revision, the spells and rules for each class (Classes), and Debug. In the game's Options window, Classes is an **Open classes** button that opens the list in the Don't Do That window.
+- **Advanced:** fine controls (Tuning), the skip list revision, the spells and rules for each class (Classes), and Debug. In the game's Options window, Classes is an **Open classes** button that opens the list in the Don't Do That window. On a class page, the switch beside a spell covers every rank of that spell, even when the row names only some ranks.
 - **About:** what the marks mean, how to use the addon, and the main commands.
 - **Profiles:** shows which profile this character uses. Choose another, create one, copy one, reset the current one or delete one. Characters can share a profile or use their own. Your tally, progress and Always Allow items stay with each character. The page is locked while test settings are on.
 
